@@ -38,7 +38,7 @@ static void* malloc_then_write(size_t size) {
 
 static void read_then_free(void* ptr) {
 	// Read before free
-	char s = *((char*)ptr);
+	char s __attribute__((unused)) = *((char*)ptr);
 	free(ptr);
 }
 static void* test_thread_func(void* arg) {
@@ -56,7 +56,7 @@ static void* test_thread_func(void* arg) {
 
 		if (args->benchmark == 1.2) {
 			if (pos == 0 && ptrs[pos] != NULL) {
-				for (size_t y = 0; y < args->num_kept_allocations; y++) {
+				for (int y = 0; y < args->num_kept_allocations; y++) {
 					read_then_free(ptrs[y]);
 				}
 			}
@@ -91,19 +91,24 @@ int main(int argc, char* argv[]) {
 
 	for (int i = 0; i < num_threads; i++) {
 		if (0 != pthread_create(&threads[i], NULL, test_thread_func, &thread_args)) {
+			perror("pthread_create");
 			return 1;
 		}
 	}
 
 	for(int i = 0; i < num_threads; i++) {
 		if (0 != pthread_join(threads[i], NULL)) {
+			perror("pthread_join");
 			return 1;
 		}
 	}
 
-#ifndef NSTATS
-	FILE* f = fopen("stats", "w");
+	FILE* f = stdout;
+	if (argc == 7)
+		f = fopen(argv[6], "w");
 	malloc_info(0, f);
-	fclose(f);
-#endif
+	if (argc == 7)
+		fclose(f);
+
+	return 0;
 }
