@@ -1,2 +1,4 @@
 build/*
 *.png
+__pycache__/*
+.gdb_history
