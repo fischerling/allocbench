@@ -187,5 +187,6 @@ int main(int argc, char **argv)
 	}
 
 	/* This should never be reached we exit when our child exits */
-	return 1;
+	fprintf(stderr, "# End memusage\n");
+	return 0;
 }
