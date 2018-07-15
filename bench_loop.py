@@ -109,7 +109,7 @@ class Benchmark_Loop():
                             # nthreads/time = MOPS/S
                             d.append(mid[1]/float(m["cpu-clock:ku"]))
                         y_vals[mid[1]-1] = np.mean(d)
-                plt.plot(self.nthreads, y_vals, label=target)
+                plt.plot(self.nthreads, y_vals, marker='.',linestyle='-', label=target)
 
             plt.legend()
             plt.xlabel("threads")
@@ -131,7 +131,7 @@ class Benchmark_Loop():
                             # nthreads/time = MOPS/S
                             d.append(n/float(m["cpu-clock:ku"]))
                         y_vals[y_mapping[mid[2]]] = np.mean(d)
-                plt.plot(x_vals, y_vals, label=target)
+                plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target)
 
             plt.legend()
             plt.xticks(x_vals, self.maxsize)

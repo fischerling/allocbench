@@ -1,5 +1,5 @@
+import copy
 import csv
-import io
 import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
@@ -27,7 +27,7 @@ class Benchmark_MYSQL():
     def __init__(self):
         self.name = "MYSQL Stress Benchmark"
         self.descrition = """See sysbench documentation."""
-        self.targets = common_targets
+        self.targets = copy.copy(common_targets)
         del(self.targets["klmalloc"])
         self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
         
@@ -156,7 +156,7 @@ class Benchmark_MYSQL():
                     for m in measures:
                         d.append(int(m["transactions"]))
                     y_vals[mid[1]-1] = np.mean(d)
-            plt.plot(self.nthreads, y_vals, label=target)
+            plt.plot(self.nthreads, y_vals, label=target, linestyle='-', marker='.')
 
         plt.legend()
         plt.xlabel("threads")
