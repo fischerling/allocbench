@@ -25,7 +25,7 @@ class Benchmark_ConProd():
         self.results = {}
     
     def prepare(self, verbose=False):
-        req = ["build/bench_conprod", "build/memusage"]
+        req = ["build/bench_conprod"]
         for r in req:
             if not os.path.isfile(r):
                 print(r, "not found")

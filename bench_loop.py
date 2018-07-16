@@ -25,7 +25,7 @@ class Benchmark_Loop():
         self.results = {}
     
     def prepare(self, verbose=False):
-        req = ["build/bench_loop", "build/memusage"]
+        req = ["build/bench_loop"]
         for r in req:
             if not os.path.isfile(r):
                 print(r, "not found")
