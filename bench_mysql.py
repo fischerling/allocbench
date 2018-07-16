@@ -130,18 +130,18 @@ class Benchmark_MYSQL():
                         self.results[key].append(result)
 
                 print()
+
+                # Get memory stats from server
+                if "memusage" not in self.results:
+                    self.results["memusage"] = {}
+
+                ps = subprocess.run(["ps", "-F", str(self.server.pid)], stdout=subprocess.PIPE)
+                tokens = str(ps.stdout.splitlines()[1]).split()
+                self.results["memusage"][tname] = {"VSZ" : tokens[4], "RSS" : tokens[5]}
+
                 self.server.kill()
                 self.server.wait()
                 
-                    # Strip all whitespace from memusage output
-                    # result["memusage"] = [x.replace(" ", "").replace("\t", "")
-                                            # for x in output[0].splitlines()]
-                        # 
-                    # # Handle perf output
-                    # csvreader = csv.reader(output[1].splitlines(), delimiter=';')
-                    # for row in csvreader:
-                        # result[row[2].replace("\\", "")] = row[0].replace("\\", "")
-
         if save:
             with open(self.name + ".save", "wb") as f:
                 pickle.dump(self.results, f)

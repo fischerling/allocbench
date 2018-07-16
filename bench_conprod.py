@@ -10,7 +10,7 @@ from common_targets import common_targets
 
 cmd = ("perf stat -x\; -e cpu-clock:k,cache-references,cache-misses,cycles,"
        "instructions,branches,faults,migrations "
-       "build/memusage build/bench_conprod{0} {1} {1} {1} 1000000 {2}")
+       "build/bench_conprod{0} {1} {1} {1} 1000000 {2}")
 
 class Benchmark_ConProd():
     def __init__(self):
@@ -49,6 +49,7 @@ class Benchmark_ConProd():
                 
                 # run cmd for each target
                 for tname, t in self.targets.items():
+                    result = {"VSZ" : [] , "RSS" : []}
 
                     env = {"LD_PRELOAD" : t[1]} if t[1] != "" else None
 
@@ -56,33 +57,35 @@ class Benchmark_ConProd():
                     if verbose:
                         print("\n" + tname, t, "\n", " ".join(target_cmd), "\n")
 
-                    p = subprocess.run(target_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+                    p = subprocess.Popen(target_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
                                         env=env, universal_newlines=True)
+
+                    while p.poll() == None:
+                        ps = subprocess.run(["ps", "-F", "--ppid", str(p.pid)], stdout=subprocess.PIPE)
+                        lines = ps.stdout.splitlines()
+                        if len(lines) == 1: # perf hasn't forked yet
+                            continue
+                        tokens = str(lines[1]).split()
+                        result["VSZ"].append(tokens[4])
+                        result["RSS"].append(tokens[5])
+
+                    p.wait()
+
+                    output = p.stderr.read()
+
                     if p.returncode != 0:
                         print("\n" + " ".join(target_cmd), "exited with", p.returncode, ".\n Aborting Benchmark.")
                         print(tname, t)
                         print(p.stderr)
-                        print(p.stdout)
+                        print(output)
                         return False
 
                     if "ERROR: ld.so" in p.stderr:
                         print("\nPreloading of", t[1], "failed for", tname, ".\n Aborting Benchmark.")
                         return False
 
-                    output = p.stderr.split("# End memusage\n")
-                    if len(output) != 2:
-                        print()
-                        print(output)
-                        print(tname, t)
-                        print("Aborting output is not correct")
-
-                    result = {}
-                    # Strip all whitespace from memusage output
-                    result["memusage"] = [x.replace(" ", "").replace("\t", "")
-                                            for x in output[0].splitlines()]
-                        
                     # Handle perf output
-                    csvreader = csv.reader(output[1].splitlines(), delimiter=';')
+                    csvreader = csv.reader(output.splitlines(), delimiter=';')
                     for row in csvreader:
                         result[row[2].replace("\\", "")] = row[0].replace("\\", "")
                     key = (tname, *args)

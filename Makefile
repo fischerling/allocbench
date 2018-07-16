@@ -26,16 +26,11 @@ OBJECTS = $(notdir $(CC_SOURCES:.cc=.o)) $(notdir $(C_SOURCES:.c=.o))
 OBJPRE = $(addprefix $(OBJDIR)/,$(OBJECTS))
 MAKEFILE_LIST = Makefile
 
-all: $(OBJDIR)/bench_loop $(OBJDIR)/memusage $(OBJDIR)/bench_conprod
+all: $(OBJDIR)/bench_loop $(OBJDIR)/bench_conprod
 
 bench: all
 	@if test \( ! \( -d bench.d \) \) ;then mkdir -p bench.d;fi
 	bash -c "./bench.py"
-
-$(OBJDIR)/memusage: $(OBJDIR)/memusage.o
-	@echo "ld		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CC) -o $@ $^
 
 $(OBJDIR)/bench_conprod: $(OBJDIR)/bench_conprod.o
 	@echo "ld		$@"
