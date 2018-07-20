@@ -32,8 +32,9 @@ class Benchmark_MYSQL( Benchmark ):
         self.targets = copy.copy(common_targets)
         del(self.targets["klmalloc"])
         self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
-        
-        self.results = {}
+
+        self.results = {"args": {"nthreads" : self.nthreads},
+                        "targets" : self.targets}
 
     def start_and_wait_for_server(self, env, verbose, log=None):
         if not log:
@@ -169,47 +170,5 @@ class Benchmark_MYSQL( Benchmark ):
         plt.title("sysbench oltp read only")
         plt.savefig("mysql.ro.png")
         plt.clf()
-        # MAXSIZE fixed
-        # for size in self.maxsize:
-            # for target in self.targets:
-                # y_vals = [0] * len(self.nthreads)
-                # for mid, measures in self.results.items():
-                    # if mid[0] == target and mid[2] == size:
-                        # d = []
-                        # for m in measures:
-                            # # nthreads/time = MOPS/S
-                            # d.append(mid[1]/float(m["cpu-clock:ku"]))
-                        # y_vals[mid[1]-1] = np.mean(d)
-                # plt.plot(self.nthreads, y_vals, label=target)
 
-            # plt.legend()
-            # plt.xlabel("threads")
-            # plt.ylabel("MOPS/s")
-            # plt.title("Loop: " + str(size) + "B")
-            # plt.savefig("Loop." + str(size) + "B.png")
-            # plt.clf()
-
-        # # NTHREADS fixed
-        # y_mapping = {v : i for i, v in enumerate(self.maxsize)}
-        # x_vals = [i + 1 for i in range(0, len(self.maxsize))]
-        # for n in self.nthreads:
-            # for target in self.targets:
-                # y_vals = [0] * len(self.maxsize)
-                # for mid, measures in self.results.items():
-                    # if mid[0] == target and mid[1] == n:
-                        # d = []
-                        # for m in measures:
-                            # # nthreads/time = MOPS/S
-                            # d.append(n/float(m["cpu-clock:ku"]))
-                        # y_vals[y_mapping[mid[2]]] = np.mean(d)
-                # plt.plot(x_vals, y_vals, label=target)
-
-            # plt.legend()
-            # plt.xticks(x_vals, self.maxsize)
-            # plt.xlabel("size in B")
-            # plt.ylabel("MOPS/s")
-            # plt.title("Loop: " + str(n) + "thread(s)")
-            # plt.savefig("Loop." + str(n) + "thread.png")
-            # plt.clf()
-        
 mysql = Benchmark_MYSQL()
