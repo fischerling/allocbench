@@ -54,6 +54,8 @@ class Benchmark_ConProd( Benchmark ):
                     result = {"VSZ" : [] , "RSS" : []}
 
                     env = {"LD_PRELOAD" : t[1]} if t[1] != "" else None
+                    if env and "LD_LIBRARY_PATH" in os.environ:
+                        env["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 
                     target_cmd = cmd.format(t[0], *args).split(" ")
                     if verbose:

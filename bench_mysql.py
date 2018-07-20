@@ -96,6 +96,8 @@ class Benchmark_MYSQL( Benchmark ):
             for tname, t in self.targets.items():
                 # No custom build mysqld server supported yet.
                 env = {"LD_PRELOAD" : t[1]} if t[1] != "" else None
+                if env and "LD_LIBRARY_PATH" in os.environ:
+                    env["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
 
                 if not self.start_and_wait_for_server(env, verbose, "mysqld.log"):
                     print("Can't start server for", tname + ".")
