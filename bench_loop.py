@@ -6,14 +6,16 @@ import numpy as np
 import os
 import subprocess
 
+from benchmark import Benchmark
 from common_targets import common_targets
 
 cmd = ("perf stat -x\; -e cpu-clock:k,cache-references,cache-misses,cycles,"
        "instructions,branches,faults,migrations "
        "build/bench_loop{} 1.2 {} 1000000 {} 10")
 
-class Benchmark_Loop():
+class Benchmark_Loop( Benchmark ):
     def __init__(self):
+        self.file_name = "bench_loop"
         self.name = "Loop Stress Benchmark"
         self.descrition = """This benchmark makes n allocations in t concurrent threads.
                             How allocations are freed can be changed with the benchmark
@@ -22,8 +24,9 @@ class Benchmark_Loop():
         self.maxsize = [2 ** x for x in range(6, 16)]
         self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
         
-        self.results = {}
-    
+        self.results = {"args" : {"nthreads" : self.nthreads, "maxsize": self.maxsize},
+                        "targets" : self.targets}
+
     def prepare(self, verbose=False):
         req = ["build/bench_loop"]
         for r in req:
@@ -38,7 +41,7 @@ class Benchmark_Loop():
         return True
 
     
-    def run(self, verbose=False, save=False, runs=3):
+    def run(self, verbose=False, runs=3):
         args_permutations = [(x,y) for x in self.nthreads for y in self.maxsize]
         n = len(args_permutations)
         for run in range(1, runs + 1):
@@ -95,38 +98,40 @@ class Benchmark_Loop():
                         self.results[key].append(result)
 
             print()
-        if save:
-            with open(self.name + ".save", "wb") as f:
-                pickle.dump(self.results, f)
         return True
 
     def summary(self):
         # MAXSIZE fixed
-        for size in self.maxsize:
-            for target in self.targets:
-                y_vals = [0] * len(self.nthreads)
+        nthreads = self.results["args"]["nthreads"]
+        maxsize = self.results["args"]["maxsize"]
+        targets = self.results["targets"]
+
+        y_mapping = {v : i for i, v in enumerate(nthreads)}
+        for size in maxsize:
+            for target in targets:
+                y_vals = [0] * len(nthreads)
                 for mid, measures in self.results.items():
                     if mid[0] == target and mid[2] == size:
                         d = []
                         for m in measures:
                             # nthreads/time = MOPS/S
                             d.append(mid[1]/float(m["cpu-clock:ku"]))
-                        y_vals[mid[1]-1] = np.mean(d)
-                plt.plot(self.nthreads, y_vals, marker='.',linestyle='-', label=target)
+                        y_vals[y_mapping[mid[1]]] = np.mean(d)
+                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target)
 
             plt.legend()
             plt.xlabel("threads")
             plt.ylabel("MOPS/s")
             plt.title("Loop: " + str(size) + "B")
-            plt.savefig("Loop." + str(size) + "B.png")
+            plt.savefig(self.file_name + "." + str(size) + "B.png")
             plt.clf()
 
         # NTHREADS fixed
-        y_mapping = {v : i for i, v in enumerate(self.maxsize)}
-        x_vals = [i + 1 for i in range(0, len(self.maxsize))]
-        for n in self.nthreads:
-            for target in self.targets:
-                y_vals = [0] * len(self.maxsize)
+        y_mapping = {v : i for i, v in enumerate(maxsize)}
+        x_vals = [i + 1 for i in range(0, len(maxsize))]
+        for n in nthreads:
+            for target in targets:
+                y_vals = [0] * len(maxsize)
                 for mid, measures in self.results.items():
                     if mid[0] == target and mid[1] == n:
                         d = []
@@ -137,11 +142,11 @@ class Benchmark_Loop():
                 plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target)
 
             plt.legend()
-            plt.xticks(x_vals, self.maxsize)
+            plt.xticks(x_vals, maxsize)
             plt.xlabel("size in B")
             plt.ylabel("MOPS/s")
             plt.title("Loop: " + str(n) + "thread(s)")
-            plt.savefig("Loop." + str(n) + "thread.png")
+            plt.savefig(self.file_name + "." + str(n) + "threads.png")
             plt.clf()
         
 loop = Benchmark_Loop()

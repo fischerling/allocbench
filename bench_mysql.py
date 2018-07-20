@@ -10,6 +10,7 @@ import shutil
 import subprocess
 from time import sleep
 
+from benchmark import Benchmark
 from common_targets import common_targets
 
 cwd = os.getcwd()
@@ -23,8 +24,9 @@ cmd = ("sysbench oltp_read_only --threads={} --time=10 --max-requests=0 "
 server_cmd = "mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket".format(cwd).split(" ")
 
 
-class Benchmark_MYSQL():
+class Benchmark_MYSQL( Benchmark ):
     def __init__(self):
+        self.file_name = "bench_mysql"
         self.name = "MYSQL Stress Benchmark"
         self.descrition = """See sysbench documentation."""
         self.targets = copy.copy(common_targets)
@@ -32,7 +34,7 @@ class Benchmark_MYSQL():
         self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
         
         self.results = {}
-    
+
     def start_and_wait_for_server(self, env, verbose, log=None):
         if not log:
             log = os.devnull
@@ -148,15 +150,18 @@ class Benchmark_MYSQL():
         return True
 
     def summary(self):
-        for target in self.targets:
-            y_vals = [0] * len(self.nthreads)
+        nthreads = self.results["args"]["nthreads"]
+        targets = self.results["targets"]
+
+        for target in targets:
+            y_vals = [0] * len(nthreads)
             for mid, measures in self.results.items():
                 if mid[0] == target:
                     d = []
                     for m in measures:
                         d.append(int(m["transactions"]))
-                    y_vals[mid[1]-1] = np.mean(d)
-            plt.plot(self.nthreads, y_vals, label=target, linestyle='-', marker='.')
+                    y_vals[mid[1]-nthreads[0]] = np.mean(d)
+            plt.plot(nthreads, y_vals, label=target, linestyle='-', marker='.')
 
         plt.legend()
         plt.xlabel("threads")
