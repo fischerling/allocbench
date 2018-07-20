@@ -82,7 +82,7 @@ class Benchmark_ConProd( Benchmark ):
                         print(output)
                         return False
 
-                    if "ERROR: ld.so" in p.stderr:
+                    if "ERROR: ld.so" in output:
                         print("\nPreloading of", t[1], "failed for", tname, ".\n Aborting Benchmark.")
                         return False
 
