@@ -85,6 +85,7 @@ class Benchmark_Loop( Benchmark ):
 
                     if "ERROR: ld.so" in output:
                         print("\nPreloading of", t[1], "failed for", tname, ".\n Aborting Benchmark.")
+                        print(output)
                         return False
 
                     # Handle perf output
