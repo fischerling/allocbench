@@ -36,12 +36,12 @@ class Benchmark_MYSQL( Benchmark ):
         self.results = {"args": {"nthreads" : self.nthreads},
                         "targets" : self.targets}
 
-    def start_and_wait_for_server(self, env, verbose, log=None):
+    def start_and_wait_for_server(self, verbose, log=None):
         if not log:
             log = os.devnull
 
         with open(log, "ab") as f:
-            self.server = subprocess.Popen(server_cmd, env=env,
+            self.server = subprocess.Popen(server_cmd,
                                                stdout=f,
                                                stderr=f,
                                                universal_newlines=True)
@@ -95,11 +95,9 @@ class Benchmark_MYSQL( Benchmark ):
             n = len(self.nthreads)
             for tname, t in self.targets.items():
                 # No custom build mysqld server supported yet.
-                env = {"LD_PRELOAD" : t[1]} if t[1] != "" else None
-                if env and "LD_LIBRARY_PATH" in os.environ:
-                    env["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+                os.environ["LD_PRELOAD"] = t[1] # set LD_PRELOAD
 
-                if not self.start_and_wait_for_server(env, verbose, "mysqld.log"):
+                if not self.start_and_wait_for_server(verbose, "mysqld.log"):
                     print("Can't start server for", tname + ".")
                     print("Aborting Benchmark.")
                     return False

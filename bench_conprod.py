@@ -53,16 +53,14 @@ class Benchmark_ConProd( Benchmark ):
                 for tname, t in self.targets.items():
                     result = {"VSZ" : [] , "RSS" : []}
 
-                    env = {"LD_PRELOAD" : t[1]} if t[1] != "" else None
-                    if env and "LD_LIBRARY_PATH" in os.environ:
-                        env["LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
+                    os.environ["LD_PRELOAD"] = t[1]
 
                     target_cmd = cmd.format(t[0], *args).split(" ")
                     if verbose:
                         print("\n" + tname, t, "\n", " ".join(target_cmd), "\n")
 
                     p = subprocess.Popen(target_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
-                                        env=env, universal_newlines=True)
+                                         universal_newlines=True)
 
                     while p.poll() == None:
                         ps = subprocess.run(["ps", "-F", "--ppid", str(p.pid)], stdout=subprocess.PIPE)
