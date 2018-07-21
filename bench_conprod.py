@@ -59,7 +59,10 @@ class Benchmark_ConProd( Benchmark ):
                     if verbose:
                         print("\n" + tname, t, "\n", " ".join(target_cmd), "\n")
 
-                    p = subprocess.Popen(target_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+                    p = subprocess.Popen(target_cmd,
+                                         env=os.environ,
+                                         stderr=subprocess.PIPE,
+                                         stdout=subprocess.PIPE,
                                          universal_newlines=True)
 
                     while p.poll() == None:

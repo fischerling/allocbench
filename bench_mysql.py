@@ -16,12 +16,13 @@ from common_targets import common_targets
 cwd = os.getcwd()
 
 prepare_cmd = ("sysbench oltp_read_only --db-driver=mysql --mysql-user=root "
-              "--mysql-socket="+cwd+"/mysql_test/socket --table-size=1000000 prepare").split(" ")
+              "--mysql-socket="+cwd+"/mysql_test/socket --table-size=1000000 prepare").split()
 
 cmd = ("sysbench oltp_read_only --threads={} --time=10 "
        "--db-driver=mysql --mysql-user=root --mysql-socket={}/mysql_test/socket run")
 
-server_cmd = "mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket".format(cwd).split(" ")
+server_cmd = ("mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket "
+             "--secure-file-priv=").format(cwd).split()
 
 
 class Benchmark_MYSQL( Benchmark ):
@@ -41,7 +42,7 @@ class Benchmark_MYSQL( Benchmark ):
             log = os.devnull
 
         with open(log, "ab") as f:
-            self.server = subprocess.Popen(server_cmd,
+            self.server = subprocess.Popen(server_cmd, env=os.environ,
                                                stdout=f,
                                                stderr=f,
                                                universal_newlines=True)
@@ -61,6 +62,7 @@ class Benchmark_MYSQL( Benchmark ):
                             stdout=devnull, stderr=devnull)
             ret = ret and p.returncode == 0
             if not ret:
+                print(p.stderr)
                 return ret
 
             if not self.start_and_wait_for_server(None, verbose, "mysqld.log"):
