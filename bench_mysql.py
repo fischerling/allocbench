@@ -92,10 +92,11 @@ class Benchmark_MYSQL( Benchmark ):
                 return ret
 
             print("Prepare test table")
-            subprocess.run(prepare_cmd)
+            p = subprocess.run(prepare_cmd)
+            ret = ret == p.returncode == 0
             self.server.kill()
             ret = ret and self.server.wait() == -9
-        
+
         return ret
 
     def cleanup(self):
@@ -103,7 +104,6 @@ class Benchmark_MYSQL( Benchmark ):
             print("Delete mysqld directory")
             shutil.rmtree("mysql_test")
 
-    
     def run(self, verbose=False, save=False, runs=3):
         cwd = os.getcwd()
         for run in range(1, runs + 1):
