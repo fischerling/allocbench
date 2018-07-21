@@ -56,16 +56,29 @@ class Benchmark_MYSQL( Benchmark ):
         if not os.path.exists("mysql_test"):
             print("Prepare mysqld directory and database")
             os.makedirs("mysql_test")
+
+            # Init database
+            if b"MariaDB" in subprocess.run(["mysqld", "--version"],
+                                            stdout=subprocess.PIPE).stdout:
+                init_db_cmd = ["mysql_install_db", "--basedir=/usr",
+                                "--datadir={}/mysql_test".format(os.getcwd())]
+                if verbose:
+                    print("MariaDB detected")
+            else:
+                init_db_cmd = ["mysqld", "-h", "{}/mysql_test".format(os.getcwd()),
+                                "--initialize-insecure"]
+                if verbose:
+                    print("Oracle MySQL detected")
+
             with open(os.devnull, "w") as devnull:
-                p = subprocess.run(["mysql_install_db", "--basedir=/usr",
-                            "--datadir={}/mysql_test".format(os.getcwd())],
+                p = subprocess.run(init_db_cmd,
                             stdout=devnull, stderr=devnull)
             ret = ret and p.returncode == 0
             if not ret:
                 print(p.stderr)
                 return ret
 
-            if not self.start_and_wait_for_server(None, verbose, "mysqld.log"):
+            if not self.start_and_wait_for_server(verbose, "mysqld.log"):
                 print("Starting mysqld failed")
                 return False
 
@@ -73,6 +86,9 @@ class Benchmark_MYSQL( Benchmark ):
                 input = b"CREATE DATABASE sbtest;\n")
             ret = ret and p.returncode == 0
             if not ret:
+                print(p.stderr)
+                self.server.kill()
+                self.server.wait()
                 return ret
 
             print("Prepare test table")
