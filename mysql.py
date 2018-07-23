@@ -27,8 +27,7 @@ server_cmd = ("mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket "
 
 class Benchmark_MYSQL( Benchmark ):
     def __init__(self):
-        self.file_name = "bench_mysql"
-        self.name = "MYSQL Stress Benchmark"
+        self.name = "mysql"
         self.descrition = """See sysbench documentation."""
         self.targets = copy.copy(common_targets)
         del(self.targets["klmalloc"])
@@ -120,6 +119,13 @@ class Benchmark_MYSQL( Benchmark ):
                     print("Aborting Benchmark.")
                     return False
 
+                # Get initial memory footprint
+                ps = subprocess.run(["ps", "-F", str(self.server.pid)], stdout=subprocess.PIPE)
+                tokens = str(ps.stdout.splitlines()[1]).split()
+                if not tname in self.results["memusage"]:
+                    self.results["memusage"] = []
+                self.results["memusage"].append({"VSZ_start" : tokens[4], "RSS_start" : tokens[5]})
+
                 for i, thread in enumerate(self.nthreads):
                     print(tname + ":", i + 1, "of", n, "\r", end='')
 
@@ -152,13 +158,10 @@ class Benchmark_MYSQL( Benchmark ):
 
                 print()
 
-                # Get memory stats from server
-                if "memusage" not in self.results:
-                    self.results["memusage"] = {}
-
+                # Get final memory footprint
                 ps = subprocess.run(["ps", "-F", str(self.server.pid)], stdout=subprocess.PIPE)
                 tokens = str(ps.stdout.splitlines()[1]).split()
-                self.results["memusage"][tname] = {"VSZ" : tokens[4], "RSS" : tokens[5]}
+                self.results["memusage"][tname][run].update({"VSZ_end" : tokens[4], "RSS_end" : tokens[5]})
 
                 self.server.kill()
                 self.server.wait()
@@ -188,7 +191,7 @@ class Benchmark_MYSQL( Benchmark ):
         plt.xlabel("threads")
         plt.ylabel("transactions")
         plt.title("sysbench oltp read only")
-        plt.savefig(self.file_name + ".l.ro.png")
+        plt.savefig(self.name + ".l.ro.png")
         plt.clf()
 
         # bar plot
@@ -211,7 +214,19 @@ class Benchmark_MYSQL( Benchmark ):
         plt.xticks(range(1, len(nthreads) + 1), nthreads)
         plt.ylabel("transactions")
         plt.title("sysbench oltp read only")
-        plt.savefig(self.file_name + ".b.ro.png")
+        plt.savefig(self.name + ".b.ro.png")
         plt.clf()
+
+        # memusage
+        for target, measures in self.results["memusage"].items():
+            vsz_growth = []
+            rss_growth = []
+            for m in measures:
+                vsz_growth.append(m["VSZ_start"] - m["VSZ_end"])
+                rss_growth.append(m["RSS_start"] - m["RSS_end"])
+            print(target, "memory footprint:")
+            print("\t avg vsz growth:", np.mean(vsz_growth))
+            print("\t avg rss growth:", np.mean(rss_growth))
+            
 
 mysql = Benchmark_MYSQL()

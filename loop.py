@@ -15,8 +15,7 @@ cmd = ("perf stat -x\; -e cpu-clock:k,cache-references,cache-misses,cycles,"
 
 class Benchmark_Loop( Benchmark ):
     def __init__(self):
-        self.file_name = "bench_loop"
-        self.name = "Loop Stress Benchmark"
+        self.name = "loop"
         self.descrition = """This benchmark makes n allocations in t concurrent threads.
                             How allocations are freed can be changed with the benchmark
                             version""",
@@ -127,7 +126,7 @@ class Benchmark_Loop( Benchmark ):
             plt.xlabel("threads")
             plt.ylabel("MOPS/s")
             plt.title("Loop: " + str(size) + "B")
-            plt.savefig(self.file_name + "." + str(size) + "B.png")
+            plt.savefig(self.name + "." + str(size) + "B.png")
             plt.clf()
 
         # NTHREADS fixed
@@ -150,7 +149,7 @@ class Benchmark_Loop( Benchmark ):
             plt.xlabel("size in B")
             plt.ylabel("MOPS/s")
             plt.title("Loop: " + str(n) + "thread(s)")
-            plt.savefig(self.file_name + "." + str(n) + "threads.png")
+            plt.savefig(self.name + "." + str(n) + "threads.png")
             plt.clf()
 
 loop = Benchmark_Loop()
