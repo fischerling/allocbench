@@ -34,7 +34,8 @@ class Benchmark_MYSQL( Benchmark ):
         self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
 
         self.results = {"args": {"nthreads" : self.nthreads},
-                        "targets" : self.targets}
+                        "targets" : self.targets,
+                        "memusage": {t : [] for t in self.targets}}
 
     def start_and_wait_for_server(self, verbose, log=None):
         if not log:
@@ -122,9 +123,7 @@ class Benchmark_MYSQL( Benchmark ):
                 # Get initial memory footprint
                 ps = subprocess.run(["ps", "-F", str(self.server.pid)], stdout=subprocess.PIPE)
                 tokens = str(ps.stdout.splitlines()[1]).split()
-                if not tname in self.results["memusage"]:
-                    self.results["memusage"] = []
-                self.results["memusage"].append({"VSZ_start" : tokens[4], "RSS_start" : tokens[5]})
+                self.results["memusage"][tname].append({"VSZ_start" : tokens[4], "RSS_start" : tokens[5]})
 
                 for i, thread in enumerate(self.nthreads):
                     print(tname + ":", i + 1, "of", n, "\r", end='')
@@ -161,7 +160,7 @@ class Benchmark_MYSQL( Benchmark ):
                 # Get final memory footprint
                 ps = subprocess.run(["ps", "-F", str(self.server.pid)], stdout=subprocess.PIPE)
                 tokens = str(ps.stdout.splitlines()[1]).split()
-                self.results["memusage"][tname][run].update({"VSZ_end" : tokens[4], "RSS_end" : tokens[5]})
+                self.results["memusage"][tname][run-1].update({"VSZ_end" : tokens[4], "RSS_end" : tokens[5]})
 
                 self.server.kill()
                 self.server.wait()
