@@ -23,7 +23,7 @@ class Benchmark_Loop( Benchmark ):
         self.targets = common_targets
         self.maxsize = [2 ** x for x in range(6, 16)]
         self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
-        
+
         self.results = {"args" : {"nthreads" : self.nthreads, "maxsize": self.maxsize},
                         "targets" : self.targets}
 
@@ -40,7 +40,7 @@ class Benchmark_Loop( Benchmark ):
                 print(r, "found and executable.")
         return True
 
-    
+
     def run(self, verbose=False, runs=3):
         args_permutations = [(x,y) for x in self.nthreads for y in self.maxsize]
         n = len(args_permutations)
@@ -49,7 +49,7 @@ class Benchmark_Loop( Benchmark ):
 
             for i, args in enumerate(args_permutations):
                 print(i + 1, "of", n, "\r", end='')
-                
+
                 # run cmd for each target
                 for tname, t in self.targets.items():
                     result = {"VSZ": [], "RSS" : []}
@@ -152,5 +152,5 @@ class Benchmark_Loop( Benchmark ):
             plt.title("Loop: " + str(n) + "thread(s)")
             plt.savefig(self.file_name + "." + str(n) + "threads.png")
             plt.clf()
-        
+
 loop = Benchmark_Loop()
