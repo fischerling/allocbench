@@ -221,8 +221,8 @@ class Benchmark_MYSQL( Benchmark ):
             vsz_growth = []
             rss_growth = []
             for m in measures:
-                vsz_growth.append(m["VSZ_start"] - m["VSZ_end"])
-                rss_growth.append(m["RSS_start"] - m["RSS_end"])
+                vsz_growth.append(int(m["VSZ_end"]) - int(m["VSZ_start"]))
+                rss_growth.append(int(m["RSS_end"]) - int(m["RSS_start"]))
             print(target, "memory footprint:")
             print("\t avg vsz growth:", np.mean(vsz_growth))
             print("\t avg rss growth:", np.mean(rss_growth))
