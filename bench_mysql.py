@@ -120,10 +120,10 @@ class Benchmark_MYSQL( Benchmark ):
                     print("Aborting Benchmark.")
                     return False
 
-                for i in self.nthreads:
-                    print(tname + ":", i, "of", n, "\r", end='')
+                for i, thread in enumerate(self.nthreads):
+                    print(tname + ":", i + 1, "of", n, "\r", end='')
 
-                    target_cmd = cmd.format(i, cwd).split(" ")
+                    target_cmd = cmd.format(thread, cwd).split(" ")
                     p = subprocess.run(target_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
                                         universal_newlines=True)
 
@@ -144,7 +144,7 @@ class Benchmark_MYSQL( Benchmark ):
                     result["avg"] = re.search("avg:\s*(\d*.\d*)", p.stdout).group(1)
                     result["max"] = re.search("max:\s*(\d*.\d*)", p.stdout).group(1)
 
-                    key = (tname, i)
+                    key = (tname, thread)
                     if not key in self.results:
                         self.results[key] = [result]
                     else:
@@ -162,15 +162,17 @@ class Benchmark_MYSQL( Benchmark ):
 
                 self.server.kill()
                 self.server.wait()
-                
+
         if save:
             with open(self.name + ".save", "wb") as f:
                 pickle.dump(self.results, f)
         return True
 
     def summary(self):
+        # linear plot
         nthreads = self.results["args"]["nthreads"]
         targets = self.results["targets"]
+        y_mapping = {v: i for i, v in enumerate(nthreads)}
 
         for target in targets:
             y_vals = [0] * len(nthreads)
@@ -179,14 +181,37 @@ class Benchmark_MYSQL( Benchmark ):
                     d = []
                     for m in measures:
                         d.append(int(m["transactions"]))
-                    y_vals[mid[1]-nthreads[0]] = np.mean(d)
+                    y_vals[y_mapping[mid[1]]] = np.mean(d)
             plt.plot(nthreads, y_vals, label=target, linestyle='-', marker='.')
 
         plt.legend()
         plt.xlabel("threads")
         plt.ylabel("transactions")
         plt.title("sysbench oltp read only")
-        plt.savefig("mysql.ro.png")
+        plt.savefig(self.file_name + ".l.ro.png")
+        plt.clf()
+
+        # bar plot
+        nthreads = list(self.results["args"]["nthreads"])
+        targets = self.results["targets"]
+        y_mapping = {v: i for i, v in enumerate(nthreads)}
+
+        for i, target in enumerate(targets):
+            y_vals = [0] * len(nthreads)
+            for mid, measures in self.results.items():
+                if mid[0] == target:
+                    d = []
+                    for m in measures:
+                        d.append(int(m["transactions"]))
+                    y_vals[y_mapping[mid[1]]] = np.mean(d)
+            plt.bar([x-i/8 for x in range(1, len(nthreads) + 1)], y_vals, width=0.2, label=target, align="center")
+
+        plt.legend()
+        plt.xlabel("threads")
+        plt.xticks(range(1, len(nthreads) + 1), nthreads)
+        plt.ylabel("transactions")
+        plt.title("sysbench oltp read only")
+        plt.savefig(self.file_name + ".b.ro.png")
         plt.clf()
 
 mysql = Benchmark_MYSQL()
