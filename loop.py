@@ -1,17 +1,16 @@
 import csv
 import pickle
+import psutil
 import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
-import subprocess
+from subprocess import PIPE
 
 from benchmark import Benchmark
 from common_targets import common_targets
 
-cmd = ("perf stat -x\; -e cpu-clock:k,cache-references,cache-misses,cycles,"
-       "instructions,branches,faults,migrations "
-       "build/bench_loop{} 1.2 {} 1000000 {} 10")
+cmd = "build/bench_loop{} 1.2 {} 1000000 {} 10"
 
 class Benchmark_Loop( Benchmark ):
     def __init__(self):
@@ -43,6 +42,7 @@ class Benchmark_Loop( Benchmark ):
     def run(self, verbose=False, runs=3):
         args_permutations = [(x,y) for x in self.nthreads for y in self.maxsize]
         n = len(args_permutations)
+        heap_min, heap_max = 0, 0
         for run in range(1, runs + 1):
             print(str(run) + ". run")
 
@@ -51,7 +51,7 @@ class Benchmark_Loop( Benchmark ):
 
                 # run cmd for each target
                 for tname, t in self.targets.items():
-                    result = {"VSZ": [], "RSS" : []}
+                    result = {"heap_start": 0, "heap_end" : 0}
 
                     os.environ["LD_PRELOAD"] = t[1]
 
@@ -59,22 +59,29 @@ class Benchmark_Loop( Benchmark ):
                     if verbose:
                         print("\n" + tname, t, "\n", " ".join(target_cmd), "\n")
 
-                    p = subprocess.Popen(target_cmd,
+                    p = psutil.Popen(target_cmd,
                                          env=os.environ,
-                                         stderr=subprocess.PIPE,
-                                         stdout=subprocess.PIPE,
+                                         stderr=PIPE,
+                                         stdout=PIPE,
                                          universal_newlines=True)
 
-                    while p.poll() == None:
-                        ps = subprocess.run(["ps", "-F", "--ppid", str(p.pid)], stdout=subprocess.PIPE)
-                        lines = ps.stdout.splitlines()
-                        if len(lines) == 1: # perf hasn't forked yet
-                            continue
-                        tokens = str(lines[1]).split()
-                        result["VSZ"].append(tokens[4])
-                        result["RSS"].append(tokens[5])
+                    while p.status() != "zombie":
+                        for m in p.memory_maps():
+                            if "[heap]" in m:
+                                if m.size > heap_max:
+                                    heap_max = m.size
+                                if m.size < heap_min or heap_min == 0:
+                                    heap_min = m.size
 
+                    times = p.cpu_times()
+
+                    # collect process
                     p.wait()
+
+                    result["heap_min"] = heap_min
+                    result["heap_max"] = heap_max
+                    result["time-user"] = times.user
+                    result["time-system"] = times.system
 
                     output = p.stderr.read()
 
@@ -90,10 +97,6 @@ class Benchmark_Loop( Benchmark ):
                         print(output)
                         return False
 
-                    # Handle perf output
-                    csvreader = csv.reader(output.splitlines(), delimiter=';')
-                    for row in csvreader:
-                        result[row[2].replace("\\", "")] = row[0].replace("\\", "")
                     key = (tname, *args)
                     if not key in self.results:
                         self.results[key] = [result]
@@ -118,7 +121,8 @@ class Benchmark_Loop( Benchmark ):
                         d = []
                         for m in measures:
                             # nthreads/time = MOPS/S
-                            d.append(mid[1]/float(m["cpu-clock:ku"]))
+                            time = eval("{} + {}".format(m["time-user"], m["time-system"]))
+                            d.append(mid[1]/time)
                         y_vals[y_mapping[mid[1]]] = np.mean(d)
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target)
 
@@ -140,7 +144,8 @@ class Benchmark_Loop( Benchmark ):
                         d = []
                         for m in measures:
                             # nthreads/time = MOPS/S
-                            d.append(n/float(m["cpu-clock:ku"]))
+                            time = eval("{} + {}".format(m["time-user"], m["time-system"]))
+                            d.append(n/time)
                         y_vals[y_mapping[mid[2]]] = np.mean(d)
                 plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target)
 
