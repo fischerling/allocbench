@@ -2,6 +2,7 @@
 
 import argparse
 
+from falsesharing import falsesharing
 from loop import loop
 # from bench_conprod import conprod
 from mysql import mysql
@@ -14,7 +15,7 @@ parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 
 
-benchmarks = [loop, mysql]
+benchmarks = [loop, mysql, falsesharing]
 
 def main():
     args = parser.parse_args()

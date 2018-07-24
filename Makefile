@@ -2,8 +2,9 @@
 
 .DEFAULT_GOAL = all
 
-C_SOURCES = $(shell find . -name "*.c")
-CC_SOURCES = $(shell find . -name "*.cc")
+SRCDIR=benchmarks
+C_SOURCES = $(shell find $(SRCDIR) -name "*.c")
+CC_SOURCES = $(shell find $(SRCDIR) -name "*.cc")
 
 VERBOSE =
 OBJDIR = ./build
@@ -26,11 +27,19 @@ OBJECTS = $(notdir $(CC_SOURCES:.cc=.o)) $(notdir $(C_SOURCES:.c=.o))
 OBJPRE = $(addprefix $(OBJDIR)/,$(OBJECTS))
 MAKEFILE_LIST = Makefile
 
-all: $(OBJDIR)/bench_loop $(OBJDIR)/bench_conprod
+TARGETS = $(OBJPRE:.o=)
 
-bench: all
-	@if test \( ! \( -d bench.d \) \) ;then mkdir -p bench.d;fi
-	bash -c "./bench.py"
+all: $(TARGETS)
+
+$(OBJDIR)/cache-thrash: $(OBJDIR)/cache-thrash.o
+	@echo "ld		$@"
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
+	$(VERBOSE) $(CXX) -pthread -o $@ $^
+
+$(OBJDIR)/cache-scratch: $(OBJDIR)/cache-scratch.o
+	@echo "ld		$@"
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
+	$(VERBOSE) $(CXX) -pthread -o $@ $^
 
 $(OBJDIR)/bench_conprod: $(OBJDIR)/bench_conprod.o
 	@echo "ld		$@"
