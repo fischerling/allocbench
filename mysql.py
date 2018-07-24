@@ -1,7 +1,5 @@
 import copy
-import csv
 import matplotlib.pyplot as plt
-import multiprocessing
 import numpy as np
 import os
 import pickle
@@ -29,9 +27,10 @@ class Benchmark_MYSQL( Benchmark ):
     def __init__(self):
         self.name = "mysql"
         self.descrition = """See sysbench documentation."""
-        self.targets = copy.copy(common_targets)
-        del(self.targets["klmalloc"])
-        self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
+        if "klmalloc" in self.targets:
+            self.targets = copy.copy(common_targets)
+            del(self.targets["klmalloc"])
+        self.nthreads = range(1, psutil.cpu_count() * 2 + 1)
 
         self.results = {"args": {"nthreads" : self.nthreads},
                         "targets" : self.targets,
@@ -42,7 +41,7 @@ class Benchmark_MYSQL( Benchmark ):
             log = os.devnull
 
         with open(log, "ab") as f:
-            self.server = subprocess.Popen(server_cmd, env=os.environ,
+            self.server = psutil.Popen(server_cmd, env=os.environ,
                                                stdout=f,
                                                stderr=f,
                                                universal_newlines=True)
@@ -121,9 +120,9 @@ class Benchmark_MYSQL( Benchmark ):
                     return False
 
                 # Get initial memory footprint
-                ps = subprocess.run(["ps", "-F", str(self.server.pid)], stdout=subprocess.PIPE)
-                tokens = str(ps.stdout.splitlines()[1]).split()
-                self.results["memusage"][tname].append({"VSZ_start" : tokens[4], "RSS_start" : tokens[5]})
+                for m in p.memory_maps():
+                    if "[heap]" in m:
+                        self.results["memusage"][tname].append({"heap_start" : m.size)
 
                 for i, thread in enumerate(self.nthreads):
                     print(tname + ":", i + 1, "of", n, "\r", end='')
@@ -158,9 +157,9 @@ class Benchmark_MYSQL( Benchmark ):
                 print()
 
                 # Get final memory footprint
-                ps = subprocess.run(["ps", "-F", str(self.server.pid)], stdout=subprocess.PIPE)
-                tokens = str(ps.stdout.splitlines()[1]).split()
-                self.results["memusage"][tname][run-1].update({"VSZ_end" : tokens[4], "RSS_end" : tokens[5]})
+                for m in p.memory_maps():
+                    if "[heap]" in m:
+                        self.results["memusage"][tname].append({"heap_end" : m.size)
 
                 self.server.kill()
                 self.server.wait()
@@ -218,14 +217,11 @@ class Benchmark_MYSQL( Benchmark ):
 
         # memusage
         for target, measures in self.results["memusage"].items():
-            vsz_growth = []
-            rss_growth = []
+            heap_growth = []
             for m in measures:
-                vsz_growth.append(int(m["VSZ_end"]) - int(m["VSZ_start"]))
-                rss_growth.append(int(m["RSS_end"]) - int(m["RSS_start"]))
+                rss_growth.append(int(m["heap_end"]) - int(m["heap_start"]))
             print(target, "memory footprint:")
-            print("\t avg vsz growth:", np.mean(vsz_growth))
-            print("\t avg rss growth:", np.mean(rss_growth))
+            print("\t avg heap growth:", np.mean(heap_growth))
             
 
 mysql = Benchmark_MYSQL()
