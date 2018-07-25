@@ -17,7 +17,7 @@ cwd = os.getcwd()
 prepare_cmd = ("sysbench oltp_read_only --db-driver=mysql --mysql-user=root "
               "--mysql-socket="+cwd+"/mysql_test/socket --table-size=1000000 prepare").split()
 
-cmd = ("sysbench oltp_read_only --threads={} --time=10 "
+cmd = ("sysbench oltp_read_only --threads={} --time=100 "
        "--db-driver=mysql --mysql-user=root --mysql-socket={}/mysql_test/socket run")
 
 server_cmd = ("mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket "
@@ -31,7 +31,7 @@ class Benchmark_MYSQL( Benchmark ):
         self.targets = copy.copy(common_targets)
         if "klmalloc" in self.targets:
             del(self.targets["klmalloc"])
-        self.nthreads = range(1, psutil.cpu_count() * 2 + 1)
+        self.nthreads = range(1, psutil.cpu_count() * 4 + 1, 2)
 
         self.results = {"args": {"nthreads" : self.nthreads},
                         "targets" : self.targets,
@@ -122,7 +122,7 @@ class Benchmark_MYSQL( Benchmark ):
 
                 # Get initial memory footprint
                 heap_size = {}
-                for m in p.memory_maps():
+                for m in self.server.memory_maps():
                     if "[heap]" in m:
                         p_size["heap_start"] = m.size
 
@@ -159,7 +159,7 @@ class Benchmark_MYSQL( Benchmark ):
                 print()
 
                 # Get final memory footprint
-                for m in p.memory_maps():
+                for m in self.server.memory_maps():
                     if "[heap]" in m:
                         heap_size["heap_end"] = m.size
 
