@@ -10,7 +10,9 @@ from subprocess import PIPE
 from benchmark import Benchmark
 from common_targets import common_targets
 
-cmd = "build/bench_loop{} 1.2 {} 1000000 {} 10"
+cmd = ("perf stat -x\; -d -e cpu-clock,cache-references,cache-misses,cycles,"
+       "instructions,branches,faults,migrations "
+       "build/bench_loop{} 1.2 {} 1000000 {} 10")
 
 class Benchmark_Loop( Benchmark ):
     def __init__(self):
@@ -65,23 +67,24 @@ class Benchmark_Loop( Benchmark ):
                                          stdout=PIPE,
                                          universal_newlines=True)
 
-                    while p.status() != "zombie":
-                        for m in p.memory_maps():
-                            if "[heap]" in m:
-                                if m.size > heap_max:
-                                    heap_max = m.size
-                                if m.size < heap_min or heap_min == 0:
-                                    heap_min = m.size
-
-                    times = p.cpu_times()
+                    while p.poll() == None:
+                        try:
+                            for m in p.children()[0].memory_maps():
+                                if "[heap]" in m:
+                                    if m.size > heap_max:
+                                        heap_max = m.size
+                                    if m.size < heap_min or heap_min == 0:
+                                        heap_min = m.size
+                        except psutil._exceptions.NoSuchProcess: # perf has collected our benchmark
+                            pass
+                        except IndexError: # perf hasn't forked yet
+                            pass
 
                     # collect process
                     p.wait()
 
                     result["heap_min"] = heap_min
                     result["heap_max"] = heap_max
-                    result["time-user"] = times.user
-                    result["time-system"] = times.system
 
                     output = p.stderr.read()
 
@@ -96,6 +99,11 @@ class Benchmark_Loop( Benchmark ):
                         print("\nPreloading of", t[1], "failed for", tname, ".\n Aborting Benchmark.")
                         print(output)
                         return False
+
+                    # Handle perf output
+                    csvreader = csv.reader(output.splitlines(), delimiter=';')
+                    for row in csvreader:
+                        result[row[2].replace("\\", "")] = row[0].replace("\\", "")
 
                     key = (tname, *args)
                     if not key in self.results:
@@ -120,9 +128,8 @@ class Benchmark_Loop( Benchmark ):
                     if mid[0] == target and mid[2] == size:
                         d = []
                         for m in measures:
-                            # nthreads/time = MOPS/S
-                            time = eval("{} + {}".format(m["time-user"], m["time-system"]))
-                            d.append(mid[1]/time)
+                            # nthreads/time = MOPS/s
+                            d.append(mid[1]/float(m["cpu-clock"]))
                         y_vals[y_mapping[mid[1]]] = np.mean(d)
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target)
 
@@ -144,8 +151,7 @@ class Benchmark_Loop( Benchmark ):
                         d = []
                         for m in measures:
                             # nthreads/time = MOPS/S
-                            time = eval("{} + {}".format(m["time-user"], m["time-system"]))
-                            d.append(n/time)
+                            d.append(n/float(m["cpu-clock"]))
                         y_vals[y_mapping[mid[2]]] = np.mean(d)
                 plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target)
 
