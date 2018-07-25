@@ -10,7 +10,7 @@ import subprocess
 from benchmark import Benchmark
 from common_targets import common_targets
 
-cmd = ("perf stat -x\; -e cpu-clock:k,cache-references,cache-misses,cycles,"
+cmd = ("perf stat -d -x\; -e cpu-clock,cache-references,cache-misses,cycles,"
        "instructions,branches,faults,migrations "
        "build/cache-{}{} {} 100 8 1000000")
 
@@ -20,7 +20,7 @@ class Benchmark_Falsesharing( Benchmark ):
         self.descrition = """This benchmarks makes small allocations and writes
                             to them multiple times. If the allocated objects are
                             on the same cache line the writes will be expensive because
-                            of cache trashing.""",
+                            of cache thrashing.""",
         self.targets = common_targets
         self.nthreads = range(1, multiprocessing.cpu_count() * 2 + 1)
 
@@ -69,7 +69,8 @@ class Benchmark_Falsesharing( Benchmark ):
                                              stdout=subprocess.PIPE,
                                              universal_newlines=True)
 
-                        output = p.stdout
+                        output = str(p.stdout)
+                        err = str(p.stderr)
 
                         if p.returncode != 0:
                             print("\n" + " ".join(target_cmd), "exited with",
@@ -85,13 +86,18 @@ class Benchmark_Falsesharing( Benchmark ):
                             print(output)
                             return False
 
+                        time = float(re.search("(\d*\.\d*)", output)[1])
+                        result["time"] = time
                         # Handle perf output
-                        time = float(re.search("(\d*\.\d*)", str(output))[1])
+                        csvreader = csv.reader(err.splitlines()[1:], delimiter=';')
+                        for row in csvreader:
+                            result[row[2].replace("\\", "")] = row[0].replace("\\", "")
+
                         key = (tname, threads)
                         if not key in self.results[bench]:
-                            self.results[bench][key] = [time]
+                            self.results[bench][key] = [result]
                         else:
-                            self.results[bench][key].append(time)
+                            self.results[bench][key].append(result)
 
             print()
         return True
@@ -105,13 +111,19 @@ class Benchmark_Falsesharing( Benchmark ):
         for bench in ["thrash", "scratch"]:
             for target in targets:
                 y_vals = [0] * len(nthreads)
-                single_threaded = np.mean(self.results[bench][(target, 1)])
-                y_vals[0] = single_threaded
+                single_threaded = np.mean([m["time"] for m in self.results[bench][(target, 1)]])
                 for mid, measures in self.results[bench].items():
-                    print(measures)
-                    if mid[0] == target and mid[1] != 1:
-                        y_vals[y_mapping[mid[1]]] = single_threaded / np.mean(measures)
-                print(target, single_threaded, y_vals)
+                    if mid[0] == target:
+                        l1_load_misses = []
+                        d = []
+                        for m in measures:
+                            d.append(m["time"])
+                            misses = float(m["L1-dcache-load-misses"])
+                            loads = float(m["L1-dcache-loads"])
+                            l1_load_misses.append(misses/loads)
+                        y_vals[y_mapping[mid[1]]] = single_threaded / np.mean(d)
+                        s = "{} {} {}: {:.3f}%".format(bench, target, mid[1], np.mean(l1_load_misses)*100)
+                        print(s)
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target)
 
             plt.legend()
