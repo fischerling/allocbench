@@ -13,6 +13,7 @@ parser.add_argument("-l", "--load", help="load benchmark results from disk", act
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
+parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
 
 
 benchmarks = [loop, mysql, falsesharing]
@@ -38,8 +39,9 @@ def main():
         if args.save:
             bench.save()
 
-        print("Summarizing", bench.name)
-        bench.summary()
+        if args.nosum:
+            print("Summarizing", bench.name)
+            bench.summary()
 
         if hasattr(bench, "cleanup"):
             print("Cleaning after", bench.name)
