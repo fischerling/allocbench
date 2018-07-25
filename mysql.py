@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pickle
+import psutil
 import re
 import shutil
 import subprocess
@@ -27,8 +28,8 @@ class Benchmark_MYSQL( Benchmark ):
     def __init__(self):
         self.name = "mysql"
         self.descrition = """See sysbench documentation."""
+        self.targets = copy.copy(common_targets)
         if "klmalloc" in self.targets:
-            self.targets = copy.copy(common_targets)
             del(self.targets["klmalloc"])
         self.nthreads = range(1, psutil.cpu_count() * 2 + 1)
 
@@ -120,9 +121,10 @@ class Benchmark_MYSQL( Benchmark ):
                     return False
 
                 # Get initial memory footprint
+                heap_size = {}
                 for m in p.memory_maps():
                     if "[heap]" in m:
-                        self.results["memusage"][tname].append({"heap_start" : m.size)
+                        p_size["heap_start"] = m.size
 
                 for i, thread in enumerate(self.nthreads):
                     print(tname + ":", i + 1, "of", n, "\r", end='')
@@ -159,7 +161,9 @@ class Benchmark_MYSQL( Benchmark ):
                 # Get final memory footprint
                 for m in p.memory_maps():
                     if "[heap]" in m:
-                        self.results["memusage"][tname].append({"heap_end" : m.size)
+                        heap_size["heap_end"] = m.size
+
+                self.results["memusage"][tname].append(heap_size)
 
                 self.server.kill()
                 self.server.wait()
