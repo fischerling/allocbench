@@ -39,7 +39,7 @@ def main():
         if args.save:
             bench.save()
 
-        if args.nosum:
+        if not args.nosum:
             print("Summarizing", bench.name)
             bench.summary()
 
