@@ -223,7 +223,7 @@ class Benchmark_MYSQL( Benchmark ):
         for target, measures in self.results["memusage"].items():
             heap_growth = []
             for m in measures:
-                rss_growth.append(int(m["heap_end"]) - int(m["heap_start"]))
+                heap_growth.append(int(m["heap_end"]) - int(m["heap_start"]))
             print(target, "memory footprint:")
             print("\t avg heap growth:", np.mean(heap_growth))
             
