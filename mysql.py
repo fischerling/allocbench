@@ -124,7 +124,7 @@ class Benchmark_MYSQL( Benchmark ):
                 heap_size = {}
                 for m in self.server.memory_maps():
                     if "[heap]" in m:
-                        p_size["heap_start"] = m.size
+                        heap_size["heap_start"] = m.size
 
                 for i, thread in enumerate(self.nthreads):
                     print(tname + ":", i + 1, "of", n, "\r", end='')
