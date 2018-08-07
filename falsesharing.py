@@ -118,8 +118,13 @@ class Benchmark_Falsesharing( Benchmark ):
                         d = []
                         for m in measures:
                             d.append(m["time"])
-                            misses = float(m["L1-dcache-load-misses"])
-                            loads = float(m["L1-dcache-loads"])
+                            misses = 0
+                            loads = 0
+                            for e in m:
+                                if "L1-dcache-load-misses" in e:
+                                    misses = float(m[e])
+                                elif "L1-dcache-loads" in e:
+                                    loads = float(m[e])
                             l1_load_misses.append(misses/loads)
                         y_vals[y_mapping[mid[1]]] = single_threaded / np.mean(d)
                         s = "{} {} {}: {:.3f}%".format(bench, target, mid[1], np.mean(l1_load_misses)*100)

@@ -129,7 +129,9 @@ class Benchmark_Loop( Benchmark ):
                         d = []
                         for m in measures:
                             # nthreads/time = MOPS/s
-                            d.append(mid[1]/float(m["cpu-clock"]))
+                            for e in m:
+                                if "cpu-clock" in e:
+                                    d.append(mid[1]/float(m[e]))
                         y_vals[y_mapping[mid[1]]] = np.mean(d)
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target)
 
@@ -151,7 +153,9 @@ class Benchmark_Loop( Benchmark ):
                         d = []
                         for m in measures:
                             # nthreads/time = MOPS/S
-                            d.append(n/float(m["cpu-clock"]))
+                            for e in m:
+                                if "cpu-clock" in e:
+                                    d.append(mid[1]/float(m[e]))
                         y_vals[y_mapping[mid[2]]] = np.mean(d)
                 plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target)
 
