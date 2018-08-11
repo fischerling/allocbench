@@ -33,7 +33,7 @@ def main():
             continue
 
         print("Running", bench.name)
-        if not bench.run(runs=args.runs):
+        if not bench.run(runs=args.runs, verbose=args.verbose):
             continue
 
         if args.save:
