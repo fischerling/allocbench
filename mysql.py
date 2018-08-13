@@ -186,7 +186,8 @@ class Benchmark_MYSQL( Benchmark ):
                     if "[heap]" in m:
                         heap_size["heap_end"] = m.size
 
-                self.results["memusage"][tname].append(heap_size)
+                if tname != "chattymalloc":
+                    self.results["memusage"][tname].append(heap_size)
 
                 self.server.kill()
                 self.server.wait()
