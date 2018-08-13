@@ -249,7 +249,7 @@ class Benchmark_MYSQL( Benchmark ):
 
         for mid, measures in self.results.items():
             if mid[0] == "chattymalloc":
-                hist = [(n, s) for s,n measures[0]["hist"].items()]
+                hist = [(n, s) for s,n in measures[0]["hist"].items()]
                 hist.sort()
                 print("Histogram for", mid[1], "threads:")
                 print(hist)
