@@ -155,7 +155,12 @@ class Benchmark_MYSQL( Benchmark ):
                         with open(log, "rb") as f:
                             hist = {}
                             for l in f.readlines():
-                                n = int(str(l).replace("chattymalloc: ", ""))
+                                l = str(l, "utf-8").replace("chattymalloc: ", "")
+                                try:
+                                    n = int(l)
+                                except ValueError:
+                                    continue
+
                                 if not n in hist:
                                     hist[n] = 0
                                 hist[n] += 1
