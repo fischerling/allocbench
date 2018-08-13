@@ -153,7 +153,7 @@ class Benchmark_MYSQL( Benchmark ):
 
                     if tname == "chattymalloc":
                         with open(log, "rb") as f:
-                            sizes = []
+                            hist = {}
                             for l in f.readlines():
                                 l = str(l, "utf-8").replace("chattymalloc: ", "")
                                 try:
@@ -161,8 +161,10 @@ class Benchmark_MYSQL( Benchmark ):
                                 except ValueError:
                                     continue
 
-                                sizes.append(n)
-                        result["sizes"] = sizes
+                                if not n in hist:
+                                    hist[n] = 0
+                                hist[n] += 1
+                        result["hist"] = hist
                     else:
                         result["transactions"] = re.search("transactions:\s*(\d*)", p.stdout).group(1)
                         result["queries"] = re.search("queries:\s*(\d*)", p.stdout).group(1)
@@ -202,6 +204,8 @@ class Benchmark_MYSQL( Benchmark ):
         y_mapping = {v: i for i, v in enumerate(nthreads)}
 
         for target in targets:
+            if target == "chattymalloc":
+                continue
             y_vals = [0] * len(nthreads)
             for mid, measures in self.results.items():
                 if mid[0] == target:
@@ -245,11 +249,10 @@ class Benchmark_MYSQL( Benchmark ):
 
         for mid, measures in self.results.items():
             if mid[0] == "chattymalloc":
-                plt.hist(measures["sizes"])
-                plt.xlabel("sizes")
-                plt.title("sysbench oltp read only: " + str(mid[1]) + "threads")
-                plt.savefig(self.name + "hist." + str(mid[1]) + ".ro.png")
-                plt.clf()
+                hist = [(n, s) for s,n measures[0]["hist"].items()]
+                hist.sort()
+                print("Histogram for", mid[1], "threads:")
+                print(hist)
 
         # memusage
         for target, measures in self.results["memusage"].items():
