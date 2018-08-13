@@ -29,7 +29,12 @@ MAKEFILE_LIST = Makefile
 
 TARGETS = $(OBJPRE:.o=)
 
-all: $(TARGETS)
+all: $(TARGETS) $(OBJDIR)/chattymalloc.so
+
+$(OBJDIR)/chattymalloc.so: chattymalloc.c $(MAKEFILE_LIST)
+	@echo "cc		$@"
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
+	$(VERBOSE) $(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
 $(OBJDIR)/cache-thrash: $(OBJDIR)/cache-thrash.o
 	@echo "ld		$@"
