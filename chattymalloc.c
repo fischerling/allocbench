@@ -66,7 +66,7 @@ void *malloc(size_t size)
 		}
 	}
 
-	fprintf(stderr, "%d\n", size);
+	fprintf(stderr, "chattymalloc: %d\n", size);
 	void *ptr = myfn_malloc(size);
 	return ptr;
 }
