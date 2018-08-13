@@ -153,7 +153,7 @@ class Benchmark_MYSQL( Benchmark ):
 
                     if tname == "chattymalloc":
                         with open(log, "rb") as f:
-                            hist = {}
+                            sizes = []
                             for l in f.readlines():
                                 l = str(l, "utf-8").replace("chattymalloc: ", "")
                                 try:
@@ -161,10 +161,8 @@ class Benchmark_MYSQL( Benchmark ):
                                 except ValueError:
                                     continue
 
-                                if not n in hist:
-                                    hist[n] = 0
-                                hist[n] += 1
-                        result["hist"] = hist
+                                sizes.append(n)
+                        result["sizes"] = sizes
                     else:
                         result["transactions"] = re.search("transactions:\s*(\d*)", p.stdout).group(1)
                         result["queries"] = re.search("queries:\s*(\d*)", p.stdout).group(1)
@@ -226,12 +224,11 @@ class Benchmark_MYSQL( Benchmark ):
         y_mapping = {v: i for i, v in enumerate(nthreads)}
 
         for i, target in enumerate(targets):
+            if target == "chattymalloc":
+                continue
             y_vals = [0] * len(nthreads)
             for mid, measures in self.results.items():
                 if mid[0] == target:
-                    if target == "chattymalloc":
-                        print(measures[0]["hist"])
-                        continue
                     d = []
                     for m in measures:
                         d.append(int(m["transactions"]))
@@ -245,6 +242,14 @@ class Benchmark_MYSQL( Benchmark ):
         plt.title("sysbench oltp read only")
         plt.savefig(self.name + ".b.ro.png")
         plt.clf()
+
+        for mid, measures in self.results.items():
+            if mid[0] == "chattymalloc":
+                plt.hist(measures["sizes"])
+                plt.xlabel("sizes")
+                plt.title("sysbench oltp read only: " + str(mid[1]) + "threads")
+                plt.savefig(self.name + "hist." + str(mid[1]) + ".ro.png")
+                plt.clf()
 
         # memusage
         for target, measures in self.results["memusage"].items():
