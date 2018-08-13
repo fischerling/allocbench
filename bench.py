@@ -2,6 +2,8 @@
 
 import argparse
 
+import common_targets
+
 from falsesharing import falsesharing
 from loop import loop
 # from bench_conprod import conprod
@@ -14,6 +16,7 @@ parser.add_argument("-r", "--runs", help="how often the benchmarks run", default
 parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
+parser.add_argument("-a", "--analyse", help="collect allocation sizes", action='store_true')
 
 
 benchmarks = [loop, mysql, falsesharing]
@@ -28,9 +31,13 @@ def main():
         if args.load:
             bench.load()
 
+        if args.analyse:
+            bench.targets.update(common_targets.analyse_targets)
+
         print("Preparing", bench.name)
         if not bench.prepare():
-            continue
+            print("Preparing", bench.name, "failed!")
+            return
 
         print("Running", bench.name)
         if not bench.run(runs=args.runs, verbose=args.verbose):

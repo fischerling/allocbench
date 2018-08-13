@@ -7,6 +7,7 @@ import psutil
 import re
 import shutil
 import subprocess
+from subprocess import PIPE
 from time import sleep
 
 from benchmark import Benchmark
@@ -41,17 +42,16 @@ class Benchmark_MYSQL( Benchmark ):
         if not log:
             log = os.devnull
 
-        with open(log, "ab") as f:
+        with open(log, "wb") as f:
             self.server = psutil.Popen(server_cmd, env=os.environ,
                                                stdout=f,
                                                stderr=f,
                                                universal_newlines=True)
         #TODO make sure server comes up !!!!
         sleep(5)
-        return True
+        return self.server.poll() == None
 
     def prepare(self, verbose=False):
-        ret = True
         # Setup mysqld
         if not os.path.exists("mysql_test"):
             print("Prepare mysqld directory and database")
@@ -59,7 +59,7 @@ class Benchmark_MYSQL( Benchmark ):
 
             # Init database
             if b"MariaDB" in subprocess.run(["mysqld", "--version"],
-                                            stdout=subprocess.PIPE).stdout:
+                                            stdout=PIPE).stdout:
                 init_db_cmd = ["mysql_install_db", "--basedir=/usr",
                                 "--datadir={}/mysql_test".format(os.getcwd())]
                 if verbose:
@@ -70,34 +70,38 @@ class Benchmark_MYSQL( Benchmark ):
                 if verbose:
                     print("Oracle MySQL detected")
 
-            with open(os.devnull, "w") as devnull:
-                p = subprocess.run(init_db_cmd,
-                            stdout=devnull, stderr=devnull)
-            ret = ret and p.returncode == 0
-            if not ret:
+            p = subprocess.run(init_db_cmd, stdout=PIPE, stderr=PIPE)
+
+            if not p.returncode == 0:
                 print(p.stderr)
-                return ret
+                return False
 
             if not self.start_and_wait_for_server(verbose, "mysqld.log"):
                 print("Starting mysqld failed")
                 return False
 
             p = subprocess.run("mysql -u root -S {}/mysql_test/socket".format(cwd).split(" "),
-                input = b"CREATE DATABASE sbtest;\n")
-            ret = ret and p.returncode == 0
-            if not ret:
+                input = b"CREATE DATABASE sbtest;\n", stdout=PIPE, stderr=PIPE)
+
+            if not p.returncode == 0:
                 print(p.stderr)
                 self.server.kill()
                 self.server.wait()
-                return ret
+                return False
 
             print("Prepare test table")
-            p = subprocess.run(prepare_cmd)
-            ret = ret == p.returncode == 0
-            self.server.kill()
-            ret = ret and self.server.wait() == -9
+            ret = True
+            p = subprocess.run(prepare_cmd, stdout=PIPE, stderr=PIPE)
+            if p.returncode != 0:
+                print(p.stderr)
+                ret = False
 
-        return ret
+            self.server.kill()
+            self.server.wait()
+
+            return ret
+
+        return True
 
     def cleanup(self):
         if os.path.exists("mysql_test"):
@@ -115,13 +119,16 @@ class Benchmark_MYSQL( Benchmark ):
                 # No custom build mysqld server supported yet.
                 os.environ["LD_PRELOAD"] = t[1] # set LD_PRELOAD
 
-                if not self.start_and_wait_for_server(verbose, "mysqld.log"):
+                log = "mysqld.log"
+                if tname == "chattymalloc":
+                    log = "chattymalloc.data"
+                if not self.start_and_wait_for_server(verbose, log):
                     print("Can't start server for", tname + ".")
                     print("Aborting Benchmark.")
                     return False
 
                 # Get initial memory footprint
-                heap_size = {}
+                heap_size = {"heap_start": 0, "heap_end": 0}
                 for m in self.server.memory_maps():
                     if "[heap]" in m:
                         heap_size["heap_start"] = m.size
@@ -130,7 +137,7 @@ class Benchmark_MYSQL( Benchmark ):
                     print(tname + ":", i + 1, "of", n, "\r", end='')
 
                     target_cmd = cmd.format(thread, cwd).split(" ")
-                    p = subprocess.run(target_cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE,
+                    p = subprocess.run(target_cmd, stderr=PIPE, stdout=PIPE,
                                         universal_newlines=True)
 
                     if p.returncode != 0:
@@ -143,12 +150,23 @@ class Benchmark_MYSQL( Benchmark ):
                         return False
 
                     result = {}
-                    result["transactions"] = re.search("transactions:\s*(\d*)", p.stdout).group(1)
-                    result["queries"] = re.search("queries:\s*(\d*)", p.stdout).group(1)
-                    # Latency
-                    result["min"] = re.search("min:\s*(\d*.\d*)", p.stdout).group(1)
-                    result["avg"] = re.search("avg:\s*(\d*.\d*)", p.stdout).group(1)
-                    result["max"] = re.search("max:\s*(\d*.\d*)", p.stdout).group(1)
+
+                    if tname == "chattymalloc":
+                        with open(log, "rb") as f:
+                            hist = {}
+                            for l in f.readlines():
+                                n = int(str(l).replace("chattymalloc: ", ""))
+                                if not n in hist:
+                                    hist[n] = 0
+                                hist[n] += 1
+                        result["hist"] = hist
+                    else:
+                        result["transactions"] = re.search("transactions:\s*(\d*)", p.stdout).group(1)
+                        result["queries"] = re.search("queries:\s*(\d*)", p.stdout).group(1)
+                        # Latency
+                        result["min"] = re.search("min:\s*(\d*.\d*)", p.stdout).group(1)
+                        result["avg"] = re.search("avg:\s*(\d*.\d*)", p.stdout).group(1)
+                        result["max"] = re.search("max:\s*(\d*.\d*)", p.stdout).group(1)
 
                     key = (tname, thread)
                     if not key in self.results:
@@ -205,6 +223,9 @@ class Benchmark_MYSQL( Benchmark ):
             y_vals = [0] * len(nthreads)
             for mid, measures in self.results.items():
                 if mid[0] == target:
+                    if target == "chattymalloc":
+                        print(measures[0]["hist"])
+                        continue
                     d = []
                     for m in measures:
                         d.append(int(m["transactions"]))
@@ -226,6 +247,6 @@ class Benchmark_MYSQL( Benchmark ):
                 heap_growth.append(int(m["heap_end"]) - int(m["heap_start"]))
             print(target, "memory footprint:")
             print("\t avg heap growth:", np.mean(heap_growth))
-            
+
 
 mysql = Benchmark_MYSQL()
