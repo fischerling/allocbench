@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 static size_t _rand() {
@@ -103,12 +104,15 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	FILE* f = stdout;
 	if (argc == 7)
-		f = fopen(argv[6], "w");
-	malloc_info(0, f);
-	if (argc == 7)
-		fclose(f);
+	{
+		FILE* f = stdout;
+		if (strcmp(argv[6],"stdout") != 0)
+			f = fopen(argv[6], "w");
+		malloc_info(0, f);
+		if (strcmp(argv[6],"stdout") != 0)
+			fclose(f);
+	}
 
 	return 0;
 }
