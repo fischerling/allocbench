@@ -116,8 +116,7 @@ class Benchmark_MYSQL( Benchmark ):
             # run cmd for each target
             n = len(self.nthreads)
             for tname, t in self.targets.items():
-                # No custom build mysqld server supported yet.
-                os.environ["LD_PRELOAD"] = t[1] # set LD_PRELOAD
+                os.environ["LD_PRELOAD"] = t["LD_PRELOAD"] # set LD_PRELOAD
 
                 log = "mysqld.log"
                 if tname == "chattymalloc":
@@ -213,7 +212,7 @@ class Benchmark_MYSQL( Benchmark ):
                     for m in measures:
                         d.append(int(m["transactions"]))
                     y_vals[y_mapping[mid[1]]] = np.mean(d)
-            plt.plot(nthreads, y_vals, label=target, linestyle='-', marker='.')
+            plt.plot(nthreads, y_vals, label=target, linestyle='-', marker='.', color=targets[target]["color"])
 
         plt.legend()
         plt.xlabel("threads")
@@ -230,6 +229,7 @@ class Benchmark_MYSQL( Benchmark ):
         for i, target in enumerate(targets):
             if target == "chattymalloc":
                 continue
+            x_vals = [x-i/8 for x in range(1, len(nthreads) + 1)]
             y_vals = [0] * len(nthreads)
             for mid, measures in self.results.items():
                 if mid[0] == target:
@@ -237,7 +237,7 @@ class Benchmark_MYSQL( Benchmark ):
                     for m in measures:
                         d.append(int(m["transactions"]))
                     y_vals[y_mapping[mid[1]]] = np.mean(d)
-            plt.bar([x-i/8 for x in range(1, len(nthreads) + 1)], y_vals, width=0.2, label=target, align="center")
+            plt.bar(x_vals, y_vals, width=0.2, label=target, align="center",  color=targets[target]["color"])
 
         plt.legend()
         plt.xlabel("threads")

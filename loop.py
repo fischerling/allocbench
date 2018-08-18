@@ -55,9 +55,9 @@ class Benchmark_Loop( Benchmark ):
                 for tname, t in self.targets.items():
                     result = {"heap_start": 0, "heap_end" : 0}
 
-                    os.environ["LD_PRELOAD"] = t[1]
+                    os.environ["LD_PRELOAD"] = t["LD_PRELOAD"]
 
-                    target_cmd = cmd.format(t[0], *args).split(" ")
+                    target_cmd = cmd.format(t["binary_suffix"], *args).split(" ")
                     if verbose:
                         print("\n" + tname, t, "\n", " ".join(target_cmd), "\n")
 
@@ -96,7 +96,7 @@ class Benchmark_Loop( Benchmark ):
                         return False
 
                     if "ERROR: ld.so" in output:
-                        print("\nPreloading of", t[1], "failed for", tname, ".\n Aborting Benchmark.")
+                        print("\nPreloading of", t["LD_PRELOAD"], "failed for", tname, ".\n Aborting Benchmark.")
                         print(output)
                         return False
 
@@ -133,7 +133,7 @@ class Benchmark_Loop( Benchmark ):
                                 if "cpu-clock" in e:
                                     d.append(mid[1]/float(m[e]))
                         y_vals[y_mapping[mid[1]]] = np.mean(d)
-                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target)
+                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
 
             plt.legend()
             plt.xlabel("threads")
@@ -157,7 +157,7 @@ class Benchmark_Loop( Benchmark ):
                                 if "cpu-clock" in e:
                                     d.append(mid[1]/float(m[e]))
                         y_vals[y_mapping[mid[2]]] = np.mean(d)
-                plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target)
+                plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
 
             plt.legend()
             plt.xticks(x_vals, maxsize)

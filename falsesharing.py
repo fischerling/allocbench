@@ -55,11 +55,11 @@ class Benchmark_Falsesharing( Benchmark ):
                 for tname, t in self.targets.items():
                     result = {}
 
-                    os.environ["LD_PRELOAD"] = t[1]
+                    os.environ["LD_PRELOAD"] = t["LD_PRELOAD"]
 
                     for bench in ["thrash", "scratch"]:
 
-                        target_cmd = cmd.format(bench, t[0], threads).split(" ")
+                        target_cmd = cmd.format(bench, t["binary_suffix"], threads).split(" ")
                         if verbose:
                             print("\n" + tname, t, "\n", " ".join(target_cmd), "\n")
 
@@ -81,7 +81,7 @@ class Benchmark_Falsesharing( Benchmark ):
                             return False
 
                         if "ERROR: ld.so" in output:
-                            print("\nPreloading of", t[1], "failed for", tname,
+                            print("\nPreloading of", t["LD_PRELOAD"], "failed for", tname,
                                     ".\n Aborting Benchmark.")
                             print(output)
                             return False
@@ -129,7 +129,7 @@ class Benchmark_Falsesharing( Benchmark ):
                         y_vals[y_mapping[mid[1]]] = single_threaded / np.mean(d)
                         s = "{} {} {}: {:.3f}%".format(bench, target, mid[1], np.mean(l1_load_misses)*100)
                         print(s)
-                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target)
+                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
 
             plt.legend()
             plt.xlabel("threads")
