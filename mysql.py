@@ -108,7 +108,7 @@ class Benchmark_MYSQL( Benchmark ):
             print("Delete mysqld directory")
             shutil.rmtree("mysql_test")
 
-    def run(self, verbose=False, save=False, runs=3):
+    def run(self, verbose=False, runs=3):
         cwd = os.getcwd()
         for run in range(1, runs + 1):
             print(str(run) + ". run")
@@ -127,7 +127,7 @@ class Benchmark_MYSQL( Benchmark ):
                     return False
 
                 # Get initial memory footprint
-                heap_size = {"heap_start": 0, "heap_end": 0}
+                heap_size = {"heap_start": 0, "heap_end": 0, "rssmax": 0}
                 for m in self.server.memory_maps():
                     if "[heap]" in m:
                         heap_size["heap_start"] = m.size
@@ -184,6 +184,11 @@ class Benchmark_MYSQL( Benchmark ):
                 for m in self.server.memory_maps():
                     if "[heap]" in m:
                         heap_size["heap_end"] = m.size
+                with open("/proc/"+str(self.server.pid)+"/status", "r") as f:
+                    for l in f.readlines():
+                        if l.startswith("VmHWM:"):
+                            heap_size["rssmax"] = l.replace("VmHWM:", "").strip().split()[0]
+                            break
 
                 if tname != "chattymalloc":
                     self.results["memusage"][tname].append(heap_size)
@@ -191,9 +196,6 @@ class Benchmark_MYSQL( Benchmark ):
                 self.server.kill()
                 self.server.wait()
 
-        if save:
-            with open(self.name + ".save", "wb") as f:
-                pickle.dump(self.results, f)
         return True
 
     def summary(self):
@@ -257,10 +259,13 @@ class Benchmark_MYSQL( Benchmark ):
         # memusage
         for target, measures in self.results["memusage"].items():
             heap_growth = []
+            rssmax = []
             for m in measures:
                 heap_growth.append(int(m["heap_end"]) - int(m["heap_start"]))
+                rssmax.append(int(m["rssmax"]))
             print(target, "memory footprint:")
             print("\t avg heap growth:", np.mean(heap_growth))
+            print("\t rss max:", np.mean(rssmax))
 
 
 mysql = Benchmark_MYSQL()
