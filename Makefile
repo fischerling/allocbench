@@ -46,11 +46,6 @@ $(OBJDIR)/cache-scratch: $(OBJDIR)/cache-scratch.o
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(VERBOSE) $(CXX) -pthread -o $@ $^
 
-$(OBJDIR)/bench_conprod: $(OBJDIR)/bench_conprod.o
-	@echo "ld		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CC) -pthread -o $@ $^
-
 $(OBJDIR)/bench_loop: $(OBJDIR)/bench_loop.o
 	@echo "ld		$@"
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
