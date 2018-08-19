@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 
 import common_targets
 
@@ -16,6 +17,7 @@ parser.add_argument("-r", "--runs", help="how often the benchmarks run", default
 parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
+parser.add_argument("-sd", "--summarydir", help="directory where all plots and the summary go", type=str)
 parser.add_argument("-a", "--analyse", help="collect allocation sizes", action='store_true')
 
 
@@ -24,6 +26,9 @@ benchmarks = [loop, mysql, falsesharing]
 def main():
     args = parser.parse_args()
     print (args)
+
+    if args.summarydir and not os.path.isdir(args.summarydir):
+        os.makedirs(args.summarydir)
 
     for bench in benchmarks:
         if args.benchmarks and not bench.name in args.benchmarks:

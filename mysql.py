@@ -198,11 +198,13 @@ class Benchmark_MYSQL( Benchmark ):
 
         return True
 
-    def summary(self):
+    def summary(self, sd=None):
         # linear plot
         nthreads = self.results["args"]["nthreads"]
         targets = self.results["targets"]
         y_mapping = {v: i for i, v in enumerate(nthreads)}
+
+        sd = sd or ""
 
         for target in targets:
             if target == "chattymalloc":
@@ -220,7 +222,7 @@ class Benchmark_MYSQL( Benchmark ):
         plt.xlabel("threads")
         plt.ylabel("transactions")
         plt.title("sysbench oltp read only")
-        plt.savefig(self.name + ".l.ro.png")
+        plt.savefig(os.path.join(sd,self.name + ".l.ro.png"))
         plt.clf()
 
         # bar plot
@@ -246,7 +248,7 @@ class Benchmark_MYSQL( Benchmark ):
         plt.xticks(range(1, len(nthreads) + 1), nthreads)
         plt.ylabel("transactions")
         plt.title("sysbench oltp read only")
-        plt.savefig(self.name + ".b.ro.png")
+        plt.savefig(os.path.join(sd, self.name + ".b.ro.png"))
         plt.clf()
 
         for mid, measures in self.results.items():

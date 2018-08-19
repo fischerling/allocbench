@@ -102,10 +102,12 @@ class Benchmark_Falsesharing( Benchmark ):
             print()
         return True
 
-    def summary(self):
+    def summary(self, sd=None):
         # Speedup thrash
         nthreads = self.results["args"]["nthreads"]
         targets = self.results["targets"]
+
+        sd = sd or ""
 
         y_mapping = {v : i for i, v in enumerate(nthreads)}
         for bench in ["thrash", "scratch"]:
@@ -135,7 +137,7 @@ class Benchmark_Falsesharing( Benchmark ):
             plt.xlabel("threads")
             plt.ylabel("speedup")
             plt.title(bench)
-            plt.savefig(self.name + "." + bench + ".png")
+            plt.savefig(os.path.join(sd, self.name + "." + bench + ".png"))
             plt.clf()
 
 falsesharing= Benchmark_Falsesharing()
