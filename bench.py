@@ -36,7 +36,7 @@ def main():
         if args.load:
             bench.load()
 
-        if args.analyse:
+        if args.analyse and bench.name == "mysql":
             bench.targets.update(common_targets.analyse_targets)
 
         print("Preparing", bench.name)
