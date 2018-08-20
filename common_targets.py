@@ -30,4 +30,8 @@ common_targets = {"klmalloc" : {
                                },
                   }
 
-analyse_targets = {"chattymalloc" : {"LD_PRELOAD" : "build/chattymalloc.so"}}
+analyse_targets = {"chattymalloc" : {"cmd_prefix"    : "",
+                                     "binary_suffix" : "",
+                                     "LD_PRELOAD"    : "build/chattymalloc.so"
+                                    }
+                  }
