@@ -1,18 +1,18 @@
 import csv
 import pickle
-import psutil
 import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
+import subprocess
 from subprocess import PIPE
 
 from benchmark import Benchmark
 from common_targets import common_targets
 
-cmd = ("perf stat -x\; -d -e cpu-clock,cache-references,cache-misses,cycles,"
-       "instructions,branches,faults,migrations "
-       "build/bench_loop{} 1.2 {} 1000000 {} 10")
+perf_cmd = ("perf stat -x\; -d -e cpu-clock,cache-references,cache-misses,cycles,"
+       "instructions,branches,faults,migrations ")
+cmd = "build/bench_loop{} 1.2 {} 1000000 {} 10"
 
 class Benchmark_Loop( Benchmark ):
     def __init__(self):
@@ -44,7 +44,7 @@ class Benchmark_Loop( Benchmark ):
     def run(self, verbose=False, runs=3):
         args_permutations = [(x,y) for x in self.nthreads for y in self.maxsize]
         n = len(args_permutations)
-        heap_min, heap_max = 0, 0
+
         for run in range(1, runs + 1):
             print(str(run) + ". run")
 
@@ -53,40 +53,35 @@ class Benchmark_Loop( Benchmark ):
 
                 # run cmd for each target
                 for tname, t in self.targets.items():
-                    result = {"heap_start": 0, "heap_end" : 0}
+                    if not tname in self.results:
+                        self.results[tname] = {}
+
+                    result = {}
 
                     os.environ["LD_PRELOAD"] = t["LD_PRELOAD"]
 
-                    target_cmd = cmd.format(t["binary_suffix"], *args).split(" ")
-                    if verbose:
-                        print("\n" + tname, t, "\n", " ".join(target_cmd), "\n")
+                    cur_cmd = cmd.format(t["binary_suffix"], *args)
 
-                    p = psutil.Popen(target_cmd,
+                    # Collect memory consumtion on first run
+                    if run == 1:
+                        subprocess.run((cur_cmd + " yes loop.out").split(), env=os.environ)
+                        with open("loop.out", "r") as f:
+                            for l in f.readlines():
+                                if l.startswith("VmHWM:"):
+                                    result["rssmax"] = l.split()[1]
+
+                    target_cmd = perf_cmd + cur_cmd + " no"
+                    if verbose:
+                        print("\n" + tname, t, "\n", target_cmd, "\n")
+
+                    p = subprocess.run(target_cmd.split(),
                                          env=os.environ,
                                          stderr=PIPE,
                                          stdout=PIPE,
                                          universal_newlines=True)
 
-                    while p.poll() == None:
-                        try:
-                            for m in p.children()[0].memory_maps():
-                                if "[heap]" in m:
-                                    if m.size > heap_max:
-                                        heap_max = m.size
-                                    if m.size < heap_min or heap_min == 0:
-                                        heap_min = m.size
-                        except psutil._exceptions.NoSuchProcess: # perf has collected our benchmark
-                            pass
-                        except IndexError: # perf hasn't forked yet
-                            pass
 
-                    # collect process
-                    p.wait()
-
-                    result["heap_min"] = heap_min
-                    result["heap_max"] = heap_max
-
-                    output = p.stderr.read()
+                    output = p.stderr
 
                     if p.returncode != 0:
                         print("\n" + " ".join(target_cmd), "exited with", p.returncode, ".\n Aborting Benchmark.")
@@ -105,41 +100,41 @@ class Benchmark_Loop( Benchmark ):
                     for row in csvreader:
                         result[row[2].replace("\\", "")] = row[0].replace("\\", "")
 
-                    key = (tname, *args)
-                    if not key in self.results:
-                        self.results[key] = [result]
+                    if not args in self.results[tname]:
+                        self.results[tname][args] = [result]
                     else:
-                        self.results[key].append(result)
+                        self.results[tname][args].append(result)
 
             print()
         return True
 
-    def summary(self):
-        # MAXSIZE fixed
+    def summary(self, sd=None):
         nthreads = self.results["args"]["nthreads"]
         maxsize = self.results["args"]["maxsize"]
         targets = self.results["targets"]
 
+        sd = sd or ""
+
+        # MAXSIZE fixed
         y_mapping = {v : i for i, v in enumerate(nthreads)}
         for size in maxsize:
             for target in targets:
                 y_vals = [0] * len(nthreads)
-                for mid, measures in self.results.items():
-                    if mid[0] == target and mid[2] == size:
-                        d = []
-                        for m in measures:
-                            # nthreads/time = MOPS/s
-                            for e in m:
-                                if "cpu-clock" in e:
-                                    d.append(mid[1]/float(m[e]))
-                        y_vals[y_mapping[mid[1]]] = np.mean(d)
+                for margs, measures in [(a, m) for a, m in self.results[target].items() if a[1] == size]:
+                    d = []
+                    for m in measures:
+                        # nthreads/time = MOPS/s
+                        for e in m:
+                            if "cpu-clock" in e:
+                                d.append(margs[0]/float(m[e]))
+                    y_vals[y_mapping[margs[0]]] = np.mean(d)
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
 
             plt.legend()
             plt.xlabel("threads")
             plt.ylabel("MOPS/s")
             plt.title("Loop: " + str(size) + "B")
-            plt.savefig(self.name + "." + str(size) + "B.png")
+            plt.savefig(os.path.join(sd, self.name + "." + str(size) + "B.png"))
             plt.clf()
 
         # NTHREADS fixed
@@ -148,15 +143,14 @@ class Benchmark_Loop( Benchmark ):
         for n in nthreads:
             for target in targets:
                 y_vals = [0] * len(maxsize)
-                for mid, measures in self.results.items():
-                    if mid[0] == target and mid[1] == n:
-                        d = []
-                        for m in measures:
-                            # nthreads/time = MOPS/S
-                            for e in m:
-                                if "cpu-clock" in e:
-                                    d.append(mid[1]/float(m[e]))
-                        y_vals[y_mapping[mid[2]]] = np.mean(d)
+                for margs, measures in [(a, m) for a, m in self.results[target].items() if a[0] == n]:
+                    d = []
+                    for m in measures:
+                        # nthreads/time = MOPS/S
+                        for e in m:
+                            if "cpu-clock" in e:
+                                d.append(margs[0]/float(m[e]))
+                    y_vals[y_mapping[margs[1]]] = np.mean(d)
                 plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
 
             plt.legend()
@@ -164,7 +158,41 @@ class Benchmark_Loop( Benchmark ):
             plt.xlabel("size in B")
             plt.ylabel("MOPS/s")
             plt.title("Loop: " + str(n) + "thread(s)")
-            plt.savefig(self.name + "." + str(n) + "threads.png")
+            plt.savefig(os.path.join(sd, self.name + "." + str(n) + "threads.png"))
+            plt.clf()
+
+        #Memusage
+        y_mapping = {v : i for i, v in enumerate(nthreads)}
+        for size in maxsize:
+            for target in targets:
+                y_vals = [0] * len(nthreads)
+                for margs, measures in [(a, m) for a, m in self.results[target].items() if a[1] == size]:
+                    y_vals[y_mapping[margs[0]]] = int(measures[0]["rssmax"])
+                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
+
+            plt.legend()
+            plt.xlabel("threads")
+            plt.ylabel("kb")
+            plt.title("Memusage Loop: " + str(size) + "B")
+            plt.savefig(os.path.join(sd, self.name + "." + str(size) + "B.mem.png"))
+            plt.clf()
+
+        # NTHREADS fixed
+        y_mapping = {v : i for i, v in enumerate(maxsize)}
+        x_vals = [i + 1 for i in range(0, len(maxsize))]
+        for n in nthreads:
+            for target in targets:
+                y_vals = [0] * len(maxsize)
+                for margs, measures in [(a, m) for a, m in self.results[target].items() if a[0] == n]:
+                    y_vals[y_mapping[margs[1]]] = int(measures[0]["rssmax"])
+                plt.plot(x_vals, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
+
+            plt.legend()
+            plt.xticks(x_vals, maxsize)
+            plt.xlabel("size in B")
+            plt.ylabel("kb")
+            plt.title("Memusage Loop: " + str(n) + "thread(s)")
+            plt.savefig(os.path.join(sd, self.name + "." + str(n) + "threads.mem.png"))
             plt.clf()
 
 loop = Benchmark_Loop()

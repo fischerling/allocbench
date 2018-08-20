@@ -77,8 +77,8 @@ int main(int argc, char* argv[]) {
 	int num_threads;
 	struct ThreadArgs thread_args;
 
-	if (argc < 6) {
-		fprintf(stderr, "Usage: %s <benchmark> <num threads> <num allocations> <max size> <num of stored allocations>\n", argv[0]);
+	if (argc < 7) {
+		fprintf(stderr, "Usage: %s <benchmark> <num threads> <num allocations> <max size> <num of stored allocations> <print mem stats> [<output-file>]\n", argv[0]);
 		return 1;
 	}
 
@@ -104,14 +104,34 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if (argc == 7)
+	if (strcmp(argv[6], "yes") == 0)
 	{
-		FILE* f = stdout;
-		if (strcmp(argv[6],"stdout") != 0)
-			f = fopen(argv[6], "w");
-		malloc_info(0, f);
-		if (strcmp(argv[6],"stdout") != 0)
-			fclose(f);
+		char buf[4096];
+
+		FILE* status = fopen("/proc/self/status", "r");
+		if (status == NULL)
+		{
+			perror("fopen status");
+			exit(1);
+		}
+
+		FILE* output = stdout;
+		if (argc == 8)
+		{
+			output = fopen(argv[7], "w");
+			if (output == NULL)
+			{
+				perror("fopen output file");
+				exit(1);
+			}
+		}
+
+		while (!feof(status))
+		{
+			fgets(&buf, 4096, status);
+			fprintf(output, "%s", buf);
+		}
+		fclose(status);
 	}
 
 	return 0;
