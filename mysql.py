@@ -30,13 +30,13 @@ class Benchmark_MYSQL( Benchmark ):
         self.name = "mysql"
         self.descrition = """See sysbench documentation."""
         self.targets = copy.copy(common_targets)
+        del(self.targets["hoard"])
         if "klmalloc" in self.targets:
             del(self.targets["klmalloc"])
         self.nthreads = range(1, psutil.cpu_count() * 4 + 1, 2)
 
         self.results = {"args": {"nthreads" : self.nthreads},
-                        "targets" : self.targets,
-                        "memusage": {t : [] for t in self.targets}}
+                        "targets" : self.targets}
 
     def start_and_wait_for_server(self, verbose, log=None):
         if not log:
@@ -118,6 +118,9 @@ class Benchmark_MYSQL( Benchmark ):
             for tname, t in self.targets.items():
                 os.environ["LD_PRELOAD"] = t["LD_PRELOAD"] # set LD_PRELOAD
 
+                if not tname in self.results:
+                    self.results[tname] = {"heap_start" : []}
+
                 log = "mysqld.log"
                 if tname == "chattymalloc":
                     log = "chattymalloc.data"
@@ -126,11 +129,11 @@ class Benchmark_MYSQL( Benchmark ):
                     print("Aborting Benchmark.")
                     return False
 
-                # Get initial memory footprint
-                heap_size = {"heap_start": 0, "heap_end": 0, "rssmax": 0}
+                # Get initial heap size
                 for m in self.server.memory_maps():
                     if "[heap]" in m:
-                        heap_size["heap_start"] = m.size
+                        self.results[tname]["heap_start"].append(m.size)
+                        break
 
                 for i, thread in enumerate(self.nthreads):
                     print(tname + ":", i + 1, "of", n, "\r", end='')
@@ -172,26 +175,23 @@ class Benchmark_MYSQL( Benchmark ):
                         result["avg"] = re.search("avg:\s*(\d*.\d*)", p.stdout).group(1)
                         result["max"] = re.search("max:\s*(\d*.\d*)", p.stdout).group(1)
 
-                    key = (tname, thread)
-                    if not key in self.results:
-                        self.results[key] = [result]
-                    else:
-                        self.results[key].append(result)
+                        # Get memory footprint
+                        for m in self.server.memory_maps():
+                            if "[heap]" in m:
+                                result["heap_end"] = m.size
+
+                        with open("/proc/"+str(self.server.pid)+"/status", "r") as f:
+                            for l in f.readlines():
+                                if l.startswith("VmHWM:"):
+                                    result["rssmax"] = l.replace("VmHWM:", "").strip().split()[0]
+                                    break
+
+                        if not thread in self.results:
+                            self.results[tname][thread] = [result]
+                        else:
+                            self.results[tname][thread].append(result)
 
                 print()
-
-                # Get final memory footprint
-                for m in self.server.memory_maps():
-                    if "[heap]" in m:
-                        heap_size["heap_end"] = m.size
-                with open("/proc/"+str(self.server.pid)+"/status", "r") as f:
-                    for l in f.readlines():
-                        if l.startswith("VmHWM:"):
-                            heap_size["rssmax"] = l.replace("VmHWM:", "").strip().split()[0]
-                            break
-
-                if tname != "chattymalloc":
-                    self.results["memusage"][tname].append(heap_size)
 
                 self.server.kill()
                 self.server.wait()
@@ -210,12 +210,9 @@ class Benchmark_MYSQL( Benchmark ):
             if target == "chattymalloc":
                 continue
             y_vals = [0] * len(nthreads)
-            for mid, measures in self.results.items():
-                if mid[0] == target:
-                    d = []
-                    for m in measures:
-                        d.append(int(m["transactions"]))
-                    y_vals[y_mapping[mid[1]]] = np.mean(d)
+            for thread, measures in [(t, d) for t, d in self.results[target].items() if t != "heap_start"]:
+                d = [int(m["transactions"]) for m in measures]
+                y_vals[y_mapping[thread]] = np.mean(d)
             plt.plot(nthreads, y_vals, label=target, linestyle='-', marker='.', color=targets[target]["color"])
 
         plt.legend()
@@ -235,12 +232,9 @@ class Benchmark_MYSQL( Benchmark ):
                 continue
             x_vals = [x-i/8 for x in range(1, len(nthreads) + 1)]
             y_vals = [0] * len(nthreads)
-            for mid, measures in self.results.items():
-                if mid[0] == target:
-                    d = []
-                    for m in measures:
-                        d.append(int(m["transactions"]))
-                    y_vals[y_mapping[mid[1]]] = np.mean(d)
+            for thread, measures in [(t, d) for t, d in self.results[target].items() if t != "heap_start"]:
+                d = [int(m["transactions"]) for m in measures]
+                y_vals[y_mapping[thread]] = np.mean(d)
             plt.bar(x_vals, y_vals, width=0.2, label=target, align="center",  color=targets[target]["color"])
 
         plt.legend()
@@ -251,6 +245,7 @@ class Benchmark_MYSQL( Benchmark ):
         plt.savefig(os.path.join(sd, self.name + ".b.ro.png"))
         plt.clf()
 
+        # Histogram
         for mid, measures in self.results.items():
             if mid[0] == "chattymalloc":
                 hist = [(n, s) for s,n in measures[0]["hist"].items()]
@@ -258,16 +253,20 @@ class Benchmark_MYSQL( Benchmark ):
                 print("Histogram for", mid[1], "threads:")
                 print(hist)
 
-        # memusage
-        for target, measures in self.results["memusage"].items():
-            heap_growth = []
-            rssmax = []
-            for m in measures:
-                heap_growth.append(int(m["heap_end"]) - int(m["heap_start"]))
-                rssmax.append(int(m["rssmax"]))
-            print(target, "memory footprint:")
-            print("\t avg heap growth:", np.mean(heap_growth))
-            print("\t rss max:", np.mean(rssmax))
+        # Memusage
+        y_mapping = {v : i for i, v in enumerate(nthreads)}
+        for target in targets:
+            y_vals = [0] * len(nthreads)
+            for thread, measures in [(t, d) for t, d in self.results[target].items() if t != "heap_start"]:
+                d = [int(m["rssmax"]) for m in measures]
+                y_vals[y_mapping[thread]] = np.mean(d)
+            plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
 
+        plt.legend()
+        plt.xlabel("threads")
+        plt.ylabel("kb")
+        plt.title("Memusage mysqld")
+        plt.savefig(os.path.join(sd, self.name + ".ro.mem.png"))
+        plt.clf()
 
 mysql = Benchmark_MYSQL()
