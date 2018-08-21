@@ -53,7 +53,7 @@ def main():
 
         if not args.nosum:
             print("Summarizing", bench.name)
-            bench.summary()
+            bench.summary(args.summarydir)
 
         if hasattr(bench, "cleanup"):
             print("Cleaning after", bench.name)
