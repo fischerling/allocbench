@@ -186,10 +186,10 @@ class Benchmark_MYSQL( Benchmark ):
                                     result["rssmax"] = l.replace("VmHWM:", "").strip().split()[0]
                                     break
 
-                        if not thread in self.results:
-                            self.results[tname][thread] = [result]
-                        else:
-                            self.results[tname][thread].append(result)
+                    if not thread in self.results:
+                        self.results[tname][thread] = [result]
+                    else:
+                        self.results[tname][thread].append(result)
 
                 print()
 
@@ -246,16 +246,17 @@ class Benchmark_MYSQL( Benchmark ):
         plt.clf()
 
         # Histogram
-        for mid, measures in self.results.items():
-            if mid[0] == "chattymalloc":
-                hist = [(n, s) for s,n in measures[0]["hist"].items()]
-                hist.sort()
-                print("Histogram for", mid[1], "threads:")
-                print(hist)
+        del(self.results["chattymalloc"]["heap_start"])
+        for thread, measures in self.results["chattymalloc"].items():
+            print(measures)
+            hist = [(n, s) for s, n in measures[0]["hist"].items()]
+            hist.sort()
+            print("Histogram for", thread, "threads:")
+            print(hist)
 
         # Memusage
         y_mapping = {v : i for i, v in enumerate(nthreads)}
-        for target in targets:
+        for target in [t for t in targets if t != "chattymalloc"]:
             y_vals = [0] * len(nthreads)
             for thread, measures in [(t, d) for t, d in self.results[target].items() if t != "heap_start"]:
                 d = [int(m["rssmax"]) for m in measures]
