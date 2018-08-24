@@ -64,8 +64,6 @@ void *malloc(size_t size)
 			initializing = 1;
 			init();
 			initializing = 0;
-
-			fprintf(stdout, "jcheck: allocated %lu bytes of temp memory in %lu chunks during initialization\n", tmppos, tmpallocs);
 		}
 		else
 		{
@@ -78,12 +76,11 @@ void *malloc(size_t size)
 			}
 			else
 			{
-				fprintf(stdout, "jcheck: too much memory requested during initialisation - increase tmpbuff size\n");
+				fprintf(stderr, "jcheck: too much memory requested during initialisation - increase tmpbuff size\n");
 				exit(1);
 			}
 		}
 	}
-
 	return myfn_malloc(size);
 }
 
@@ -92,9 +89,7 @@ void free(void *ptr)
 	// something wrong if we call free before one of the allocators!
 	if (myfn_malloc == NULL)
 		init();
-	if (ptr >= (void*) tmpbuff && ptr <= (void*)(tmpbuff + tmppos))
-		fprintf(stdout, "freeing temp memory\n");
-	else
+	if (!(ptr >= (void*) tmpbuff && ptr <= (void*)(tmpbuff + tmppos)))
 		myfn_free(ptr);
 }
 

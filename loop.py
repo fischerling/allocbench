@@ -64,13 +64,16 @@ class Benchmark_Loop( Benchmark ):
 
                     # Collect memory consumtion on first run
                     if run == 1:
-                        subprocess.run((cur_cmd + " yes loop.out").split(), env=os.environ)
-                        with open("loop.out", "r") as f:
+                        os.environ["LD_PRELOAD"] = "build/print_status_on_exit.so " + os.environ["LD_PRELOAD"]
+                        subprocess.run(cur_cmd.split(), env=os.environ)
+                        with open("status", "r") as f:
                             for l in f.readlines():
                                 if l.startswith("VmHWM:"):
                                     result["rssmax"] = l.split()[1]
 
-                    target_cmd = perf_cmd + cur_cmd + " no"
+                        os.environ["LD_PRELOAD"] = t["LD_PRELOAD"]
+
+                    target_cmd = perf_cmd + cur_cmd
                     if verbose:
                         print("\n" + tname, t, "\n", target_cmd, "\n")
 
@@ -84,7 +87,7 @@ class Benchmark_Loop( Benchmark ):
                     output = p.stderr
 
                     if p.returncode != 0:
-                        print("\n" + " ".join(target_cmd), "exited with", p.returncode, ".\n Aborting Benchmark.")
+                        print("\n" + target_cmd, "exited with", p.returncode, ".\n Aborting Benchmark.")
                         print(tname, t)
                         print(output)
                         print(p.stdout)
