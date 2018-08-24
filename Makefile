@@ -29,7 +29,12 @@ MAKEFILE_LIST = Makefile
 
 TARGETS = $(OBJPRE:.o=)
 
-all: $(TARGETS) $(OBJDIR)/chattymalloc.so
+all: $(TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so
+
+$(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c $(MAKEFILE_LIST)
+	@echo "cc		$@"
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
+	$(VERBOSE) $(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
 $(OBJDIR)/chattymalloc.so: chattymalloc.c $(MAKEFILE_LIST)
 	@echo "cc		$@"

@@ -3,30 +3,46 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 char tmpbuff[1024];
 unsigned long tmppos = 0;
 unsigned long tmpallocs = 0;
-
-FILE* out = NULL;
 
 /*=========================================================
  *  * interception points
  *  */
 
 static void * (*myfn_malloc)(size_t size);
-static void * (*myfn_free)(void* ptr);
+static void   (*myfn_free)(void *ptr);
 
-static void init()
+static void print_status(void)
 {
-	out = fopen("chattymalloc.data", "w");
-	if (out == NULL)
+	char buf[4096];
+
+	FILE* status = fopen("/proc/self/status", "r");
+	if (status == NULL)
 	{
-		fprintf(stderr, "failed to open output file\n");
+		perror("fopen status");
 		exit(1);
 	}
 
+	FILE* output = fopen("status", "w");
+	if (output == NULL)
+	{
+		perror("fopen output file");
+		exit(1);
+	}
+
+	while (!feof(status))
+	{
+		fgets(&buf, 4096, status);
+		fprintf(output, "%s", buf);
+	}
+	fclose(status);
+}
+
+static void init()
+{
 	myfn_malloc     = dlsym(RTLD_NEXT, "malloc");
 	myfn_free       = dlsym(RTLD_NEXT, "free");
 
@@ -35,13 +51,12 @@ static void init()
 		fprintf(stderr, "Error in `dlsym`: %s\n", dlerror());
 		exit(1);
 	}
+	atexit(print_status);
 }
 
 void *malloc(size_t size)
 {
 	static int initializing = 0;
-	static int in_fprintf = 0;
-
 	if (myfn_malloc == NULL)
 	{
 		if (!initializing)
@@ -50,6 +65,7 @@ void *malloc(size_t size)
 			init();
 			initializing = 0;
 
+			fprintf(stdout, "jcheck: allocated %lu bytes of temp memory in %lu chunks during initialization\n", tmppos, tmpallocs);
 		}
 		else
 		{
@@ -62,20 +78,13 @@ void *malloc(size_t size)
 			}
 			else
 			{
-				fprintf(stderr, "jcheck: too much memory requested during initialisation - increase tmpbuff size\n");
+				fprintf(stdout, "jcheck: too much memory requested during initialisation - increase tmpbuff size\n");
 				exit(1);
 			}
 		}
 	}
 
-	if (!in_fprintf)
-	{
-		in_fprintf = 1;
-		fprintf(out, "%d\n", size);
-		in_fprintf = 0;
-	}
-	void *ptr = myfn_malloc(size);
-	return ptr;
+	return myfn_malloc(size);
 }
 
 void free(void *ptr)
@@ -83,6 +92,9 @@ void free(void *ptr)
 	// something wrong if we call free before one of the allocators!
 	if (myfn_malloc == NULL)
 		init();
-	if (!(ptr >= (void*) tmpbuff && ptr <= (void*)(tmpbuff + tmppos)))
+	if (ptr >= (void*) tmpbuff && ptr <= (void*)(tmpbuff + tmppos))
+		fprintf(stdout, "freeing temp memory\n");
+	else
 		myfn_free(ptr);
 }
+

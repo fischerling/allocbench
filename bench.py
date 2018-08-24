@@ -36,15 +36,16 @@ def main():
         if args.load:
             bench.load()
 
-        if args.analyse and bench.name == "mysql":
-            bench.targets.update(common_targets.analyse_targets)
-
-        print("Preparing", bench.name)
+        print("Preparing", bench.name, "...")
         if not bench.prepare():
             print("Preparing", bench.name, "failed!")
             return
 
-        print("Running", bench.name)
+        if args.analyse and hasattr(bench, "analyse") and callable(bench.analyse):
+            print("Analysing", bench.name, "...")
+            bench.analyse(verbose=args.verbose)
+
+        print("Running", bench.name, "...")
         if not bench.run(runs=args.runs, verbose=args.verbose):
             continue
 
@@ -52,11 +53,11 @@ def main():
             bench.save()
 
         if not args.nosum:
-            print("Summarizing", bench.name)
+            print("Summarizing", bench.name, "...")
             bench.summary(args.summarydir)
 
         if hasattr(bench, "cleanup"):
-            print("Cleaning after", bench.name)
+            print("Cleaning up", bench.name, "...")
             bench.cleanup()
 
 if __name__ == "__main__":
