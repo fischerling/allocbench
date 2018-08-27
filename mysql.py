@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
-import pickle
-import re
 import shutil
 import subprocess
 from subprocess import PIPE
@@ -12,13 +10,14 @@ from time import sleep
 
 from benchmark import Benchmark
 from common_targets import common_targets
+import chattyparser
 
 cwd = os.getcwd()
 
 prepare_cmd = ("sysbench oltp_read_only --db-driver=mysql --mysql-user=root "
-              "--mysql-socket="+cwd+"/mysql_test/socket --table-size=1000000 prepare").split()
+              "--mysql-socket="+cwd+"/mysql_test/socket --tables=5 --table-size=1000000 prepare").split()
 
-cmd = ("sysbench oltp_read_only --threads={} --time=100 "
+cmd = ("sysbench oltp_read_only --threads={} --time=60 --tables=5 "
        "--db-driver=mysql --mysql-user=root --mysql-socket={}/mysql_test/socket run")
 
 server_cmd = ("mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket "
@@ -91,7 +90,7 @@ class Benchmark_MYSQL( Benchmark ):
                 self.server.wait()
                 return False
 
-            print("Prepare test table")
+            print("Prepare test tables")
             ret = True
             p = subprocess.run(prepare_cmd, stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
@@ -168,15 +167,32 @@ class Benchmark_MYSQL( Benchmark ):
         return True
 
     def analyse(self, verbose=False):
+        self.results["hist"] = {}
+
+        os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
+        os.environ["CHATTYMALLOC_OPTS"] = "store=false"
         if not self.start_and_wait_for_server(verbose, "mysqld.log"):
             print("Can't start server.")
             print("Aborting analysing.")
             return False
 
-        self.results["hist"] = {}
+        self.server.kill()
+        self.server.wait()
+
+        self.results["hist"][0] = chattyparser.hist()
+
         runs = len(self.nthreads)
         for i, t in enumerate(self.nthreads):
             print("analysing", i + 1, "of", runs, "\r", end='')
+
+            os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
+            os.environ["CHATTYMALLOC_OPTS"] = "store=false"
+            if not self.start_and_wait_for_server(verbose, "mysqld.log"):
+                print("Can't start server.")
+                print("Aborting analysing.")
+                return False
+
+            os.environ["LD_PRELOAD"] = ""
 
             target_cmd = cmd.format(t, cwd).split(" ")
             p = subprocess.run(target_cmd, stderr=PIPE, stdout=PIPE,
@@ -186,24 +202,12 @@ class Benchmark_MYSQL( Benchmark ):
                 print("\n" + " ".join(target_cmd), "exited with", p.returncode, ".\n Aborting analysing.")
                 print(p.stderr)
                 print(p.stdout)
-                self.server.kill()
-                self.server.wait()
                 return False
 
-            with open("chattymalloc.data", "r") as f:
-                hist = {}
-                for l in f.readlines():
-                    n = int(l)
-
-                    if not n in hist:
-                        hist[n] = 0
-                    hist[n] += 1
-
-                self.results["hist"][t] = hist
-
+            self.server.kill()
+            self.server.wait()
+            self.results["hist"][t] = chattyparser.hist(path="chattymalloc.data")
         print()
-        self.server.kill()
-        self.server.wait()
 
     def summary(self, sd=None):
         # linear plot
@@ -214,8 +218,6 @@ class Benchmark_MYSQL( Benchmark ):
         sd = sd or ""
 
         for target in targets:
-            if target == "chattymalloc":
-                continue
             y_vals = [0] * len(nthreads)
             for thread, measures in self.results[target].items():
                 d = [int(m["transactions"]) for m in measures]
@@ -235,8 +237,6 @@ class Benchmark_MYSQL( Benchmark ):
         y_mapping = {v: i for i, v in enumerate(nthreads)}
 
         for i, target in enumerate(targets):
-            if target == "chattymalloc":
-                continue
             x_vals = [x-i/8 for x in range(1, len(nthreads) + 1)]
             y_vals = [0] * len(nthreads)
             for thread, measures in self.results[target].items():
@@ -254,11 +254,26 @@ class Benchmark_MYSQL( Benchmark ):
 
         # Histogram
         if "hist" in self.results:
-            for thread, hist in self.results["hist"].items():
-                s = [(n, s) for s, n in hist.items()]
-                s.sort()
-                print("Histogram for", thread, "threads:")
-                print(s)
+            for t, h in self.results["hist"].items():
+                #Build up data
+                print(t)
+                d = []
+                num_discarded = 0
+                for size, freq in h.items():
+                    if freq > 5 and size <= 10000:
+                        d += [size] * freq
+                    else:
+                        num_discarded += freq
+
+                print("in hist")
+                print(len(d), max(d), min(d))
+                n, bins, patches = plt.hist(x=d, bins="auto")
+                plt.xlabel("allocation sizes in byte")
+                plt.ylabel("number of allocation")
+                plt.title("Histogram for " + str(t) + " threads\n"
+                            + str(num_discarded) + " not between 8 and 10000 byte")
+                plt.savefig(os.path.join(sd, self.name + ".hist." + str(t) + ".png"))
+                plt.clf()
 
         # Memusage
         y_mapping = {v : i for i, v in enumerate(nthreads)}
