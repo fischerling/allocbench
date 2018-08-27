@@ -3,10 +3,9 @@
 .DEFAULT_GOAL = all
 
 SRCDIR=benchmarks
-C_SOURCES = $(shell find $(SRCDIR) -name "*.c")
-CC_SOURCES = $(shell find $(SRCDIR) -name "*.cc")
+BENCH_C_SOURCES = $(shell find $(SRCDIR) -name "*.c")
+BENCH_CC_SOURCES = $(shell find $(SRCDIR) -name "*.cc")
 
-VERBOSE =
 OBJDIR = ./build
 
 CC = gcc
@@ -21,54 +20,58 @@ CXXFLAGS = -std=c++11 -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS) -fno-exception
 CFLAGS = -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 #LDFLAGS= -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
 
-VPATH = $(sort $(dir $(C_SOURCES) $(CC_SOURCES)))
+VPATH = $(sort $(dir $(BENCH_C_SOURCES) $(BENCH_CC_SOURCES)))
 
-OBJECTS = $(notdir $(CC_SOURCES:.cc=.o)) $(notdir $(C_SOURCES:.c=.o))
-OBJPRE = $(addprefix $(OBJDIR)/,$(OBJECTS))
+GLIBC_NOTC = $(PWD)/../glibc/glibc-install-notc/lib
+
+BENCH_OBJECTS = $(notdir $(BENCH_CC_SOURCES:.cc=.o)) $(notdir $(BENCH_C_SOURCES:.c=.o))
+BENCH_OBJPRE = $(addprefix $(OBJDIR)/,$(BENCH_OBJECTS))
 MAKEFILE_LIST = Makefile
 
-TARGETS = $(OBJPRE:.o=)
+BENCH_TARGETS = $(BENCH_OBJPRE:.o=) $(BENCH_OBJPRE:.o=-glibc-notc)
 
-all: $(TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so
+all: $(BENCH_TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so
 
 $(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c $(MAKEFILE_LIST)
-	@echo "cc		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CC) -shared $(CFLAGS) -o $@ $< -ldl
+	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
 $(OBJDIR)/chattymalloc.so: chattymalloc.c $(MAKEFILE_LIST)
-	@echo "cc		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CC) -shared $(CFLAGS) -o $@ $< -ldl
+	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
 $(OBJDIR)/cache-thrash: $(OBJDIR)/cache-thrash.o
-	@echo "ld		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CXX) -pthread -o $@ $^
+	$(CXX) -pthread -o $@ $^
+
+$(OBJDIR)/cache-thrash-glibc-notc: $(OBJDIR)/cache-thrash
+	cp $< $@
+	patchelf --set-interpreter $(GLIBC_NOTC)/ld-linux-x86-64.so.2 $@
+	patchelf --set-rpath $(GLIBC_NOTC) $@
 
 $(OBJDIR)/cache-scratch: $(OBJDIR)/cache-scratch.o
-	@echo "ld		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CXX) -pthread -o $@ $^
+	$(CXX) -pthread -o $@ $^
+
+$(OBJDIR)/cache-scratch-glibc-notc: $(OBJDIR)/cache-scratch
+	cp $< $@
+	patchelf --set-interpreter $(GLIBC_NOTC)/ld-linux-x86-64.so.2 $@
+	patchelf --set-rpath $(GLIBC_NOTC) $@
 
 $(OBJDIR)/bench_loop: $(OBJDIR)/bench_loop.o
-	@echo "ld		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CC) -pthread -o $@ $^
+	$(CC) -pthread -o $@ $^
 
-$(OBJDIR)/%.o : %.c $(MAKEFILE_LIST)
-	@echo "cc		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CC) -c $(CFLAGS) -o $@ $<
+$(OBJDIR)/bench_loop-glibc-notc: $(OBJDIR)/bench_loop
+	cp $< $@
+	patchelf --set-interpreter $(GLIBC_NOTC)/ld-linux-x86-64.so.2 $@
+	patchelf --set-rpath $(GLIBC_NOTC) $@
 
-$(OBJDIR)/%.o : %.cc $(MAKEFILE_LIST)
-	@echo "cxx		$@"
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(VERBOSE) $(CXX) -c $(CXXFLAGS) -o $@ $<
+$(OBJDIR)/%.o : %.c $(OBJDIR) $(MAKEFILE_LIST)
+	$(CC) -c $(CFLAGS) -o $@ $<
+
+$(OBJDIR)/%.o : %.cc $(OBJDIR) $(MAKEFILE_LIST)
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
+
+$(OBJDIR):
+	mkdir -p $@
 
 clean:
-	@echo "rm		$(OBJDIR)"
-	$(VERBOSE) rm -rf $(OBJDIR)
-	@echo "rm		$(DEPDIR)"
-	$(VERBOSE) rm -rf $(DEPDIR)
+	rm -rf $(OBJDIR)
+	rm -rf $(DEPDIR)
 
