@@ -36,10 +36,11 @@ def main():
         if args.load:
             bench.load()
 
-        print("Preparing", bench.name, "...")
-        if not bench.prepare():
-            print("Preparing", bench.name, "failed!")
-            return
+        if args.runs > 0 or args.analyse:
+            print("Preparing", bench.name, "...")
+            if not bench.prepare():
+                print("Preparing", bench.name, "failed!")
+                return
 
         if args.analyse and hasattr(bench, "analyse") and callable(bench.analyse):
             print("Analysing", bench.name, "...")
@@ -56,7 +57,7 @@ def main():
             print("Summarizing", bench.name, "...")
             bench.summary(args.summarydir)
 
-        if hasattr(bench, "cleanup"):
+        if (args.runs > 0 or args.analyse) and hasattr(bench, "cleanup"):
             print("Cleaning up", bench.name, "...")
             bench.cleanup()
 
