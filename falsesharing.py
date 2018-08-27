@@ -26,8 +26,9 @@ class Benchmark_Falsesharing( Benchmark ):
 
         self.results = {"args" : {"nthreads" : self.nthreads},
                         "targets" : self.targets,
-                        "thrash": {},
-                        "scratch": {}}
+                        "thrash": {x : {} for x in self.targets},
+                        "scratch": {x: {} for x in self.targets}
+                       }
 
     def prepare(self, verbose=False):
         req = ["build/cache-thrash", "build/cache-scratch"]
@@ -93,11 +94,10 @@ class Benchmark_Falsesharing( Benchmark ):
                         for row in csvreader:
                             result[row[2].replace("\\", "")] = row[0].replace("\\", "")
 
-                        key = (tname, threads)
-                        if not key in self.results[bench]:
-                            self.results[bench][key] = [result]
+                        if not threads in self.results[bench][tname]:
+                            self.results[bench][tname][threads] = [result]
                         else:
-                            self.results[bench][key].append(result)
+                            self.results[bench][tname][threads].append(result)
 
             print()
         return True
@@ -113,31 +113,41 @@ class Benchmark_Falsesharing( Benchmark ):
         for bench in ["thrash", "scratch"]:
             for target in targets:
                 y_vals = [0] * len(nthreads)
-                single_threaded = np.mean([m["time"] for m in self.results[bench][(target, 1)]])
-                for mid, measures in self.results[bench].items():
-                    if mid[0] == target:
-                        l1_load_misses = []
-                        d = []
-                        for m in measures:
-                            d.append(m["time"])
-                            misses = 0
-                            loads = 0
-                            for e in m:
-                                if "L1-dcache-load-misses" in e:
-                                    misses = float(m[e])
-                                elif "L1-dcache-loads" in e:
-                                    loads = float(m[e])
-                            l1_load_misses.append(misses/loads)
-                        y_vals[y_mapping[mid[1]]] = single_threaded / np.mean(d)
-                        s = "{} {} {}: {:.3f}%".format(bench, target, mid[1], np.mean(l1_load_misses)*100)
-                        print(s)
-                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
+                single_threaded = np.mean([m["time"] for m in self.results[bench][target][1]])
+                for threads, measures in self.results[bench][target].items():
+                    l1_load_misses = []
+                    d = [m["time"] for m in measures]
+                    y_vals[y_mapping[threads]] = single_threaded / np.mean(d)
+                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target,
+                            color=targets[target]["color"])
 
             plt.legend()
             plt.xlabel("threads")
             plt.ylabel("speedup")
-            plt.title(bench)
+            plt.title(bench + " speedup" )
             plt.savefig(os.path.join(sd, self.name + "." + bench + ".png"))
+            plt.clf()
+
+            for target in targets:
+                y_vals = [0] * len(nthreads)
+                for threads, measures in self.results[bench][target].items():
+                    l1_load_misses = []
+                    for m in measures:
+                        misses = 0
+                        loads = 0
+                        for e in m:
+                            if "L1-dcache-load-misses" in e:
+                                misses = float(m[e])
+                            elif "L1-dcache-loads" in e:
+                                loads = float(m[e])
+                        l1_load_misses.append(misses/loads)
+                    y_vals[y_mapping[threads]] = np.mean(l1_load_misses) * 100
+                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
+            plt.legend()
+            plt.xlabel("threads")
+            plt.ylabel("l1-cache-misses in %")
+            plt.title(bench + " cache-misses")
+            plt.savefig(os.path.join(sd, self.name + "." + bench + ".l1misses.png"))
             plt.clf()
 
 falsesharing= Benchmark_Falsesharing()
