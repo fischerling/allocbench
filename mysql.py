@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
+import re
 import shutil
 import subprocess
 from subprocess import PIPE
