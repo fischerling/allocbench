@@ -26,7 +26,7 @@ static void print_status(void)
 		exit(1);
 	}
 
-	FILE* output = fopen("status", "w");
+	FILE* output = fopen("status", "a");
 	if (output == NULL)
 	{
 		perror("fopen output file");
