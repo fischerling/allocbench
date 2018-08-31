@@ -1,7 +1,6 @@
 import subprocess
 
-glibc_path = "/home/cip/2014/aj46ezos/BA/glibc/glibc-install/lib"
-glibc_path_notc = "/home/cip/2014/aj46ezos/BA/glibc/glibc-install-notc/lib"
+glibc_path_notc = "../glibc/glibc-install-notc/lib"
 
 library_path = ""
 p = subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
@@ -38,9 +37,9 @@ common_targets = {
                                 "color"         : "C4"
                                },
                   "glibc-notc" :    {
-                                "cmd_prefix"    : glibc_path+"/ld-2.28.9000.so "
+                                "cmd_prefix"    : glibc_path_notc+"/ld-linux-x86-64.so.2 "
                                                     + "--library-path "
-                                                    + glibc_path + ":"
+                                                    + glibc_path_notc + ":"
                                                     + library_path,
                                 "binary_suffix" : "-glibc-notc",
                                 "LD_PRELOAD"    : "/usr/lib/libstdc++.so /usr/lib/libgcc_s.so.1",
