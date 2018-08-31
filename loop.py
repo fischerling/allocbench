@@ -20,7 +20,6 @@ class Benchmark_Loop( Benchmark ):
                     }
 
         self.requirements = ["build/bench_loop"]
-        print(type(self))
         super().__init__()
 
     def summary(self, sd=None):
