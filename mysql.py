@@ -31,7 +31,8 @@ class Benchmark_MYSQL( Benchmark ):
 
         # mysqld fails with hoard somehow
         self.targets = copy.copy(common_targets)
-        del(self.targets["hoard"])
+        if "hoard" in self.targets:
+            del(self.targets["hoard"])
 
         self.args = {"nthreads" : range(1, multiprocessing.cpu_count() * 4 + 1, 2)}
         self.cmd = cmd
@@ -126,7 +127,7 @@ class Benchmark_MYSQL( Benchmark ):
         self.server.kill()
         self.server.wait()
 
-    def process_stdout(self, result, stdout):
+    def process_stdout(self, result, stdout, verbose):
         result["transactions"] = re.search("transactions:\s*(\d*)", stdout).group(1)
         result["queries"] = re.search("queries:\s*(\d*)", stdout).group(1)
         # Latency
@@ -189,7 +190,6 @@ class Benchmark_MYSQL( Benchmark ):
         # linear plot
         for target in targets:
             y_vals = []
-            print(self.results[target])
             for perm in self.iterate_args():
                 d = [int(m["transactions"]) for m in self.results[target][perm]]
                 y_vals.append(np.mean(d))
@@ -224,10 +224,15 @@ class Benchmark_MYSQL( Benchmark ):
         # Histogram
         if "hist" in self.results:
             for t, h in self.results["hist"].items():
+                self.plot_hist_ascii(h, os.path.join(sd, self.name+"."+str(t)+".hist"))
                 #Build up data
                 print(t)
                 d = []
                 num_discarded = 0
+
+                total = h["total"]
+                del(h["total"])
+
                 for size, freq in h.items():
                     if freq > 5 and size <= 10000:
                         d += [size] * freq
@@ -243,6 +248,8 @@ class Benchmark_MYSQL( Benchmark ):
                             + str(num_discarded) + " not between 8 and 10000 byte")
                 plt.savefig(os.path.join(sd, self.name + ".hist." + str(t) + ".png"))
                 plt.clf()
+
+                h["total"] = total
 
 
         # Memusage

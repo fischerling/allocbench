@@ -42,13 +42,13 @@ class Benchmark (object):
             self.requirements = []
     
     def save(self, path=None, verbose=False):
-        print(self.results)
         f = path if path else self.name + ".save"
         if verbose:
             print("Saving results to:", self.name + ".save")
         # Pickle can't handle namedtuples so convert the dicts of namedtuples
         # into lists of dicts.
-        save_data = {"args" : self.results["args"], "targets" : self.results["targets"]}
+        save_data = {}
+        save_data.update(self.results)
         for target in self.results["targets"]:
             l = []
             for ntuple, measures in self.results[target].items():
@@ -63,11 +63,9 @@ class Benchmark (object):
         if verbose:
             print("Loading results from:", self.name + ".save")
         with open(f, "rb") as f:
-            save_data = pickle.load(f)
+            self.results = pickle.load(f)
         # Build new named tuples
-        self.results["args"] = save_data["args"]
-        self.results["targets"] = save_data["targets"]
-        for target in save_data["targets"]:
+        for target in self.results["targets"]:
             d = {}
             for dic, measures in save_data[target]:
                 d[self.Perm(**dic)] = measures
@@ -140,11 +138,36 @@ class Benchmark (object):
 
     def parse_chattymalloc_data(self, path="chattymalloc.data"):
         hist = {}
+        total = 0
         with open(path, "r") as f:
             for l in f.readlines():
-                n = int(l)
+                total += 1
+                try:
+                    n = int(l)
+                except ValueError:
+                    pass
                 hist[n] = hist.get(n, 0) + 1
+        hist["total"] = total
         return hist
+
+    def plot_hist_ascii(self, hist, path):
+        total = hist["total"]
+        del(hist["total"])
+        bins = {}
+        bin = 1
+        for size in sorted(hist):
+            if int(size) > bin * 16:
+                bin += 1
+            bins[bin] = bins.get(bin, 0) + hist[size]
+        hist["total"] = total
+
+        with open(path, "w") as f:
+            print("Total malloc calls:", total, file=f)
+            print("Histogram of sizes:", file=f)
+            for b in sorted(bins):
+                perc = bins[b]/total*100
+                print((b-1)*16, '-', b*16-1, '\t', bins[b],
+                        perc, '%', '*'*int(perc/2), file=f)
 
     def run(self, verbose=False, runs=5):
         n = len(list(self.iterate_args())) * len(self.targets)
@@ -165,7 +188,7 @@ class Benchmark (object):
 
                 for perm in self.iterate_args():
                     i += 1
-                    print(i + 1, "of", n, "\r", end='')
+                    print(i, "of", n, "\r", end='')
                     
                     actual_cmd = self.perf_cmd
 
@@ -203,14 +226,17 @@ class Benchmark (object):
                     os.remove("status")
                         
                     if hasattr(self, "process_stdout"):
-                        self.process_stdout(result, res.stdout)
+                        self.process_stdout(result, res.stdout, verbose)
 
                     # Parse perf output if available
                     if self.perf_cmd != "":
                         csvreader = csv.reader(res.stderr.splitlines(), delimiter=',')
                         for row in csvreader:
                             # Split of the user/kernel space info to be better portable
-                            result[row[2].split(":")[0]] = row[0]
+                            try:
+                                result[row[2].split(":")[0]] = row[0]
+                            except Exception as e:
+                                print("Exception", e, "occured on", row, "for", tname, "and", perm)
 
                     if run == 1:
                         self.results[tname][perm] = []
