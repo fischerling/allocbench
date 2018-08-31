@@ -12,12 +12,7 @@ for l in p.stdout.splitlines():
     if not l.startswith('\t'):
         library_path += l
 
-common_targets = {"klmalloc" : {
-                                "cmd_prefix"    : "",
-                                "binary_suffix" : "",
-                                "LD_PRELOAD"    : "targets/libklmalloc.so",
-                                "color"         : "C0"
-                               },
+common_targets = {
                   "glibc" :    {
                                 "cmd_prefix"    : "",
                                 "binary_suffix" : "",
@@ -51,10 +46,4 @@ common_targets = {"klmalloc" : {
                                 "LD_PRELOAD"    : "/usr/lib/libstdc++.so /usr/lib/libgcc_s.so.1",
                                 "color"         : "C5"
                                },
-                  }
-
-analyse_targets = {"chattymalloc" : {"cmd_prefix"    : "",
-                                     "binary_suffix" : "",
-                                     "LD_PRELOAD"    : "build/chattymalloc.so"
-                                    }
                   }
