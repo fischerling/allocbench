@@ -5,4 +5,5 @@ __pycache__/*
 *.save
 *.data
 *.log
+*.hist
 status
