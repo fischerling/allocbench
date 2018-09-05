@@ -67,7 +67,7 @@ class Benchmark (object):
         # Build new named tuples
         for target in self.results["targets"]:
             d = {}
-            for dic, measures in save_data[target]:
+            for dic, measures in self.results[target]:
                 d[self.Perm(**dic)] = measures
             self.results[target] = d
 
