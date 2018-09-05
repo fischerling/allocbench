@@ -21,7 +21,7 @@ cmd = ("sysbench oltp_read_only --threads={nthreads} --time=1 --tables=5 "
        "--db-driver=mysql --mysql-user=root --mysql-socket="+cwd+"/mysql_test/socket run")
 
 server_cmd = (shutil.which("mysqld")+" -h "+cwd+"/mysql_test --socket="+cwd+"/mysql_test/socket "
-              "--secure-file-priv= ").format(cwd).split()
+              "--secure-file-priv= ").split()
 
 
 class Benchmark_MYSQL( Benchmark ):
