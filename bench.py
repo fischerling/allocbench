@@ -9,6 +9,7 @@ from falsesharing import falsesharing
 from loop import loop
 # from bench_conprod import conprod
 from mysql import mysql
+from dj_trace import dj_trace
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-s", "--save", help="save benchmark results to disk", action='store_true')
@@ -21,7 +22,7 @@ parser.add_argument("-sd", "--summarydir", help="directory where all plots and t
 parser.add_argument("-a", "--analyse", help="collect allocation sizes", action='store_true')
 
 
-benchmarks = [loop, mysql, falsesharing]
+benchmarks = [loop, mysql, falsesharing, dj_trace]
 
 def main():
     args = parser.parse_args()

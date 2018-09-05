@@ -28,15 +28,25 @@ BENCH_OBJECTS = $(notdir $(BENCH_CC_SOURCES:.cc=.o)) $(notdir $(BENCH_C_SOURCES:
 BENCH_OBJPRE = $(addprefix $(OBJDIR)/,$(BENCH_OBJECTS))
 MAKEFILE_LIST = Makefile
 
-BENCH_TARGETS = $(BENCH_OBJPRE:.o=) $(BENCH_OBJPRE:.o=-glibc-notc)
+BENCH_TARGETS = $(BENCH_OBJPRE:.o=) $(OBJDIR)/trace_run
 
-all: $(BENCH_TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so
+NOTC_TARGETS = $(BENCH_TARGETS:=-glibc-notc)
+
+all: $(BENCH_TARGETS) $(NOTC_TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so
 
 $(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c $(MAKEFILE_LIST)
 	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
 $(OBJDIR)/chattymalloc.so: chattymalloc.c $(MAKEFILE_LIST)
 	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
+
+$(OBJDIR)/trace_run: trace_run.c $(MAKEFILE_LIST)
+	$(CC) -pthread $(CFLAGS) -o $@ $<
+
+$(OBJDIR)/trace_run-glibc-notc: $(OBJDIR)/trace_run $(MAKEFILE_LIST)
+	cp $< $@
+	patchelf --set-interpreter $(GLIBC_NOTC)/ld-linux-x86-64.so.2 $@
+	patchelf --set-rpath $(GLIBC_NOTC) $@
 
 $(OBJDIR)/cache-thrash: $(OBJDIR)/cache-thrash.o
 	$(CXX) -pthread -o $@ $^
