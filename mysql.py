@@ -17,7 +17,7 @@ cwd = os.getcwd()
 prepare_cmd = ("sysbench oltp_read_only --db-driver=mysql --mysql-user=root "
               "--mysql-socket="+cwd+"/mysql_test/socket --tables=5 --table-size=1000000 prepare").split()
 
-cmd = ("sysbench oltp_read_only --threads={nthreads} --time=1 --tables=5 "
+cmd = ("sysbench oltp_read_only --threads={nthreads} --time=60 --tables=5 "
        "--db-driver=mysql --mysql-user=root --mysql-socket="+cwd+"/mysql_test/socket run")
 
 server_cmd = (shutil.which("mysqld")+" -h "+cwd+"/mysql_test --socket="+cwd+"/mysql_test/socket "
