@@ -93,15 +93,17 @@ class Benchmark (object):
 
         return True
 
-    def iterate_args(self):
+    def iterate_args(self, args=None):
         """Return a dict for each possible combination of args"""
-        arg_names = sorted(self.args.keys())
-        for p in itertools.product(*[self.args[k] for k in arg_names]):
+        if not args:
+            args = self.args
+        arg_names = sorted(args.keys())
+        for p in itertools.product(*[args[k] for k in arg_names]):
             Perm = namedtuple("Perm", arg_names)
             yield Perm(*p)
 
-    def iterate_args_fixed(self, fixed):
-        for p in self.iterate_args():
+    def iterate_args_fixed(self, fixed, args=None):
+        for p in self.iterate_args(args=args):
             p_dict = p._asdict()
             is_fixed = True
             for k in fixed:

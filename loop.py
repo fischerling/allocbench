@@ -34,7 +34,7 @@ class Benchmark_Loop( Benchmark ):
             for arg_value in args[arg]:
                 for target in targets:
                     y_vals = []
-                    for perm in self.iterate_args_fixed({arg : arg_value}):
+                    for perm in self.iterate_args_fixed({arg : arg_value}, args=args):
                         d = []
                         for measure in self.results[target][perm]:
                             # nthreads/time = MOPS/s
@@ -62,7 +62,7 @@ class Benchmark_Loop( Benchmark ):
             for arg_value in args[arg]:
                 for target in targets:
                     y_vals = []
-                    for perm in self.iterate_args_fixed({arg : arg_value}):
+                    for perm in self.iterate_args_fixed({arg : arg_value}, args=args):
                         d = []
                         for measure in self.results[target][perm]:
                             d.append(int(measure["VmHWM"]))

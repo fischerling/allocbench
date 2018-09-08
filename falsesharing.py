@@ -9,6 +9,8 @@ import subprocess
 
 from benchmark import Benchmark
 
+time_re = re.compile("^Time elapsed = (?P<time>\d*\.\d*) seconds.$")
+
 class Benchmark_Falsesharing( Benchmark ):
     def __init__(self):
         self.name = "falsesharing"
@@ -27,9 +29,13 @@ class Benchmark_Falsesharing( Benchmark ):
         self.requirements = ["build/cache-thrash", "build/cache-scratch"]
         super().__init__()
 
+    def process_stdout(self, result, stdout, verbose):
+        result["time"] = time_re.match(stdout).group("time")
+
     def summary(self, sd=None):
         # Speedup thrash
-        nthreads = self.results["args"]["threads"]
+        args = self.results["args"]
+        nthreads = args["threads"]
         targets = self.results["targets"]
 
         sd = sd or ""
@@ -39,12 +45,12 @@ class Benchmark_Falsesharing( Benchmark ):
                 y_vals = []
 
                 single_threaded_perm = self.Perm(bench=bench, threads=1)
-                single_threaded = np.mean([float(m["task-clock"])
+                single_threaded = np.mean([float(m["time"])
                                                     for m in self.results[target][single_threaded_perm]])
 
-                for perm in self.iterate_args_fixed({"bench" : bench}):
+                for perm in self.iterate_args_fixed({"bench" : bench}, args=args):
 
-                    d = [float(m["task-clock"]) for m in self.results[target][perm]]
+                    d = [float(m["time"]) for m in self.results[target][perm]]
 
                     y_vals.append(single_threaded / np.mean(d))
 
@@ -61,7 +67,7 @@ class Benchmark_Falsesharing( Benchmark ):
             for target in targets:
                 y_vals = []
 
-                for perm in self.iterate_args_fixed({"bench" : bench}):
+                for perm in self.iterate_args_fixed({"bench" : bench}, args=args):
                     l1_load_misses = []
 
                     for m in self.results[target][perm]:

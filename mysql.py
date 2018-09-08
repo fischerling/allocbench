@@ -185,12 +185,13 @@ class Benchmark_MYSQL( Benchmark ):
     def summary(self, sd=None):
         sd = sd or ""
         targets = self.results["targets"]
+        args = self.results["args"]
         nthreads = list(self.results["args"]["nthreads"])
 
         # linear plot
         for target in targets:
             y_vals = []
-            for perm in self.iterate_args():
+            for perm in self.iterate_args(args=args):
                 d = [int(m["transactions"]) for m in self.results[target][perm]]
                 y_vals.append(np.mean(d))
             plt.plot(nthreads, y_vals, label=target, linestyle='-',
@@ -206,7 +207,7 @@ class Benchmark_MYSQL( Benchmark ):
         # bar plot
         for i, target in enumerate(targets):
             y_vals = []
-            for perm in self.iterate_args():
+            for perm in self.iterate_args(args=args):
                 d = [int(m["transactions"]) for m in self.results[target][perm]]
                 y_vals.append(np.mean(d))
             x_vals = [x-i/8 for x in range(1, len(nthreads) + 1)]
@@ -255,7 +256,7 @@ class Benchmark_MYSQL( Benchmark ):
         # Memusage
         for target in targets:
             y_vals = []
-            for perm in self.iterate_args():
+            for perm in self.iterate_args(args=args):
                 d = [int(m["rssmax"]) for m in self.results[target][perm]]
                 y_vals.append(np.mean(d))
             plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target,
