@@ -171,10 +171,10 @@ class Benchmark (object):
 
     def run(self, verbose=False, runs=5):
         n = len(list(self.iterate_args())) * len(self.targets)
-        i = 0
         for run in range(1, runs + 1):
             print(str(run) + ". run")
 
+            i = 0
             for tname, t in self.targets.items():
                 if not tname in self.results:
                     self.results[tname] = {}
