@@ -14,7 +14,7 @@ CXX = g++
 WARNFLAGS = -Wall -Wextra
 COMMONFLAGS = -fno-builtin -fPIC -DPIC -pthread
 OPTFLAGS = -O3 -DNDEBUG
-#OPTFLAGS = -O0 -g3
+# OPTFLAGS = -O0 -g3
 
 CXXFLAGS = -std=c++11 -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS) -fno-exceptions
 CFLAGS = -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
@@ -44,6 +44,14 @@ $(OBJDIR)/trace_run: trace_run.c $(MAKEFILE_LIST)
 	$(CC) -pthread $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/trace_run-glibc-notc: $(OBJDIR)/trace_run $(MAKEFILE_LIST)
+	cp $< $@
+	patchelf --set-interpreter $(GLIBC_NOTC)/ld-linux-x86-64.so.2 $@
+	patchelf --set-rpath $(GLIBC_NOTC) $@
+
+$(OBJDIR)/larson: $(OBJDIR)/larson.o
+	$(CXX) -pthread -o $@ $^
+
+$(OBJDIR)/larson-glibc-notc: $(OBJDIR)/larson
 	cp $< $@
 	patchelf --set-interpreter $(GLIBC_NOTC)/ld-linux-x86-64.so.2 $@
 	patchelf --set-rpath $(GLIBC_NOTC) $@
