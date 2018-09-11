@@ -1,11 +1,8 @@
-import csv
-import pickle
 import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
 import re
-import subprocess
 
 from benchmark import Benchmark
 
