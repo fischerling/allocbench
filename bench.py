@@ -56,7 +56,7 @@ def main():
 
         if not args.nosum and not (args.runs < 1 and not args.load):
             print("Summarizing", bench.name, "...")
-            bench.summary(args.summarydir)
+            bench.summary(args.summarydir or "")
 
         if (args.runs > 0 or args.analyse) and hasattr(bench, "cleanup"):
             print("Cleaning up", bench.name, "...")

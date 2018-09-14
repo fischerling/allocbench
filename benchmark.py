@@ -2,6 +2,8 @@ from collections import namedtuple
 import copy
 import csv
 import itertools
+import matplotlib.pyplot as plt
+import numpy as np
 import os
 import pickle
 import shutil
@@ -14,7 +16,7 @@ class Benchmark (object):
     defaults = {
         "name" : "default_benchmark",
         "description" : "This is the default benchmark description please add your own useful one.",
-        
+
         "measure_cmd" : "perf stat -x, -dd ",
         "analyse_cmd" : "memusage -p {} -t ",
         "cmd" : "true",
@@ -32,7 +34,7 @@ class Benchmark (object):
             self.args = {}
 
         self.Perm = namedtuple("Perm", self.args.keys())
-        
+
         if not hasattr(self, "results"):
             self.results = {}
         self.results["args"] = self.args
@@ -41,7 +43,7 @@ class Benchmark (object):
 
         if not hasattr(self, "requirements"):
             self.requirements = []
-    
+
     def save(self, path=None, verbose=False):
         f = path if path else self.name + ".save"
         if verbose:
@@ -78,7 +80,7 @@ class Benchmark (object):
 
         for r in self.requirements:
             fpath, fname = os.path.split(r)
-            
+
             if fpath:
                 if not is_exe(r):
                     return False
@@ -113,7 +115,7 @@ class Benchmark (object):
                     break
             if is_fixed:
                 yield p
-            
+
 
     def analyse(self, verbose=False, nolibmemusage=True):
         if not nolibmemusage and not shutil.which("memusage"):
@@ -140,7 +142,7 @@ class Benchmark (object):
             if "binary_suffix" in self.cmd:
                 perm["binary_suffix"] = ""
             actual_cmd += self.cmd.format(**perm)
-            
+
             res = subprocess.run(actual_cmd.split(),
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
@@ -191,7 +193,7 @@ class Benchmark (object):
                 for perm in self.iterate_args():
                     i += 1
                     print(i, "of", n,"\r", end='')
-                    
+
                     actual_cmd = self.measure_cmd
 
                     perm_dict = perm._asdict()
@@ -217,7 +219,7 @@ class Benchmark (object):
                         return False
 
                     result = {}
-                    
+
                     # Read VmHWM from status file. If our benchmark didn't fork
                     # the first occurance of VmHWM is from our benchmark
                     with open("status", "r") as f:
@@ -226,13 +228,13 @@ class Benchmark (object):
                                 result["VmHWM"] = l.split()[1]
                                 break
                     os.remove("status")
-                        
+
                     if hasattr(self, "process_output"):
                         self.process_output(result, res.stdout, res.stderr,
                                                 tname, perm, verbose)
 
                     # Parse perf output if available
-                    if self.measure_cmd != self.defaults["measure_cmd"]:
+                    if self.measure_cmd == self.defaults["measure_cmd"]:
                         csvreader = csv.reader(res.stderr.splitlines(), delimiter=',')
                         for row in csvreader:
                             # Split of the user/kernel space info to be better portable
@@ -251,3 +253,58 @@ class Benchmark (object):
             print()
         return True
 
+    def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
+                        title="default title", filepostfix="", sumdir="", arg=""):
+
+        args = self.results["args"]
+        targets = self.results["targets"]
+
+        arg = arg or list(args.keys())[0]
+
+        for target in targets:
+            y_vals = []
+            for perm in self.iterate_args():
+                d = []
+                for m in self.results[target][perm]:
+                    d.append(eval(yval.format(**m)))
+                y_vals.append(np.mean(d))
+            x_vals = list(range(1, len(y_vals) + 1))
+            plt.plot(x_vals, y_vals, marker='.', linestyle='-',
+                label=target, color=targets[target]["color"])
+
+        plt.legend()
+        plt.xticks(x_vals, args[arg])
+        plt.xlabel(eval(xlabel))
+        plt.ylabel(eval(ylabel))
+        plt.title(eval(title))
+        plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, "png"])))
+        plt.clf()
+
+    def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
+                        title="default title", filepostfix="", sumdir="", fixed=[]):
+
+        args = self.results["args"]
+        targets = self.results["targets"]
+
+        for arg in fixed or args:
+            loose_arg = [a for a in args if a != arg][0]
+            for arg_value in args[arg]:
+                for target in targets:
+                    y_vals = []
+                    for perm in self.iterate_args_fixed({arg : arg_value}, args=args):
+                        d = []
+                        for m in self.results[target][perm]:
+                            d.append(eval(yval.format(**m)))
+                        y_vals.append(np.mean(d))
+                    x_vals = list(range(1, len(y_vals) + 1))
+                    plt.plot(x_vals, y_vals, marker='.', linestyle='-',
+                        label=target, color=targets[target]["color"])
+
+                plt.legend()
+                plt.xticks(x_vals, args[loose_arg])
+                plt.xlabel(eval(xlabel))
+                plt.ylabel(eval(ylabel))
+                plt.title(eval(title))
+                plt.savefig(os.path.join(sumdir, ".".join([self.name, arg,
+                    str(arg_value), filepostfix, "png"])))
+                plt.clf()

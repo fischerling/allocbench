@@ -22,63 +22,22 @@ class Benchmark_Loop( Benchmark ):
         self.requirements = ["build/bench_loop"]
         super().__init__()
 
-    def summary(self, sd=None):
+    def summary(self, sumdir):
         args = self.results["args"]
         targets = self.results["targets"]
 
-        sd = sd or ""
-
         # Speed
-        for arg in args:
-            loose_arg = [a for a in args if a != arg][0]
-            for arg_value in args[arg]:
-                for target in targets:
-                    y_vals = []
-                    for perm in self.iterate_args_fixed({arg : arg_value}, args=args):
-                        d = []
-                        for measure in self.results[target][perm]:
-                            # nthreads/time = MOPS/s
-                            for e in measure:
-                                if "task-clock" in e:
-                                    d.append(perm.nthreads/float(measure[e]))
-                        y_vals.append(np.mean(d))
-
-                    x_vals = list(range(1, len(y_vals) + 1))
-
-                    plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                        label=target, color=targets[target]["color"])
-
-                plt.legend()
-                plt.xticks(x_vals, args[loose_arg])
-                plt.xlabel(loose_arg)
-                plt.ylabel("MOPS/s")
-                plt.title("Loop: " + arg + " " + str(arg_value))
-                plt.savefig(os.path.join(sd, ".".join([self.name, arg, str(arg_value), "png"])))
-                plt.clf()
+        self.plot_fixed_arg("perm.nthreads / float({task-clock})",
+                    ylabel = '"MOPS/s"',
+                    title = '"Loop: " + arg + " " + str(arg_value)',
+                    filepostfix="tclock",
+                    sumdir=sumdir)
 
         # Memusage
-        for arg in args:
-            loose_arg = [a for a in args if a != arg][0]
-            for arg_value in args[arg]:
-                for target in targets:
-                    y_vals = []
-                    for perm in self.iterate_args_fixed({arg : arg_value}, args=args):
-                        d = []
-                        for measure in self.results[target][perm]:
-                            d.append(int(measure["VmHWM"]))
-                        y_vals.append(np.mean(d))
-
-                    x_vals = list(range(1, len(y_vals) + 1))
-
-                    plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                        label=target, color=targets[target]["color"])
-
-                plt.legend()
-                plt.xticks(x_vals, args[loose_arg])
-                plt.xlabel(loose_arg)
-                plt.ylabel("VmHWM")
-                plt.title("Loop Memusage: " + arg + " " + str(arg_value))
-                plt.savefig(os.path.join(sd, ".".join([self.name, arg, str(arg_value), "mem", "png"])))
-                plt.clf()
+        self.plot_fixed_arg("int({VmHWM})",
+                    ylabel='"VmHWM in kB"',
+                    title= '"Loop Memusage: " + arg + " " + str(arg_value)',
+                    filepostfix="memusage",
+                    sumdir=sumdir)
 
 loop = Benchmark_Loop()

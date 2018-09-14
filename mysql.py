@@ -34,7 +34,8 @@ class Benchmark_MYSQL( Benchmark ):
         if "hoard" in self.targets:
             del(self.targets["hoard"])
 
-        self.args = {"nthreads" : range(1, multiprocessing.cpu_count() * 4 + 1, 2)}
+        # self.args = {"nthreads" : range(1, multiprocessing.cpu_count() * 4 + 1, 2)}
+        self.args = {"nthreads" : range(1, 2)}
         self.cmd = cmd
         self.measure_cmd = ""
 
@@ -138,14 +139,14 @@ class Benchmark_MYSQL( Benchmark ):
         with open("/proc/"+str(self.server.pid)+"/status", "r") as f:
             for l in f.readlines():
                 if l.startswith("VmHWM:"):
-                    result["rssmax"] = l.replace("VmHWM:", "").strip().split()[0]
+                    result["rssmax"] = int(l.replace("VmHWM:", "").strip().split()[0])
                     break
 
-    def analyse(self, verbose=False):
+    def analyse(self, verbose=False, nolibmemusage=""):
+        import chattyparser
+
         nthreads = [0] + list(self.args["nthreads"])
         failed = False
-
-        self.results["hist"] = {}
 
         os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
 
@@ -160,7 +161,7 @@ class Benchmark_MYSQL( Benchmark ):
 
             if t != 0:
                 target_cmd = self.cmd.format(nthreads=t).split(" ")
-                p = subprocess.run(target_cmd,
+                p = subrocess.run(target_cmd,
                                    stderr=PIPE,
                                    stdout=PIPE,
                                    universal_newlines=True)
@@ -174,7 +175,9 @@ class Benchmark_MYSQL( Benchmark ):
             self.server.kill()
             self.server.wait()
 
-            self.results["hist"][t] = self.parse_chattymalloc_data()
+            hist, calls, reqsize, top5reqsize = chattyparser.parse()
+            chattyparser.plot_hist_ascii(hist, calls, ".".join([self.name, str(t),
+                                            "memusage", "hist"]))
 
             if failed:
                 print(self.server.stdout.read())
@@ -182,91 +185,42 @@ class Benchmark_MYSQL( Benchmark ):
                 return False
         print()
 
-    def summary(self, sd=None):
-        sd = sd or ""
+    def summary(self, sd):
         targets = self.results["targets"]
-        args = self.results["args"]
         nthreads = list(self.results["args"]["nthreads"])
 
         # linear plot
-        for target in targets:
-            y_vals = []
-            for perm in self.iterate_args(args=args):
-                d = [int(m["transactions"]) for m in self.results[target][perm]]
-                y_vals.append(np.mean(d))
-            plt.plot(nthreads, y_vals, label=target, linestyle='-',
-                        marker='.', color=targets[target]["color"])
-
-        plt.legend()
-        plt.xlabel("threads")
-        plt.ylabel("transactions")
-        plt.title("sysbench oltp read only")
-        plt.savefig(os.path.join(sd,self.name + ".l.ro.png"))
-        plt.clf()
+        self.plot_single_arg("{transactions}",
+                    xlabel = '"threads"',
+                    ylabel = '"transactions"',
+                    title = '"sysbench oltp read only"',
+                    filepostfix = "l.ro",
+                    sumdir = sd)
 
         # bar plot
         for i, target in enumerate(targets):
             y_vals = []
-            for perm in self.iterate_args(args=args):
+            for perm in self.iterate_args(args=self.results["args"]):
                 d = [int(m["transactions"]) for m in self.results[target][perm]]
                 y_vals.append(np.mean(d))
-            x_vals = [x-i/8 for x in range(1, len(nthreads) + 1)]
+            x_vals = [x-i/8 for x in range(1, len(y_vals) + 1)]
             plt.bar(x_vals, y_vals, width=0.2, label=target, align="center",
                         color=targets[target]["color"])
 
         plt.legend()
         plt.xlabel("threads")
-        plt.xticks(range(1, len(nthreads) + 1), nthreads)
+        plt.xticks(range(1, len(y_vals) + 1), self.results["args"]["nthreads"])
         plt.ylabel("transactions")
         plt.title("sysbench oltp read only")
         plt.savefig(os.path.join(sd, self.name + ".b.ro.png"))
         plt.clf()
 
-        # Histogram
-        if "hist" in self.results:
-            for t, h in self.results["hist"].items():
-                self.plot_hist_ascii(h, os.path.join(sd, self.name+"."+str(t)+".hist"))
-                #Build up data
-                print(t)
-                d = []
-                num_discarded = 0
-
-                total = h["total"]
-                del(h["total"])
-
-                for size, freq in h.items():
-                    if freq > 5 and size <= 10000:
-                        d += [size] * freq
-                    else:
-                        num_discarded += freq
-
-                print("in hist")
-                print(len(d), max(d), min(d))
-                n, bins, patches = plt.hist(x=d, bins="auto")
-                plt.xlabel("allocation sizes in byte")
-                plt.ylabel("number of allocation")
-                plt.title("Histogram for " + str(t) + " threads\n"
-                            + str(num_discarded) + " not between 8 and 10000 byte")
-                plt.savefig(os.path.join(sd, self.name + ".hist." + str(t) + ".png"))
-                plt.clf()
-
-                h["total"] = total
-
-
         # Memusage
-        for target in targets:
-            y_vals = []
-            for perm in self.iterate_args(args=args):
-                d = [int(m["rssmax"]) for m in self.results[target][perm]]
-                y_vals.append(np.mean(d))
-            plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target,
-                        color=targets[target]["color"])
-
-        plt.legend()
-        plt.xlabel("threads")
-        plt.ylabel("kb")
-        plt.title("Memusage mysqld")
-        plt.savefig(os.path.join(sd, self.name + ".ro.mem.png"))
-        plt.clf()
+        self.plot_single_arg("{rssmax}",
+                    xlabel = '"threads"',
+                    ylabel = '"VmHWM in kB"',
+                    title = '"Memusage sysbench oltp read only"',
+                    filepostfix = "ro.mem",
+                    sumdir = sd)
 
 mysql = Benchmark_MYSQL()
