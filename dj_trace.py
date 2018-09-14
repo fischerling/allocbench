@@ -77,7 +77,7 @@ class Benchmark_DJ_Trace( Benchmark ):
                     sys.stderr.write("\n")
         return True
 
-    def process_output(self, result, stdout, target, perm, verbose):
+    def process_output(self, result, stdout, stderr, target, perm, verbose):
         def to_int(s):
             return int(s.replace(',', ""))
 
