@@ -7,10 +7,11 @@ import common_targets
 
 from falsesharing import falsesharing
 from loop import loop
-# from bench_conprod import conprod
 from mysql import mysql
 from dj_trace import dj_trace
 from larson import larson
+
+benchmarks = [loop, mysql, falsesharing, dj_trace, larson]
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-s", "--save", help="save benchmark results to disk", action='store_true')
@@ -21,9 +22,6 @@ parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
 parser.add_argument("-sd", "--summarydir", help="directory where all plots and the summary go", type=str)
 parser.add_argument("-a", "--analyse", help="collect allocation sizes", action='store_true')
-
-
-benchmarks = [loop, mysql, falsesharing, dj_trace, larson]
 
 def main():
     args = parser.parse_args()
