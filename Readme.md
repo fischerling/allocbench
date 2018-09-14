@@ -9,7 +9,7 @@ git clone https://muhq.space/software/allocbench.git
 ## Usage
 
 	usage: bench.py [-h] [-s] [-l] [-r RUNS] [-v] [-b BENCHMARKS [BENCHMARKS ...]]
-	                [-ns] [-sd SUMMARYDIR] [-a]
+	                [-ns] [-sd SUMMARYDIR] [-a] [--nolibmemusage]
 
 	benchmark memory allocators
 
@@ -20,8 +20,10 @@ git clone https://muhq.space/software/allocbench.git
 	  -r RUNS, --runs RUNS  how often the benchmarks run
 	  -v, --verbose         more output
 	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
-	  benchmarks to run
+	                        benchmarks to run
 	  -ns, --nosum          don't produce plots
 	  -sd SUMMARYDIR, --summarydir SUMMARYDIR
-	  directory where all plots and the summary go
+	                        directory where all plots and the summary go
 	  -a, --analyse         collect allocation sizes
+	  --nolibmemusage       don't use libmemusage to analyse
+
