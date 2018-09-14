@@ -32,7 +32,7 @@ class Benchmark_Larson( Benchmark ):
 
     def summary(self, sumdir):
         # Plot threads->throughput and maxsize->throughput
-        self.plot_fixed_args("{throughput}",
+        self.plot_fixed_arg("{throughput}",
                     ylabel="'OPS/s'",
                     title = "'Larson: ' + arg + ' ' + str(arg_value)",
                     sumdir=sumdir)
