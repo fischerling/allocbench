@@ -34,8 +34,7 @@ class Benchmark_MYSQL( Benchmark ):
         if "hoard" in self.targets:
             del(self.targets["hoard"])
 
-        # self.args = {"nthreads" : range(1, multiprocessing.cpu_count() * 4 + 1, 2)}
-        self.args = {"nthreads" : range(1, 2)}
+        self.args = {"nthreads" : range(1, multiprocessing.cpu_count() * 4 + 1, 2)}
         self.cmd = cmd
         self.measure_cmd = ""
 
