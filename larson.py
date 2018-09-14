@@ -26,7 +26,7 @@ class Benchmark_Larson( Benchmark ):
         self.requirements = ["build/larson"]
         super().__init__()
 
-    def process_stdout(self, result, stdout, verbose):
+    def process_output(self, result, stdout, stderr, target, perm, verbose):
         for l in stdout.splitlines():
             res = throughput_re.match(l)
             if res:

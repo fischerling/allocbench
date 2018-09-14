@@ -4,6 +4,7 @@ import csv
 import itertools
 import os
 import pickle
+import shutil
 import subprocess
 
 from common_targets import common_targets
@@ -14,7 +15,7 @@ class Benchmark (object):
         "name" : "default_benchmark",
         "description" : "This is the default benchmark description please add your own useful one.",
         
-        "perf_cmd" : "perf stat -x, -dd ",
+        "measure_cmd" : "perf stat -x, -dd ",
         "analyse_cmd" : "memusage -p {} -t ",
         "cmd" : "true",
         "targets" : common_targets,
@@ -114,64 +115,63 @@ class Benchmark (object):
                 yield p
             
 
-    def analyse(self, verbose=False):
-        for perm in self.iterate_args():
+    def analyse(self, verbose=False, nolibmemusage=True):
+        if not nolibmemusage and not shutil.which("memusage"):
+            print("memusage not found. Using chattymalloc.")
+            libmemusage = False
+
+        if nolibmemusage:
+            import chattyparser
+            actual_cmd = ""
+            old_preload = os.environ.get("LD_PRELOAD", None)
+            os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
+
+        n = len(list(self.iterate_args()))
+        for i, perm in enumerate(self.iterate_args()):
+            print(i + 1, "of", n, "\r", end='')
             perm = perm._asdict()
             file_name = self.name + "."
             file_name += ".".join([str(x) for x in perm.values()])
             file_name += ".memusage"
 
-            actual_cmd = self.analyse_cmd.format(file_name + ".png")
+            if not nolibmemusage:
+                actual_cmd = self.analyse_cmd.format(file_name + ".png")
+
             if "binary_suffix" in self.cmd:
                 perm["binary_suffix"] = ""
             actual_cmd += self.cmd.format(**perm)
             
-            with open(file_name + ".hist", "w") as f:
-                res = subprocess.run(actual_cmd.split(),
+            res = subprocess.run(actual_cmd.split(),
                                     stdout=subprocess.PIPE,
-                                    stderr=f,
+                                    stderr=subprocess.PIPE,
                                     universal_newlines=True)
 
-                if res.returncode != 0:
-                    print(actual_cmd, "failed.")
-                    print("Aborting analysing.")
-                    print("You may look at", file_name + ".hist", "to fix this.")
-                    return
+            if res.returncode != 0:
+                print(actual_cmd, "failed.")
+                print("Stdout:", res.stdout)
+                print("Stderr:", res.stderr)
+                print("Aborting analysing.")
+                return
 
-    def parse_chattymalloc_data(self, path="chattymalloc.data"):
-        hist = {}
-        total = 0
-        with open(path, "r") as f:
-            for l in f.readlines():
-                total += 1
+            if nolibmemusage:
                 try:
-                    n = int(l)
-                except ValueError:
-                    pass
-                hist[n] = hist.get(n, 0) + 1
-        hist["total"] = total
-        return hist
+                    hist, calls, reqsize, top5reqsize = chattyparser.parse()
+                    top5 = [s[1] for s in sorted([(n, s) for s, n in hist.items()])]
+                    hist, calls, reqsize, top5reqsize = chattyparser.parse(track_top5=top5)
 
-    def plot_hist_ascii(self, hist, path):
-        total = hist["total"]
-        del(hist["total"])
-        bins = {}
-        bin = 1
-        for size in sorted(hist):
-            if int(size) > bin * 16:
-                bin += 1
-            bins[bin] = bins.get(bin, 0) + hist[size]
-        hist["total"] = total
+                    chattyparser.plot_hist_ascii(hist, calls, file_name + ".hist")
+                    chattyparser.plot_profile(reqsize, top5reqsize, file_name + ".profile.png")
+                except MemoryError as memerr:
+                    print("Can't Analyse", actual_cmd, "with chattymalloc because",
+                            "to much memory would be needed.")
+                    continue
 
-        with open(path, "w") as f:
-            print("Total malloc calls:", total, file=f)
-            print("Histogram of sizes:", file=f)
-            for b in sorted(bins):
-                perc = bins[b]/total*100
-                print((b-1)*16, '-', b*16-1, '\t', bins[b],
-                        perc, '%', '*'*int(perc/2), file=f)
+        os.environ["LD_PRELOAD"] = old_preload or ""
+        print()
 
     def run(self, verbose=False, runs=5):
+        if runs > 0:
+            print("Running", self.name, "...")
         n = len(list(self.iterate_args())) * len(self.targets)
         for run in range(1, runs + 1):
             print(str(run) + ". run")
@@ -190,9 +190,9 @@ class Benchmark (object):
 
                 for perm in self.iterate_args():
                     i += 1
-                    print(i, "of", n, "\r", end='')
+                    print(i, "of", n,"\r", end='')
                     
-                    actual_cmd = self.perf_cmd
+                    actual_cmd = self.measure_cmd
 
                     perm_dict = perm._asdict()
                     perm_dict.update(t)
@@ -227,11 +227,12 @@ class Benchmark (object):
                                 break
                     os.remove("status")
                         
-                    if hasattr(self, "process_stdout"):
-                        self.process_stdout(result, res.stdout, verbose)
+                    if hasattr(self, "process_output"):
+                        self.process_output(result, res.stdout, res.stderr,
+                                                tname, perm, verbose)
 
                     # Parse perf output if available
-                    if self.perf_cmd != "":
+                    if self.measure_cmd != self.defaults["measure_cmd"]:
                         csvreader = csv.reader(res.stderr.splitlines(), delimiter=',')
                         for row in csvreader:
                             # Split of the user/kernel space info to be better portable

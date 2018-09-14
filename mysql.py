@@ -36,7 +36,7 @@ class Benchmark_MYSQL( Benchmark ):
 
         self.args = {"nthreads" : range(1, multiprocessing.cpu_count() * 4 + 1, 2)}
         self.cmd = cmd
-        self.perf_cmd = ""
+        self.measure_cmd = ""
 
         self.requirements = ["mysqld", "sysbench"]
         super().__init__()
@@ -127,7 +127,7 @@ class Benchmark_MYSQL( Benchmark ):
         self.server.kill()
         self.server.wait()
 
-    def process_stdout(self, result, stdout, verbose):
+    def process_output(self, result, stdout, stderr, target, perm, verbose):
         result["transactions"] = re.search("transactions:\s*(\d*)", stdout).group(1)
         result["queries"] = re.search("queries:\s*(\d*)", stdout).group(1)
         # Latency

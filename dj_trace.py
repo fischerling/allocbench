@@ -77,24 +77,25 @@ class Benchmark_DJ_Trace( Benchmark ):
                     sys.stderr.write("\n")
         return True
 
-    def process_stdout(self, result, stdout, verbose):
+    def process_output(self, result, stdout, target, perm, verbose):
         def to_int(s):
             return int(s.replace(',', ""))
 
+        regexs = {7:malloc_re ,8:calloc_re, 9:realloc_re, 10:free_re}
+        functions = {7:"malloc", 8:"calloc", 9:"realloc", 10:"free"}
         for i, l in enumerate(stdout.splitlines()):
             if i == 3:
                 result["Max_RSS"] = to_int(max_rss_re.match(l).group("rss"))
             elif i == 4:
                 result["Ideal_RSS"] = to_int(ideal_rss_re.match(l).group("rss"))
-            elif i == 7:
-                result["avg_malloc"] = to_int(malloc_re.match(l).group("time"))
-            elif i == 8:
-                result["avg_calloc"] = to_int(calloc_re.match(l).group("time"))
-            elif i == 9:
-                result["avg_realloc"] = to_int(realloc_re.match(l).group("time"))
-            elif i == 10:
-                result["avg_free"] = to_int(free_re.match(l).group("time"))
-        
+            elif i in [7, 8, 9, 10]:
+                res = regexs[i].match(l)
+                fname = functions[i]
+                result["avg_" + fname] = to_int(res.group("time"))
+                if not perm.workload in self.results:
+                    self.results[perm.workload] = {"malloc_calls":0, "calloc_calls":0,
+                                            "realloc_calls":0, "free_calls":0}
+                self.results[perm.workload][fname + "_calls"] = res.group("calls")
 
     def summary(self, sd=None):
         args = self.results["args"]
@@ -116,20 +117,24 @@ class Benchmark_DJ_Trace( Benchmark ):
             plt.clf()
 
         # Function Times
+        xa = np.arange(0, 6, 1.5)
         for perm in self.iterate_args():
             for i, target in enumerate(targets):
-                x_vals = [x-i/8 for x in range(0,4)]
+                x_vals = [x-i/len(targets) for x in xa]
                 y_vals = [0] * 4
                 y_vals[0] = np.mean([x["avg_malloc"] for x in self.results[target][perm]])
                 y_vals[1] = np.mean([x["avg_calloc"] for x in self.results[target][perm]])
                 y_vals[2] = np.mean([x["avg_realloc"] for x in self.results[target][perm]])
                 y_vals[3] = np.mean([x["avg_free"] for x in self.results[target][perm]])
-                plt.bar(x_vals, y_vals, width=0.2, align="center",
+                plt.bar(x_vals, y_vals, width=0.25, align="center",
                         label=target, color=targets[target]["color"])
 
             plt.legend(loc="best")
-            plt.xticks(range(0,4), ["malloc", "calloc", "realloc", "free"])
-            plt.ylabel("Avg time in ms")
+            plt.xticks(xa, ["malloc\n" + str(self.results[perm.workload]["malloc_calls"]) + "\ncalls",
+                            "calloc\n" + str(self.results[perm.workload]["calloc_calls"]) + "\ncalls",
+                            "realloc\n" + str(self.results[perm.workload]["realloc_calls"]) + "\ncalls",
+                            "free\n" + str(self.results[perm.workload]["free_calls"]) + "\ncalls"])
+            plt.ylabel("Avg ticks per function")
             plt.title("Avg API call times " + perm.workload + ":")
             plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "apitimes", "png"])))
             plt.clf()
