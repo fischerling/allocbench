@@ -17,8 +17,8 @@ class Benchmark (object):
         "name" : "default_benchmark",
         "description" : "This is the default benchmark description please add your own useful one.",
 
-        "measure_cmd" : "perf stat -x, -dd ",
-        "analyse_cmd" : "memusage -p {} -t ",
+        "measure_cmd" : "perf stat -x, -d",
+        "analyse_cmd" : "memusage -p {} -t",
         "cmd" : "true",
         "targets" : common_targets,
     }
@@ -137,7 +137,7 @@ class Benchmark (object):
             file_name += ".memusage"
 
             if not nolibmemusage:
-                actual_cmd = self.analyse_cmd.format(file_name + ".png")
+                actual_cmd = self.analyse_cmd.format(file_name + ".png") + " "
 
             if "binary_suffix" in self.cmd:
                 perm["binary_suffix"] = ""
@@ -194,7 +194,7 @@ class Benchmark (object):
                     i += 1
                     print(i, "of", n,"\r", end='')
 
-                    actual_cmd = self.measure_cmd
+                    actual_cmd = self.measure_cmd + " "
 
                     perm_dict = perm._asdict()
                     perm_dict.update(t)
