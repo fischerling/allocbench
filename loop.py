@@ -1,7 +1,4 @@
-import matplotlib.pyplot as plt
 import multiprocessing
-import numpy as np
-import os
 
 from benchmark import Benchmark
 
@@ -23,9 +20,6 @@ class Benchmark_Loop( Benchmark ):
         super().__init__()
 
     def summary(self, sumdir):
-        args = self.results["args"]
-        targets = self.results["targets"]
-
         # Speed
         self.plot_fixed_arg("perm.nthreads / float({task-clock})",
                     ylabel = '"MOPS/s"',
