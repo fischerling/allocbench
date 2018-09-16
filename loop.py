@@ -21,10 +21,10 @@ class Benchmark_Loop( Benchmark ):
 
     def summary(self, sumdir):
         # Speed
-        self.plot_fixed_arg("perm.nthreads / float({task-clock})",
-                    ylabel = '"MOPS/s"',
+        self.plot_fixed_arg("perm.nthreads / (float({task-clock})/1000)",
+                    ylabel = '"MOPS/cpu-second"',
                     title = '"Loop: " + arg + " " + str(arg_value)',
-                    filepostfix="tclock",
+                    filepostfix="time",
                     sumdir=sumdir)
 
         # Memusage
