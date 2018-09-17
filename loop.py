@@ -9,7 +9,7 @@ class Benchmark_Loop( Benchmark ):
                             How allocations are freed can be changed with the benchmark
                             version""",
 
-        self.cmd = "build/bench_loop{binary_suffix} 1.2 {nthreads} 1000000 {maxsize} 10"
+        self.cmd = "build/bench_loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
         self.args = {
                         "maxsize" : [2 ** x for x in range(6, 16)],
