@@ -29,13 +29,11 @@ class Benchmark_Falsesharing( Benchmark ):
     def process_output(self, result, stdout, stderr, target, perm, verbose):
         result["time"] = time_re.match(stdout).group("time")
 
-    def summary(self, sd=None):
+    def summary(self, sumdir=None):
         # Speedup thrash
         args = self.results["args"]
         nthreads = args["threads"]
         targets = self.results["targets"]
-
-        sd = sd or ""
 
         for bench in self.results["args"]["bench"]:
             for target in targets:
@@ -58,33 +56,21 @@ class Benchmark_Falsesharing( Benchmark ):
             plt.xlabel("threads")
             plt.ylabel("speedup")
             plt.title(bench + " speedup" )
-            plt.savefig(os.path.join(sd, self.name + "." + bench + ".png"))
+            plt.savefig(os.path.join(sumdir, self.name + "." + bench + ".png"))
             plt.clf()
 
-            for target in targets:
-                y_vals = []
+        self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+                    ylabel="'l1 cache misses in %'",
+                    title = "'cache misses: ' + arg + ' ' + str(arg_value)",
+                    filepostfix = "l1-misses",
+                    sumdir=sumdir,
+                    fixed=["bench"])
 
-                for perm in self.iterate_args_fixed({"bench" : bench}, args=args):
-                    l1_load_misses = []
-
-                    for m in self.results[target][perm]:
-                        misses = 0
-                        loads = 0
-                        for e in m:
-                            if "L1-dcache-load-misses" in e:
-                                misses = float(m[e])
-                            elif "L1-dcache-loads" in e:
-                                loads = float(m[e])
-                        l1_load_misses.append(misses/loads)
-
-                    y_vals.append(np.mean(l1_load_misses) * 100)
-
-                plt.plot(nthreads, y_vals, marker='.', linestyle='-', label=target, color=targets[target]["color"])
-            plt.legend()
-            plt.xlabel("threads")
-            plt.ylabel("l1-cache-misses in %")
-            plt.title(bench + " cache-misses")
-            plt.savefig(os.path.join(sd, self.name + "." + bench + ".l1misses.png"))
-            plt.clf()
+        self.plot_fixed_arg("({LLC-load-misses}/{LLC-loads})*100",
+                    ylabel="'l1 cache misses in %'",
+                    title = "'LLC misses: ' + arg + ' ' + str(arg_value)",
+                    filepostfix = "llc-misses",
+                    sumdir=sumdir,
+                    fixed=["bench"])
 
 falsesharing = Benchmark_Falsesharing()
