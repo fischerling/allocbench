@@ -13,7 +13,7 @@ class Benchmark_Larson( Benchmark ):
                              and deallocates objects, and then transfers some objects
                              (randomly selected) to other threads to be freed."""
 
-        self.cmd = "build/larson{binary_suffix} 1 8 {maxsize} 1000 10000 1 {threads}"
+        self.cmd = "build/larson{binary_suffix} 1 8 {maxsize} 1000 50000 1 {threads}"
         self.measure_cmd = ""
 
         self.args = {
