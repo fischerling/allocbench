@@ -14,7 +14,6 @@ class Benchmark_Larson( Benchmark ):
                              (randomly selected) to other threads to be freed."""
 
         self.cmd = "build/larson{binary_suffix} 1 8 {maxsize} 1000 50000 1 {threads}"
-        self.measure_cmd = ""
 
         self.args = {
                         "maxsize" : [8, 32, 64, 128, 256, 512, 1024],
@@ -33,9 +32,23 @@ class Benchmark_Larson( Benchmark ):
 
     def summary(self, sumdir):
         # Plot threads->throughput and maxsize->throughput
-        self.plot_fixed_arg("{throughput}",
-                    ylabel="'OPS/s'",
+        self.plot_fixed_arg("{throughput}/1000000",
+                    ylabel="'MOPS/s'",
                     title = "'Larson: ' + arg + ' ' + str(arg_value)",
+                    filepostfix = "throughput",
+                    sumdir=sumdir)
+
+        self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+                    ylabel="'l1 cache misses in %'",
+                    title = "'Larson cache misses: ' + arg + ' ' + str(arg_value)",
+                    filepostfix = "cachemisses",
+                    sumdir=sumdir)
+
+        # Memusage
+        self.plot_fixed_arg("int({VmHWM})",
+                    ylabel='"VmHWM in kB"',
+                    title= '"Loop Memusage: " + arg + " " + str(arg_value)',
+                    filepostfix="memusage",
                     sumdir=sumdir)
 
 larson = Benchmark_Larson()
