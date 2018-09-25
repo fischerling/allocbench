@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import multiprocessing
 import numpy as np
 import os
@@ -12,15 +13,16 @@ from benchmark import Benchmark
 comma_sep_number_re = "(?:\d*(?:,\d*)?)*"
 rss_re = "(?P<rss>" + comma_sep_number_re + ")"
 time_re = "(?P<time>" + comma_sep_number_re + ")"
-calls_re = "(?P<calls>" + comma_sep_number_re + ")"
+
+cpu_time_re = re.compile("^{} usec across.*threads$".format(time_rss))
 
 max_rss_re = re.compile("^{} Kb Max RSS".format(rss_re))
 ideal_rss_re = re.compile("^{} Kb Max Ideal RSS".format(rss_re))
 
-malloc_re = re.compile("^Avg malloc time:\s*{} in\s*{} calls$".format(time_re, calls_re))
-calloc_re = re.compile("^Avg calloc time:\s*{} in\s*{} calls$".format(time_re, calls_re))
-realloc_re = re.compile("^Avg realloc time:\s*{} in\s*{} calls$".format(time_re, calls_re))
-free_re = re.compile("^Avg free time:\s*{} in\s*{} calls$".format(time_re, calls_re))
+malloc_re = re.compile("^Avg malloc time:\s*{} in.*calls$".format(time_re))
+calloc_re = re.compile("^Avg calloc time:\s*{} in.*calls$".format(time_re))
+realloc_re = re.compile("^Avg realloc time:\s*{} in.*calls$".format(time_re))
+free_re = re.compile("^Avg free time:\s*{} in.*calls$".format(time_re))
 
 class Benchmark_DJ_Trace( Benchmark ):
     def __init__(self):
@@ -33,6 +35,7 @@ class Benchmark_DJ_Trace( Benchmark ):
                              glibc allocator.""",
 
         self.cmd = "build/trace_run{binary_suffix} dj_workloads/{workload}.wl"
+        self.measure_cmd = ""
 
         self.args = {
                         "workload" : [
@@ -47,6 +50,35 @@ class Benchmark_DJ_Trace( Benchmark ):
                                         "proprietary-2",
                                       ]
                     }
+        self.results = {
+                        "389-ds-2": {
+                            "malloc": 170500018, "calloc": 161787184,
+                            "realloc": 404134, "free": 314856324, "threads": 41},
+                        "dj": {
+                            "malloc": 2000000, "calloc": 200, "realloc": 0,
+                            "free": 2003140, "threads": 201},
+                        "dj2": {
+                            "malloc":29263321, "calloc": 3798404, "realloc":122956,
+                            "free": 32709054, "threads":36},
+                        "mt_test_one_alloc": {
+                            "malloc":524290, "calloc": 1, "realloc":0,
+                            "free":594788, "threads":2},
+                        "oocalc": {
+                            "malloc":6731734, "calloc": 38421, "realloc":14108,
+                            "free":6826686, "threads":88},
+                        "qemu-virtio": {
+                            "malloc":1772163, "calloc": 146634,
+                            "realloc":59813, "free":1954732, "threads":3},
+                        "qemu-win7": {
+                            "malloc":980904, "calloc": 225420,
+                            "realloc":89880, "free":1347825, "threads":6},
+                        "proprietary-1": {
+                            "malloc":316032131, "calloc": 5642, "realloc":84,
+                            "free":319919727, "threads":20},
+                        "proprietary-2": {
+                            "malloc":9753948, "calloc": 4693,
+                            "realloc":117, "free":10099261, "threads": 19},
+                        }
 
         self.requirements = ["build/trace_run"]
         super().__init__()
@@ -84,6 +116,8 @@ class Benchmark_DJ_Trace( Benchmark ):
         regexs = {7:malloc_re ,8:calloc_re, 9:realloc_re, 10:free_re}
         functions = {7:"malloc", 8:"calloc", 9:"realloc", 10:"free"}
         for i, l in enumerate(stdout.splitlines()):
+            if i == 2:
+                result["cputime"] = to_int(cpu_time_re.match(l).group("time"))
             if i == 3:
                 result["Max_RSS"] = to_int(max_rss_re.match(l).group("rss"))
             elif i == 4:
@@ -92,10 +126,6 @@ class Benchmark_DJ_Trace( Benchmark ):
                 res = regexs[i].match(l)
                 fname = functions[i]
                 result["avg_" + fname] = to_int(res.group("time"))
-                if not perm.workload in self.results:
-                    self.results[perm.workload] = {"malloc_calls":0, "calloc_calls":0,
-                                            "realloc_calls":0, "free_calls":0}
-                self.results[perm.workload][fname + "_calls"] = res.group("calls")
 
     def summary(self, sd=None):
         args = self.results["args"]
@@ -106,21 +136,24 @@ class Benchmark_DJ_Trace( Benchmark ):
         # Total times
         for perm in self.iterate_args():
             for i, target in enumerate(targets):
-                d = [float(x["task-clock"]) for x in self.results[target][perm]]
-                y_val = np.mean(d)
+                d = [float(x["cputime"]) for x in self.results[target][perm]]
+                y_val = np.mean(d)/1000
                 plt.bar([i], y_val, label=target, color=targets[target]["color"])
 
-            plt.legend(loc="lower right")
-            plt.ylabel("Time in ms")
-            plt.title("Runtime of " + perm.workload + ":")
+            # ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/1000))
+            # plt.gca().yaxis.set_major_formatter(ticks_y)
+
+            plt.legend(loc="best")
+            plt.ylabel("Zeit in ms")
+            plt.title("Gesamte Laufzeit")
             plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "runtime", "png"])))
             plt.clf()
 
-        # Function Times
+    # Function Times
         xa = np.arange(0, 6, 1.5)
         for perm in self.iterate_args():
             for i, target in enumerate(targets):
-                x_vals = [x-i/len(targets) for x in xa]
+                x_vals = [x+i/len(targets) for x in xa]
                 y_vals = [0] * 4
                 y_vals[0] = np.mean([x["avg_malloc"] for x in self.results[target][perm]])
                 y_vals[1] = np.mean([x["avg_calloc"] for x in self.results[target][perm]])
@@ -130,12 +163,12 @@ class Benchmark_DJ_Trace( Benchmark ):
                         label=target, color=targets[target]["color"])
 
             plt.legend(loc="best")
-            plt.xticks(xa, ["malloc\n" + str(self.results[perm.workload]["malloc_calls"]) + "\ncalls",
-                            "calloc\n" + str(self.results[perm.workload]["calloc_calls"]) + "\ncalls",
-                            "realloc\n" + str(self.results[perm.workload]["realloc_calls"]) + "\ncalls",
-                            "free\n" + str(self.results[perm.workload]["free_calls"]) + "\ncalls"])
-            plt.ylabel("Avg ticks per function")
-            plt.title("Avg API call times " + perm.workload + ":")
+            plt.xticks(xa + 1/len(targets)*2, ["malloc\n" + str(self.results[perm.workload]["malloc"]) + "\ncalls",
+                            "calloc\n" + str(self.results[perm.workload]["calloc"]) + "\ncalls",
+                            "realloc\n" + str(self.results[perm.workload]["realloc"]) + "\ncalls",
+                            "free\n" + str(self.results[perm.workload]["free"]) + "\ncalls"])
+            plt.ylabel("Durchschnittliche Zeit in cycles")
+            plt.title("Durchscnittliche Laufzeiten der API Funktionen")
             plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "apitimes", "png"])))
             plt.clf()
 
@@ -143,17 +176,68 @@ class Benchmark_DJ_Trace( Benchmark ):
         for perm in self.iterate_args():
             for i, target in enumerate(targets):
                 d = [x["Max_RSS"] for x in self.results[target][perm]]
-                y_val = np.mean(d)
+                y_val = np.mean(d)/1000
                 plt.bar([i], y_val, label=target, color=targets[target]["color"])
 
             # add ideal rss
-            y_val = self.results[list(targets.keys())[0]][perm][0]["Ideal_RSS"]
+            y_val = self.results[list(targets.keys())[0]][perm][0]["Ideal_RSS"]/1000
             plt.bar([len(targets)], y_val, label="Ideal RSS")
 
+            # ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/1000))
+            # plt.gca().yaxis.set_major_formatter(ticks_y)
+
             plt.legend(loc="best")
-            plt.ylabel("Max RSS in Kb")
-            plt.title("Max RSS " + perm.workload + ":")
+            plt.ylabel("Max RSS in MB")
+            plt.title("Maximal benötigter Speicher (VmHWM)")
             plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "rss", "png"])))
             plt.clf()
+
+        # Tables
+        for perm in self.iterate_args():
+            # collect data
+            d = {target: {} for target in targets}
+            for i, target in enumerate(targets):
+                d[target]["time"] = [float(x["task-clock"]) for x in self.results[target][perm]]
+                d[target]["rss"] = [x["Max_RSS"] for x in self.results[target][perm]]
+
+            times = [np.mean(d[target]["time"]) for target in targets]
+            tmin = min(times)
+            tmax = max(times)
+
+            rss = [np.mean(d[target]["rss"]) for target in targets]
+            rssmin = min(rss)
+            rssmax = max(rss)
+
+            fname = os.path.join(sd, ".".join([self.name, perm.workload, "table.tex"]))
+            with open(fname, "w") as f:
+                print("\\begin{tabular}{| l | l | l |}" , file=f)
+                print("& Zeit (ms) / $\\sigma$ (\\%) & VmHWM (KB) / $\\sigma$ (\\%) \\\\", file=f)
+                print("\\hline", file=f)
+
+                for target in targets:
+                    print(target, end=" & ", file=f)
+
+                    t = d[target]["time"]
+                    m = np.mean(t)
+                    s = "\\textcolor{{{}}}{{{:.3f}}} / {:.3f}"
+                    if m == tmin:
+                        color = "green"
+                    elif m == tmax:
+                        color = "red"
+                    else:
+                        color = "black"
+                    print(s.format(color, m, np.std(t)/m), end=" & ", file=f)
+
+                    t = d[target]["rss"]
+                    m = np.mean(t)
+                    if m == rssmin:
+                        color = "green"
+                    elif m == rssmax:
+                        color = "red"
+                    else:
+                        color = "black"
+                    print(s.format(color, m, np.std(t)/m), "\\\\", file=f)
+
+                print("\end{tabular}", file=f)
 
 dj_trace = Benchmark_DJ_Trace()
