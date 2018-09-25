@@ -157,18 +157,17 @@ class Benchmark (object):
 
             if nolibmemusage:
                 try:
-                    hist, calls, reqsize, top5reqsize = chattyparser.parse()
-                    top5 = [s[1] for s in sorted([(n, s) for s, n in hist.items()])]
-                    hist, calls, reqsize, top5reqsize = chattyparser.parse(track_top5=top5)
-
-                    chattyparser.plot_hist_ascii(hist, calls, file_name + ".hist")
-                    chattyparser.plot_profile(reqsize, top5reqsize, file_name + ".profile.png")
+                    chattyparser.plot()
                 except MemoryError as memerr:
                     print("Can't Analyse", actual_cmd, "with chattymalloc because",
                             "to much memory would be needed.")
                     continue
+            else:
+                with open(file_name + ".hist", "w") as f:
+                    f.write(res.stderr)
 
-        os.environ["LD_PRELOAD"] = old_preload or ""
+        if nolibmemusage:
+            os.environ["LD_PRELOAD"] = old_preload or ""
         print()
 
     def run(self, verbose=False, runs=5):
@@ -263,7 +262,7 @@ class Benchmark (object):
 
         for target in targets:
             y_vals = []
-            for perm in self.iterate_args():
+            for perm in self.iterate_args(args=args):
                 d = []
                 for m in self.results[target][perm]:
                     d.append(eval(yval.format(**m)))
@@ -281,7 +280,7 @@ class Benchmark (object):
         plt.clf()
 
     def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
-                        title="default title", filepostfix="", sumdir="", fixed=[]):
+                        title="'default title'", filepostfix="", sumdir="", fixed=[]):
 
         args = self.results["args"]
         targets = self.results["targets"]
@@ -308,3 +307,63 @@ class Benchmark (object):
                 plt.savefig(os.path.join(sumdir, ".".join([self.name, arg,
                     str(arg_value), filepostfix, "png"])))
                 plt.clf()
+
+    def write_best_doublearg_tex_table(self, evaluation, sort=">", filepostfix="", sumdir="", std=False):
+        args = self.results["args"]
+        keys = list(args.keys())
+        targets = self.results["targets"]
+
+        header_arg = keys[0] if len(args[keys[0]]) < len(args[keys[1]]) else keys[1]
+        row_arg = [arg for arg in args if arg != header_arg][0]
+
+        headers = args[header_arg]
+        print(header_arg, len(headers))
+        rows = args[row_arg]
+        print(row_arg, len(rows))
+
+        cell_text = []
+        for av in rows:
+            row = []
+            for perm in self.iterate_args_fixed({row_arg: av}, args=args):
+                best = []
+                best_val = None
+                for target in targets:
+                    d = []
+                    for m in self.results[target][perm]:
+                        d.append(eval(evaluation.format(**m)))
+                    mean = np.mean(d)
+                    if target == "glibc":
+                        print(perm)
+                        print(np.std(d)/mean, "%")
+                    if perm.maxsize==64 and perm.nthreads==2:
+                        print(target, mean)
+                    if not best_val:
+                        best = [target]
+                        best_val = mean
+                    elif (sort == ">" and mean > best_val) or (sort == "<" and mean < best_val):
+
+                        best = [target]
+                        best_val = mean
+                    elif mean == best_val:
+                        best.append(target)
+
+                row.append("{}: {:.3f}".format(best[0], best_val))
+            cell_text.append(row)
+
+
+        fname = os.path.join(sumdir, ".".join([self.name, filepostfix, "tex"]))
+        with open(fname , "w") as f:
+            print("\\begin{tabular}{|", end="", file=f)
+            print(" l |" * len(headers),"}", file=f)
+
+            print(header_arg+"/"+row_arg, end=" & ", file=f)
+            for header in headers[:-1]:
+                print(header, end="& ", file=f)
+            print(headers[-1], "\\\\", file=f)
+
+            for i, row in enumerate(cell_text):
+                print(rows[i], end=" & ", file=f)
+                for e in row[:-1]:
+                    print(e, end=" & ",file=f)
+                print(row[-1], "\\\\", file=f)
+            print("\\end{tabular}", file=f)
