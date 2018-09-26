@@ -24,13 +24,13 @@ typedef struct ThreadArgs {
 static void* malloc_then_write(size_t size) {
 	void* ptr = malloc(size);
 	// Write to ptr
-	*((char*)ptr) = '!';
+	/* *((char*)ptr) = '!'; */
 	return ptr;
 }
 
 static void read_then_free(void* ptr) {
 	// Read before free
-	char s __attribute__((unused)) = *((char*)ptr);
+	/* char s __attribute__((unused)) = *((char*)ptr); */
 	free(ptr);
 }
 static void* test_thread_func(void* arg) {
