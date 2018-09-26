@@ -14,7 +14,7 @@ comma_sep_number_re = "(?:\d*(?:,\d*)?)*"
 rss_re = "(?P<rss>" + comma_sep_number_re + ")"
 time_re = "(?P<time>" + comma_sep_number_re + ")"
 
-cpu_time_re = re.compile("^{} usec across.*threads$".format(time_rss))
+cpu_time_re = re.compile("^{} usec across.*threads$".format(time_re))
 
 max_rss_re = re.compile("^{} Kb Max RSS".format(rss_re))
 ideal_rss_re = re.compile("^{} Kb Max Ideal RSS".format(rss_re))
@@ -149,7 +149,7 @@ class Benchmark_DJ_Trace( Benchmark ):
             plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "runtime", "png"])))
             plt.clf()
 
-    # Function Times
+        # Function Times
         xa = np.arange(0, 6, 1.5)
         for perm in self.iterate_args():
             for i, target in enumerate(targets):
