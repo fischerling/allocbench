@@ -16,10 +16,16 @@ parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_
 parser.add_argument("-sd", "--summarydir", help="directory where all plots and the summary go", type=str)
 parser.add_argument("-a", "--analyse", help="collect allocation sizes", action='store_true')
 parser.add_argument("--nolibmemusage", help="don't use libmemusage to analyse", action='store_true')
+parser.add_argument("--license", help="print license info and exit", action='store_true')
 
 def main():
     args = parser.parse_args()
-    print (args)
+    if args.license:
+        print("Copyright (C) 2018-1029 Florian Fischer")
+        print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
+        return
+    if args.verbose:
+        print(args)
 
     if args.summarydir and not os.path.isdir(args.summarydir):
         os.makedirs(args.summarydir)

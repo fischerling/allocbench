@@ -9,7 +9,7 @@ git clone https://muhq.space/software/allocbench.git
 ## Usage
 
 	usage: bench.py [-h] [-s] [-l] [-r RUNS] [-v] [-b BENCHMARKS [BENCHMARKS ...]]
-	                [-ns] [-sd SUMMARYDIR] [-a] [--nolibmemusage]
+	                [-ns] [-sd SUMMARYDIR] [-a] [--nolibmemusage] [--license]
 
 	benchmark memory allocators
 
@@ -26,6 +26,7 @@ git clone https://muhq.space/software/allocbench.git
 	                        directory where all plots and the summary go
 	  -a, --analyse         collect allocation sizes
 	  --nolibmemusage       don't use libmemusage to analyse
+	  --license             print license info and exit
 
 ## License
 
