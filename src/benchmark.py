@@ -9,7 +9,7 @@ import pickle
 import shutil
 import subprocess
 
-from common_targets import common_targets
+from src.common_targets import common_targets
 
 class Benchmark (object):
 
@@ -252,7 +252,7 @@ class Benchmark (object):
             print()
         return True
 
-    def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
+    def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'", autoticks=True,
                         title="default title", filepostfix="", sumdir="", arg=""):
 
         args = self.results["args"]
@@ -267,19 +267,23 @@ class Benchmark (object):
                 for m in self.results[target][perm]:
                     d.append(eval(yval.format(**m)))
                 y_vals.append(np.mean(d))
-            x_vals = list(range(1, len(y_vals) + 1))
+            if not autoticks:
+                x_vals = list(range(1, len(y_vals) + 1))
+            else:
+                x_vals = args[arg]
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                 label=target, color=targets[target]["color"])
 
         plt.legend()
-        plt.xticks(x_vals, args[arg])
+        if not autoticks:
+            plt.xticks(x_vals, args[arg])
         plt.xlabel(eval(xlabel))
         plt.ylabel(eval(ylabel))
         plt.title(eval(title))
         plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, "png"])))
         plt.clf()
 
-    def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
+    def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg", autoticks=True,
                         title="'default title'", filepostfix="", sumdir="", fixed=[]):
 
         args = self.results["args"]
@@ -295,12 +299,16 @@ class Benchmark (object):
                         for m in self.results[target][perm]:
                             d.append(eval(yval.format(**m)))
                         y_vals.append(np.mean(d))
-                    x_vals = list(range(1, len(y_vals) + 1))
+                    if not autoticks:
+                        x_vals = list(range(1, len(y_vals) + 1))
+                    else:
+                        x_vals = args[loose_arg]
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                         label=target, color=targets[target]["color"])
 
                 plt.legend()
-                plt.xticks(x_vals, args[loose_arg])
+                if not autoticks:
+                    plt.xticks(x_vals, args[loose_arg])
                 plt.xlabel(eval(xlabel))
                 plt.ylabel(eval(ylabel))
                 plt.title(eval(title))
