@@ -9,8 +9,8 @@ import subprocess
 from subprocess import PIPE
 from time import sleep
 
-from benchmark import Benchmark
-from common_targets import common_targets
+from src.benchmark import Benchmark
+from src.common_targets import common_targets
 
 cwd = os.getcwd()
 
@@ -34,7 +34,7 @@ class Benchmark_MYSQL( Benchmark ):
         if "hoard" in self.targets:
             del(self.targets["hoard"])
 
-        self.args = {"nthreads" : range(1, multiprocessing.cpu_count() * 4 + 1, 2)}
+        self.args = {"nthreads" : range(1, multiprocessing.cpu_count() + 1)}
         self.cmd = cmd
         self.measure_cmd = ""
 
@@ -51,7 +51,7 @@ class Benchmark_MYSQL( Benchmark ):
                                        stderr=subprocess.PIPE,
                                        universal_newlines=True)
         #TODO make sure server comes up !
-        sleep(5)
+        sleep(10)
         return self.server.poll() == None
 
     def prepare(self, verbose=False):
@@ -99,6 +99,7 @@ class Benchmark_MYSQL( Benchmark ):
             ret = True
             p = subprocess.run(prepare_cmd, stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
+                print(p.stout)
                 print(p.stderr)
                 ret = False
 
@@ -147,20 +148,21 @@ class Benchmark_MYSQL( Benchmark ):
         nthreads = [0] + list(self.args["nthreads"])
         failed = False
 
-        os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
 
         runs = len(nthreads)
         for i, t in enumerate(nthreads):
             print("analysing", i + 1, "of", runs, "\r", end='')
 
+            os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
             if not self.start_and_wait_for_server(verbose):
                 print("Can't start server.")
                 print("Aborting analysing.")
-                return False
+                failed = True
+            os.environ["LD_PRELOAD"] = ""
 
-            if t != 0:
+            if not failed and t != 0:
                 target_cmd = self.cmd.format(nthreads=t).split(" ")
-                p = subrocess.run(target_cmd,
+                p = subprocess.run(target_cmd,
                                    stderr=PIPE,
                                    stdout=PIPE,
                                    universal_newlines=True)
@@ -186,7 +188,8 @@ class Benchmark_MYSQL( Benchmark ):
 
     def summary(self, sd):
         targets = self.results["targets"]
-        nthreads = list(self.results["args"]["nthreads"])
+        args = self.results["args"]
+        nthreads = list(args["nthreads"])
 
         # linear plot
         self.plot_single_arg("{transactions}",
@@ -221,5 +224,56 @@ class Benchmark_MYSQL( Benchmark ):
                     title = '"Memusage sysbench oltp read only"',
                     filepostfix = "ro.mem",
                     sumdir = sd)
+
+        # Colored latex table showing transactions count
+        d = {target: {} for target in targets}
+        for perm in self.iterate_args(args=args):
+            for i, target in enumerate(targets):
+                t = [float(x["transactions"]) for x in self.results[target][perm]]
+                m = np.mean(t)
+                s = np.std(t)/m
+                d[target][perm] = {"mean": m, "std" : s}
+
+        mins = {}
+        maxs = {}
+        for perm in self.iterate_args(args=args):
+            cmax = None
+            cmin = None
+            for i, target in enumerate(targets):
+                m = d[target][perm]["mean"]
+                if not cmax or m > cmax:
+                    cmax = m
+                if not cmin or m < cmin:
+                    cmin = m
+            maxs[perm] = cmax
+            mins[perm] = cmin
+
+        fname = os.path.join(sd, ".".join([self.name, "transactions.tex"]))
+        headers = [perm.nthreads for perm in self.iterate_args(args=args)]
+        with open(fname, "w") as f:
+            print("\\begin{tabular}{| l" + " l"*len(headers) + " |}" , file=f)
+            print("Fäden / Allokator ", end=" ", file=f)
+            for head in headers:
+                print("& {}".format(head), end=" ", file=f)
+            print("\\\\\n\\hline", file=f)
+
+            for target in targets:
+                print(target)
+                print(target, end=" ", file=f)
+                for perm in self.iterate_args(args=args):
+                    print(perm, d[target][perm]["std"])
+                    m = d[target][perm]["mean"]
+                    s = "& \\textcolor{{{}}}{{{:.3f}}}"
+                    if m == maxs[perm]:
+                        color = "green"
+                    elif m == mins[perm]:
+                        color = "red"
+                    else:
+                        color = "black"
+                    print(s.format(color, m), end=" ", file=f)
+                print("\\\\", file=f)
+
+            print("\end{tabular}", file=f)
+
 
 mysql = Benchmark_MYSQL()
