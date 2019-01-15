@@ -1,6 +1,6 @@
 import multiprocessing
 
-from benchmark import Benchmark
+from src.benchmark import Benchmark
 
 class Benchmark_Loop( Benchmark ):
     def __init__(self):
@@ -32,6 +32,17 @@ class Benchmark_Loop( Benchmark ):
                     ylabel='"VmHWM in kB"',
                     title= '"Loop Memusage: " + arg + " " + str(arg_value)',
                     filepostfix="memusage",
+                    sumdir=sumdir)
+
+        self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+                    ylabel='"L1 misses in %"',
+                    title= '"Loop l1 cache misses: " + arg + " " + str(arg_value)',
+                    filepostfix="l1misses",
+                    sumdir=sumdir)
+
+        # Speed Matrix
+        self.write_best_doublearg_tex_table("perm.nthreads / (float({task-clock})/1000)",
+                    filepostfix="memusage.matrix",
                     sumdir=sumdir)
 
 loop = Benchmark_Loop()
