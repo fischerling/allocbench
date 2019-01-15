@@ -4,7 +4,7 @@ import numpy as np
 import os
 import re
 
-from benchmark import Benchmark
+from src.benchmark import Benchmark
 
 time_re = re.compile("^Time elapsed = (?P<time>\d*\.\d*) seconds.$")
 
