@@ -27,3 +27,7 @@ git clone https://muhq.space/software/allocbench.git
 	  -a, --analyse         collect allocation sizes
 	  --nolibmemusage       don't use libmemusage to analyse
 
+## License
+
+This program is released under GPLv3. You can find a copy of the license
+in the LICENSE file in the programs root directory.
