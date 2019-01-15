@@ -2,9 +2,10 @@
 
 .DEFAULT_GOAL = all
 
-SRCDIR=benchmarks
-BENCH_C_SOURCES = $(shell find $(SRCDIR) -name "*.c")
-BENCH_CC_SOURCES = $(shell find $(SRCDIR) -name "*.cc")
+SRCDIR=src/
+BENCHSRCDIR=$(SRCDIR)/benchmarks
+BENCH_C_SOURCES = $(shell find $(BENCHSRCDIR) -name "*.c")
+BENCH_CC_SOURCES = $(shell find $(BENCHSRCDIR) -name "*.cc")
 
 OBJDIR = ./build
 
@@ -34,13 +35,13 @@ NOTC_TARGETS = $(BENCH_TARGETS:=-glibc-notc)
 
 all: $(BENCH_TARGETS) $(NOTC_TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so
 
-$(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c $(MAKEFILE_LIST)
+$(OBJDIR)/print_status_on_exit.so: $(SRCDIR)/print_status_on_exit.c $(MAKEFILE_LIST)
 	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
-$(OBJDIR)/chattymalloc.so: chattymalloc.c $(MAKEFILE_LIST)
+$(OBJDIR)/chattymalloc.so: $(SRCDIR)/chattymalloc.c $(MAKEFILE_LIST)
 	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
-$(OBJDIR)/trace_run: trace_run.c $(MAKEFILE_LIST)
+$(OBJDIR)/trace_run: $(SRCDIR)/trace_run.c $(MAKEFILE_LIST)
 	$(CC) -pthread $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/trace_run-glibc-notc: $(OBJDIR)/trace_run $(MAKEFILE_LIST)

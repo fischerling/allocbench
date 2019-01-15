@@ -1,7 +1,7 @@
 import multiprocessing
 import re
 
-from benchmark import Benchmark
+from src.benchmark import Benchmark
 
 throughput_re = re.compile("^Throughput =\s*(?P<throughput>\d+) operations per second.$")
 

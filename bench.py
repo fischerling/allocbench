@@ -1,17 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
+import importlib
 import os
 
-import common_targets
-
-from falsesharing import falsesharing
-from loop import loop
-from mysql import mysql
-from dj_trace import dj_trace
-from larson import larson
-
-benchmarks = [loop, mysql, falsesharing, dj_trace, larson]
+benchmarks = ["loop", "mysql", "falsesharing", "dj_trace", "larson"]
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-s", "--save", help="save benchmark results to disk", action='store_true')
@@ -32,6 +25,7 @@ def main():
         os.makedirs(args.summarydir)
 
     for bench in benchmarks:
+        bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
         if args.benchmarks and not bench.name in args.benchmarks:
             continue
         if args.load:
