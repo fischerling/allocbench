@@ -8,7 +8,7 @@ import sys
 import re
 import shutil
 
-from benchmark import Benchmark
+from src.benchmark import Benchmark
 
 comma_sep_number_re = "(?:\d*(?:,\d*)?)*"
 rss_re = "(?P<rss>" + comma_sep_number_re + ")"
@@ -134,7 +134,7 @@ class Benchmark_DJ_Trace( Benchmark ):
         sd = sd or ""
 
         # Total times
-        for perm in self.iterate_args():
+        for perm in self.iterate_args(args=args):
             for i, target in enumerate(targets):
                 d = [float(x["cputime"]) for x in self.results[target][perm]]
                 y_val = np.mean(d)/1000
@@ -151,7 +151,7 @@ class Benchmark_DJ_Trace( Benchmark ):
 
         # Function Times
         xa = np.arange(0, 6, 1.5)
-        for perm in self.iterate_args():
+        for perm in self.iterate_args(args=args):
             for i, target in enumerate(targets):
                 x_vals = [x+i/len(targets) for x in xa]
                 y_vals = [0] * 4
@@ -173,7 +173,7 @@ class Benchmark_DJ_Trace( Benchmark ):
             plt.clf()
 
         # Memusage
-        for perm in self.iterate_args():
+        for perm in self.iterate_args(args=args):
             for i, target in enumerate(targets):
                 d = [x["Max_RSS"] for x in self.results[target][perm]]
                 y_val = np.mean(d)/1000
@@ -193,11 +193,11 @@ class Benchmark_DJ_Trace( Benchmark ):
             plt.clf()
 
         # Tables
-        for perm in self.iterate_args():
+        for perm in self.iterate_args(args=args):
             # collect data
             d = {target: {} for target in targets}
             for i, target in enumerate(targets):
-                d[target]["time"] = [float(x["task-clock"]) for x in self.results[target][perm]]
+                d[target]["time"] = [float(x["cputime"]) for x in self.results[target][perm]]
                 d[target]["rss"] = [x["Max_RSS"] for x in self.results[target][perm]]
 
             times = [np.mean(d[target]["time"]) for target in targets]

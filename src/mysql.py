@@ -258,10 +258,8 @@ class Benchmark_MYSQL( Benchmark ):
             print("\\\\\n\\hline", file=f)
 
             for target in targets:
-                print(target)
                 print(target, end=" ", file=f)
                 for perm in self.iterate_args(args=args):
-                    print(perm, d[target][perm]["std"])
                     m = d[target][perm]["mean"]
                     s = "& \\textcolor{{{}}}{{{:.3f}}}"
                     if m == maxs[perm]:
