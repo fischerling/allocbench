@@ -325,9 +325,7 @@ class Benchmark (object):
         row_arg = [arg for arg in args if arg != header_arg][0]
 
         headers = args[header_arg]
-        print(header_arg, len(headers))
         rows = args[row_arg]
-        print(row_arg, len(rows))
 
         cell_text = []
         for av in rows:
@@ -340,16 +338,10 @@ class Benchmark (object):
                     for m in self.results[target][perm]:
                         d.append(eval(evaluation.format(**m)))
                     mean = np.mean(d)
-                    if target == "glibc":
-                        print(perm)
-                        print(np.std(d)/mean, "%")
-                    if perm.maxsize==64 and perm.nthreads==2:
-                        print(target, mean)
                     if not best_val:
                         best = [target]
                         best_val = mean
                     elif (sort == ">" and mean > best_val) or (sort == "<" and mean < best_val):
-
                         best = [target]
                         best_val = mean
                     elif mean == best_val:
