@@ -3,7 +3,7 @@ results/*
 targets/*
 dj_workloads/*
 *.png
-*/__pycache__/*
+*__pycache__*
 .gdb_history
 *.save
 *.data
