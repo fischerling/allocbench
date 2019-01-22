@@ -24,7 +24,7 @@ static void print_status(void)
 
 	while (!feof(status))
 	{
-		fgets(&buf, 4096, status);
+		fgets(&buf[0], 4096, status);
 		fprintf(output, "%s", buf);
 	}
 	fclose(status);
