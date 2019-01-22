@@ -11,7 +11,7 @@ benchmarks = ["loop", "mysql", "falsesharing", "dj_trace", "larson"]
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-s", "--save", help="save benchmark results to disk", action='store_true')
-parser.add_argument("-l", "--load", help="load benchmark results from disk", action='store_true')
+parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
@@ -36,14 +36,17 @@ def main():
         else:
             resdir = os.path.join("results", src.facter.get_hostname(),
                                     datetime.datetime.now().strftime("%Y-%m-%dT%H:%M"))
-        os.makedirs(resdir)
+        try:
+            os.makedirs(resdir)
+        except FileExistsError:
+            pass
 
     for bench in benchmarks:
         bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
         if args.benchmarks and not bench.name in args.benchmarks:
             continue
         if args.load:
-            bench.load()
+            bench.load(path=args.load)
 
         if args.runs > 0 or args.analyse:
             print("Preparing", bench.name, "...")
@@ -67,7 +70,10 @@ def main():
                 bench.save()
 
             if not args.nosum and not (args.runs < 1 and not args.load):
-                os.mkdir(bench.name)
+                try:
+                    os.mkdir(bench.name)
+                except FileExistsError:
+                    pass
                 os.chdir(bench.name)
                 print("Summarizing", bench.name, "...")
                 bench.summary()

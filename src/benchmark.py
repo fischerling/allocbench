@@ -62,7 +62,13 @@ class Benchmark (object):
             pickle.dump(save_data, f)
 
     def load(self, path=None, verbose=False):
-        f = path if path else self.name + ".save"
+        if not path:
+            f = self.name + ".save"
+        else:
+            if os.path.isdir(path):
+                f = os.path.join(path, self.name + ".save")
+            else:
+                f = path
         if verbose:
             print("Loading results from:", self.name + ".save")
         with open(f, "rb") as f:
