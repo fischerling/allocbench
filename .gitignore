@@ -1,5 +1,7 @@
 build/*
 results/*
+targets/*
+dj_workloads/*
 *.png
 */__pycache__/*
 .gdb_history
