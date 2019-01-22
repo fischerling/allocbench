@@ -42,7 +42,7 @@ common_targets = {
                                                     + glibc_path_notc + ":"
                                                     + library_path,
                                 "binary_suffix" : "-glibc-notc",
-                                "LD_PRELOAD"    : "/usr/lib/libstdc++.so /usr/lib/libgcc_s.so.1",
+                                "LD_PRELOAD"    : "",
                                 "color"         : "C5"
                                },
                   }

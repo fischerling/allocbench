@@ -2,7 +2,7 @@
 
 .DEFAULT_GOAL = all
 
-SRCDIR=src/
+SRCDIR=src
 BENCHSRCDIR=$(SRCDIR)/benchmarks
 BENCH_C_SOURCES = $(shell find $(BENCHSRCDIR) -name "*.c")
 BENCH_CC_SOURCES = $(shell find $(BENCHSRCDIR) -name "*.cc")
@@ -19,7 +19,9 @@ OPTFLAGS = -O3 -DNDEBUG
 
 CXXFLAGS = -std=c++11 -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS) -fno-exceptions
 CFLAGS = -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
-#LDFLAGS= -fno-builtin-malloc -fno-builtin-calloc -fno-builtin-realloc -fno-builtin-free
+
+LDFLAGS = -pthread -static-libgcc
+LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 
 VPATH = $(sort $(dir $(BENCH_C_SOURCES) $(BENCH_CC_SOURCES)))
 
@@ -33,7 +35,10 @@ BENCH_TARGETS = $(BENCH_OBJPRE:.o=) $(OBJDIR)/trace_run
 
 NOTC_TARGETS = $(BENCH_TARGETS:=-glibc-notc)
 
-all: $(BENCH_TARGETS) $(NOTC_TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so
+all: $(BENCH_TARGETS) $(NOTC_TARGETS) $(OBJDIR)/chattymalloc.so $(OBJDIR)/print_status_on_exit.so $(OBJDIR)/ccinfo
+
+$(OBJDIR)/ccinfo:
+	$(CC) -v 2> $@
 
 $(OBJDIR)/print_status_on_exit.so: $(SRCDIR)/print_status_on_exit.c $(MAKEFILE_LIST)
 	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
@@ -42,7 +47,7 @@ $(OBJDIR)/chattymalloc.so: $(SRCDIR)/chattymalloc.c $(MAKEFILE_LIST)
 	$(CC) -shared $(CFLAGS) -o $@ $< -ldl
 
 $(OBJDIR)/trace_run: $(SRCDIR)/trace_run.c $(MAKEFILE_LIST)
-	$(CC) -pthread $(CFLAGS) -o $@ $<
+	$(CC) $(LDFALGS) $(CFLAGS) -o $@ $<
 
 $(OBJDIR)/trace_run-glibc-notc: $(OBJDIR)/trace_run $(MAKEFILE_LIST)
 	cp $< $@
@@ -50,7 +55,7 @@ $(OBJDIR)/trace_run-glibc-notc: $(OBJDIR)/trace_run $(MAKEFILE_LIST)
 	patchelf --set-rpath $(GLIBC_NOTC) $@
 
 $(OBJDIR)/larson: $(OBJDIR)/larson.o
-	$(CXX) -pthread -o $@ $^
+	$(CXX) $(LDXXFLAGS) -o $@ $^
 
 $(OBJDIR)/larson-glibc-notc: $(OBJDIR)/larson
 	cp $< $@
@@ -58,7 +63,7 @@ $(OBJDIR)/larson-glibc-notc: $(OBJDIR)/larson
 	patchelf --set-rpath $(GLIBC_NOTC) $@
 
 $(OBJDIR)/cache-thrash: $(OBJDIR)/cache-thrash.o
-	$(CXX) -pthread -o $@ $^
+	$(CXX) $(LDXXFLAGS) -o $@ $^
 
 $(OBJDIR)/cache-thrash-glibc-notc: $(OBJDIR)/cache-thrash
 	cp $< $@
@@ -66,7 +71,7 @@ $(OBJDIR)/cache-thrash-glibc-notc: $(OBJDIR)/cache-thrash
 	patchelf --set-rpath $(GLIBC_NOTC) $@
 
 $(OBJDIR)/cache-scratch: $(OBJDIR)/cache-scratch.o
-	$(CXX) -pthread -o $@ $^
+	$(CXX) $(LDXXFLAGS) -o $@ $^
 
 $(OBJDIR)/cache-scratch-glibc-notc: $(OBJDIR)/cache-scratch
 	cp $< $@
@@ -74,7 +79,7 @@ $(OBJDIR)/cache-scratch-glibc-notc: $(OBJDIR)/cache-scratch
 	patchelf --set-rpath $(GLIBC_NOTC) $@
 
 $(OBJDIR)/bench_loop: $(OBJDIR)/bench_loop.o
-	$(CC) -pthread -o $@ $^
+	$(CC) $(LDFLAGS) -o $@ $^
 
 $(OBJDIR)/bench_loop-glibc-notc: $(OBJDIR)/bench_loop
 	cp $< $@
