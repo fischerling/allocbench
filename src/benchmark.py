@@ -9,7 +9,7 @@ import pickle
 import shutil
 import subprocess
 
-from src.common_targets import common_targets
+from src.targets import targets
 
 class Benchmark (object):
 
@@ -20,7 +20,7 @@ class Benchmark (object):
         "measure_cmd" : "perf stat -x, -d",
         "analyse_cmd" : "memusage -p {} -t",
         "cmd" : "true",
-        "targets" : common_targets,
+        "targets" : targets,
     }
 
     def __init__(self):

@@ -6,12 +6,14 @@ import importlib
 import os
 
 import src.facter
+import src.targets
 
 benchmarks = ["loop", "mysql", "falsesharing", "dj_trace", "larson"]
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-s", "--save", help="save benchmark results to disk", action='store_true')
 parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
+parser.add_argument("-t", "--targets", help="load target definitions from file", type=str)
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
@@ -27,8 +29,17 @@ def main():
         print("Copyright (C) 2018-1029 Florian Fischer")
         print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
         return
+
     if args.verbose:
         print(args)
+
+    if args.targets:
+        with open(args.targets, "r") as f:
+            g = {}
+            exec(f.read(), g)
+        src.targets.targets = g["targets"]
+        if args.verbose:
+            print("Targets:", src.targets.targets.keys())
 
     if args.save or not args.nosum and not (args.runs < 1 and not args.load):
         if args.resultdir:

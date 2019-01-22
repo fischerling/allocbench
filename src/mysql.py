@@ -10,7 +10,7 @@ from subprocess import PIPE
 from time import sleep
 
 from src.benchmark import Benchmark
-from src.common_targets import common_targets
+from src.targets import targets
 
 cwd = os.getcwd()
 
@@ -30,7 +30,7 @@ class Benchmark_MYSQL( Benchmark ):
         self.descrition = """See sysbench documentation."""
 
         # mysqld fails with hoard somehow
-        self.targets = copy.copy(common_targets)
+        self.targets = copy.copy(targets)
         if "hoard" in self.targets:
             del(self.targets["hoard"])
 
