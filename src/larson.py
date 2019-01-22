@@ -30,25 +30,22 @@ class Benchmark_Larson( Benchmark ):
                 result["throughput"] = int(res.group("throughput"))
                 return
 
-    def summary(self, sumdir):
+    def summary(self):
         # Plot threads->throughput and maxsize->throughput
         self.plot_fixed_arg("{throughput}/1000000",
                     ylabel="'MOPS/s'",
                     title = "'Larson: ' + arg + ' ' + str(arg_value)",
-                    filepostfix = "throughput",
-                    sumdir=sumdir)
+                    filepostfix = "throughput")
 
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                     ylabel="'l1 cache misses in %'",
                     title = "'Larson cache misses: ' + arg + ' ' + str(arg_value)",
-                    filepostfix = "cachemisses",
-                    sumdir=sumdir)
+                    filepostfix = "cachemisses")
 
         # Memusage
         self.plot_fixed_arg("int({VmHWM})",
                     ylabel='"VmHWM in kB"',
                     title= '"Loop Memusage: " + arg + " " + str(arg_value)',
-                    filepostfix="memusage",
-                    sumdir=sumdir)
+                    filepostfix="memusage")
 
 larson = Benchmark_Larson()

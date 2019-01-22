@@ -19,30 +19,27 @@ class Benchmark_Loop( Benchmark ):
         self.requirements = ["build/bench_loop"]
         super().__init__()
 
-    def summary(self, sumdir):
+    def summary(self):
         # Speed
         self.plot_fixed_arg("perm.nthreads / (float({task-clock})/1000)",
                     ylabel = '"MOPS/cpu-second"',
                     title = '"Loop: " + arg + " " + str(arg_value)',
-                    filepostfix="time",
-                    sumdir=sumdir)
+                    filepostfix="time")
 
         # Memusage
         self.plot_fixed_arg("int({VmHWM})",
                     ylabel='"VmHWM in kB"',
                     title= '"Loop Memusage: " + arg + " " + str(arg_value)',
-                    filepostfix="memusage",
-                    sumdir=sumdir)
+                    filepostfix="memusage")
 
+        # L1 cache misses
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                     ylabel='"L1 misses in %"',
                     title= '"Loop l1 cache misses: " + arg + " " + str(arg_value)',
-                    filepostfix="l1misses",
-                    sumdir=sumdir)
+                    filepostfix="l1misses")
 
         # Speed Matrix
         self.write_best_doublearg_tex_table("perm.nthreads / (float({task-clock})/1000)",
-                    filepostfix="memusage.matrix",
-                    sumdir=sumdir)
+                    filepostfix="memusage.matrix")
 
 loop = Benchmark_Loop()

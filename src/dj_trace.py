@@ -127,11 +127,9 @@ class Benchmark_DJ_Trace( Benchmark ):
                 fname = functions[i]
                 result["avg_" + fname] = to_int(res.group("time"))
 
-    def summary(self, sd=None):
+    def summary(self):
         args = self.results["args"]
         targets = self.results["targets"]
-
-        sd = sd or ""
 
         # Total times
         for perm in self.iterate_args(args=args):
@@ -146,7 +144,7 @@ class Benchmark_DJ_Trace( Benchmark ):
             plt.legend(loc="best")
             plt.ylabel("Zeit in ms")
             plt.title("Gesamte Laufzeit")
-            plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "runtime", "png"])))
+            plt.savefig(".".join([self.name, perm.workload, "runtime", "png"]))
             plt.clf()
 
         # Function Times
@@ -169,7 +167,7 @@ class Benchmark_DJ_Trace( Benchmark ):
                             "free\n" + str(self.results[perm.workload]["free"]) + "\ncalls"])
             plt.ylabel("Durchschnittliche Zeit in cycles")
             plt.title("Durchscnittliche Laufzeiten der API Funktionen")
-            plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "apitimes", "png"])))
+            plt.savefig(".".join([self.name, perm.workload, "apitimes", "png"]))
             plt.clf()
 
         # Memusage
@@ -189,7 +187,7 @@ class Benchmark_DJ_Trace( Benchmark ):
             plt.legend(loc="best")
             plt.ylabel("Max RSS in MB")
             plt.title("Maximal benötigter Speicher (VmHWM)")
-            plt.savefig(os.path.join(sd, ".".join([self.name, perm.workload, "rss", "png"])))
+            plt.savefig(".".join([self.name, perm.workload, "rss", "png"]))
             plt.clf()
 
         # Tables
@@ -208,7 +206,7 @@ class Benchmark_DJ_Trace( Benchmark ):
             rssmin = min(rss)
             rssmax = max(rss)
 
-            fname = os.path.join(sd, ".".join([self.name, perm.workload, "table.tex"]))
+            fname = ".".join([self.name, perm.workload, "table.tex"])
             with open(fname, "w") as f:
                 print("\\begin{tabular}{| l | l | l |}" , file=f)
                 print("& Zeit (ms) / $\\sigma$ (\\%) & VmHWM (KB) / $\\sigma$ (\\%) \\\\", file=f)

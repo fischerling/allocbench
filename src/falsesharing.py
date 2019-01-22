@@ -29,7 +29,7 @@ class Benchmark_Falsesharing( Benchmark ):
     def process_output(self, result, stdout, stderr, target, perm, verbose):
         result["time"] = time_re.match(stdout).group("time")
 
-    def summary(self, sumdir=None):
+    def summary(self):
         # Speedup thrash
         args = self.results["args"]
         nthreads = args["threads"]
@@ -56,21 +56,19 @@ class Benchmark_Falsesharing( Benchmark ):
             plt.xlabel("threads")
             plt.ylabel("speedup")
             plt.title(bench + " speedup" )
-            plt.savefig(os.path.join(sumdir, self.name + "." + bench + ".png"))
+            plt.savefig(self.name + "." + bench + ".png")
             plt.clf()
 
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                     ylabel="'l1 cache misses in %'",
                     title = "'cache misses: ' + arg + ' ' + str(arg_value)",
                     filepostfix = "l1-misses",
-                    sumdir=sumdir,
                     fixed=["bench"])
 
         self.plot_fixed_arg("({LLC-load-misses}/{LLC-loads})*100",
                     ylabel="'l1 cache misses in %'",
                     title = "'LLC misses: ' + arg + ' ' + str(arg_value)",
                     filepostfix = "llc-misses",
-                    sumdir=sumdir,
                     fixed=["bench"])
 
 falsesharing = Benchmark_Falsesharing()

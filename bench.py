@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
 import importlib
 import os
+
+import src.facter
 
 benchmarks = ["loop", "mysql", "falsesharing", "dj_trace", "larson"]
 
@@ -13,7 +16,7 @@ parser.add_argument("-r", "--runs", help="how often the benchmarks run", default
 parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
-parser.add_argument("-sd", "--summarydir", help="directory where all plots and the summary go", type=str)
+parser.add_argument("-sd", "--resultdir", help="directory where all results go", type=str)
 parser.add_argument("-a", "--analyse", help="collect allocation sizes", action='store_true')
 parser.add_argument("--nolibmemusage", help="don't use libmemusage to analyse", action='store_true')
 parser.add_argument("--license", help="print license info and exit", action='store_true')
@@ -27,8 +30,13 @@ def main():
     if args.verbose:
         print(args)
 
-    if args.summarydir and not os.path.isdir(args.summarydir):
-        os.makedirs(args.summarydir)
+    if args.save or not args.nosum and not (args.runs < 1 and not args.load):
+        if args.resultdir:
+            resdir = os.path.join(args.resultdir)
+        else:
+            resdir = os.path.join("results", src.facter.get_hostname(),
+                                    datetime.datetime.now().strftime("%Y-%m-%dT%H:%M"))
+        os.makedirs(resdir)
 
     for bench in benchmarks:
         bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
@@ -51,12 +59,20 @@ def main():
         if not bench.run(runs=args.runs, verbose=args.verbose):
             continue
 
-        if args.save:
-            bench.save()
+        if args.save or not args.nosum and not (args.runs < 1 and not args.load):
+            old_cwd = os.getcwd()
+            os.chdir(resdir)
 
-        if not args.nosum and not (args.runs < 1 and not args.load):
-            print("Summarizing", bench.name, "...")
-            bench.summary(args.summarydir or "")
+            if args.save:
+                bench.save()
+
+            if not args.nosum and not (args.runs < 1 and not args.load):
+                os.mkdir(bench.name)
+                os.chdir(bench.name)
+                print("Summarizing", bench.name, "...")
+                bench.summary()
+
+            os.chdir(old_cwd)
 
         if (args.runs > 0 or args.analyse) and hasattr(bench, "cleanup"):
             print("Cleaning up", bench.name, "...")

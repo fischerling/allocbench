@@ -186,7 +186,7 @@ class Benchmark_MYSQL( Benchmark ):
                 return False
         print()
 
-    def summary(self, sd):
+    def summary(self):
         targets = self.results["targets"]
         args = self.results["args"]
         nthreads = list(args["nthreads"])
@@ -196,8 +196,7 @@ class Benchmark_MYSQL( Benchmark ):
                     xlabel = '"threads"',
                     ylabel = '"transactions"',
                     title = '"sysbench oltp read only"',
-                    filepostfix = "l.ro",
-                    sumdir = sd)
+                    filepostfix = "l.ro")
 
         # bar plot
         for i, target in enumerate(targets):
@@ -214,7 +213,7 @@ class Benchmark_MYSQL( Benchmark ):
         plt.xticks(range(1, len(y_vals) + 1), self.results["args"]["nthreads"])
         plt.ylabel("transactions")
         plt.title("sysbench oltp read only")
-        plt.savefig(os.path.join(sd, self.name + ".b.ro.png"))
+        plt.savefig(self.name + ".b.ro.png")
         plt.clf()
 
         # Memusage
@@ -222,8 +221,7 @@ class Benchmark_MYSQL( Benchmark ):
                     xlabel = '"threads"',
                     ylabel = '"VmHWM in kB"',
                     title = '"Memusage sysbench oltp read only"',
-                    filepostfix = "ro.mem",
-                    sumdir = sd)
+                    filepostfix = "ro.mem")
 
         # Colored latex table showing transactions count
         d = {target: {} for target in targets}
@@ -248,7 +246,7 @@ class Benchmark_MYSQL( Benchmark ):
             maxs[perm] = cmax
             mins[perm] = cmin
 
-        fname = os.path.join(sd, ".".join([self.name, "transactions.tex"]))
+        fname = ".".join([self.name, "transactions.tex"])
         headers = [perm.nthreads for perm in self.iterate_args(args=args)]
         with open(fname, "w") as f:
             print("\\begin{tabular}{| l" + " l"*len(headers) + " |}" , file=f)
