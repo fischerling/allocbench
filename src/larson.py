@@ -13,14 +13,14 @@ class Benchmark_Larson( Benchmark ):
                              and deallocates objects, and then transfers some objects
                              (randomly selected) to other threads to be freed."""
 
-        self.cmd = "build/larson{binary_suffix} 1 8 {maxsize} 1000 50000 1 {threads}"
+        self.cmd = "larson{binary_suffix} 1 8 {maxsize} 1000 50000 1 {threads}"
 
         self.args = {
                         "maxsize" : [8, 32, 64, 128, 256, 512, 1024],
                         "threads" : range(1, multiprocessing.cpu_count() * 2 + 1)
                     }
 
-        self.requirements = ["build/larson"]
+        self.requirements = ["larson"]
         super().__init__()
 
     def process_output(self, result, stdout, stderr, target, perm, verbose):

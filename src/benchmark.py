@@ -81,6 +81,7 @@ class Benchmark (object):
             self.results[target] = d
 
     def prepare(self, verbose=False):
+        os.environ["PATH"] += ":build/" + self.name
         def is_exe(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -256,6 +257,7 @@ class Benchmark (object):
                     if self.posttarget_hook((tname, t), run, verbose):
                         return False
             print()
+        os.environ["PATH"] = os.environ["PATH"].replace(":build/"+self.name, "")
         return True
 
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'", autoticks=True,

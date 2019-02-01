@@ -9,14 +9,14 @@ class Benchmark_Loop( Benchmark ):
                             How allocations are freed can be changed with the benchmark
                             version""",
 
-        self.cmd = "build/bench_loop{binary_suffix} {nthreads} 1000000 {maxsize}"
+        self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
         self.args = {
                         "maxsize" : [2 ** x for x in range(6, 16)],
                         "nthreads" : range(1, multiprocessing.cpu_count() * 2 + 1)
                     }
 
-        self.requirements = ["build/bench_loop"]
+        self.requirements = ["loop"]
         super().__init__()
 
     def summary(self):

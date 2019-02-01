@@ -16,14 +16,14 @@ class Benchmark_Falsesharing( Benchmark ):
                             on the same cache line the writes will be expensive because
                             of cache thrashing."""
 
-        self.cmd = "build/cache-{bench}{binary_suffix} {threads} 100 8 1000000"
+        self.cmd = "cache-{bench}{binary_suffix} {threads} 100 8 1000000"
 
         self.args = {
                         "bench" : ["thrash", "scratch"],
                         "threads" : range(1, multiprocessing.cpu_count() * 2 + 1)
                     }
 
-        self.requirements = ["build/cache-thrash", "build/cache-scratch"]
+        self.requirements = ["cache-thrash", "cache-scratch"]
         super().__init__()
 
     def process_output(self, result, stdout, stderr, target, perm, verbose):

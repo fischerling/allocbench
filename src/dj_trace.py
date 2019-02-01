@@ -34,7 +34,7 @@ class Benchmark_DJ_Trace( Benchmark ):
                              also used by delorie to measure improvements in the
                              glibc allocator.""",
 
-        self.cmd = "build/trace_run{binary_suffix} dj_workloads/{workload}.wl"
+        self.cmd = "trace_run{binary_suffix} dj_workloads/{workload}.wl"
         self.measure_cmd = ""
 
         self.args = {
@@ -80,7 +80,7 @@ class Benchmark_DJ_Trace( Benchmark ):
                             "realloc":117, "free":10099261, "threads": 19},
                         }
 
-        self.requirements = ["build/trace_run"]
+        self.requirements = ["trace_run"]
         super().__init__()
 
     def prepare(self, verbose=False):
