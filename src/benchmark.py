@@ -1,5 +1,4 @@
 from collections import namedtuple
-import copy
 import csv
 import itertools
 import matplotlib.pyplot as plt
@@ -11,16 +10,18 @@ import subprocess
 
 from src.targets import targets
 
+
 class Benchmark (object):
 
     defaults = {
-        "name" : "default_benchmark",
-        "description" : "This is the default benchmark description please add your own useful one.",
+        "name": "default_benchmark",
+        "description": ("This is the default benchmark description please add"
+                        "your own useful one."),
 
-        "measure_cmd" : "perf stat -x, -d",
-        "analyse_cmd" : "memusage -p {} -t",
-        "cmd" : "true",
-        "targets" : targets,
+        "measure_cmd": "perf stat -x, -d",
+        "analyse_cmd": "memusage -p {} -t",
+        "cmd": "true",
+        "targets": targets,
     }
 
     def __init__(self):
@@ -39,7 +40,7 @@ class Benchmark (object):
             self.results = {}
         self.results["args"] = self.args
         self.results["targets"] = self.targets
-        self.results.update({t : {} for t in self.targets})
+        self.results.update({t: {} for t in self.targets})
 
         if not hasattr(self, "requirements"):
             self.requirements = []
@@ -53,10 +54,10 @@ class Benchmark (object):
         save_data = {}
         save_data.update(self.results)
         for target in self.results["targets"]:
-            l = []
+            tmp_list = []
             for ntuple, measures in self.results[target].items():
-                l.append((ntuple._asdict(), measures))
-            save_data[target] = l
+                tmp_list.append((ntuple._asdict(), measures))
+            save_data[target] = tmp_list
 
         with open(f, "wb") as f:
             pickle.dump(save_data, f)
@@ -127,11 +128,10 @@ class Benchmark (object):
             if is_fixed:
                 yield p
 
-
     def analyse(self, verbose=False, nolibmemusage=True):
         if not nolibmemusage and not shutil.which("memusage"):
             print("memusage not found. Using chattymalloc.")
-            libmemusage = False
+            nolibmemusage = True
 
         if nolibmemusage:
             import chattyparser
@@ -155,9 +155,9 @@ class Benchmark (object):
             actual_cmd += self.cmd.format(**perm)
 
             res = subprocess.run(actual_cmd.split(),
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.PIPE,
-                                    universal_newlines=True)
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 universal_newlines=True)
 
             if res.returncode != 0:
                 print(actual_cmd, "failed.")
@@ -169,9 +169,9 @@ class Benchmark (object):
             if nolibmemusage:
                 try:
                     chattyparser.plot()
-                except MemoryError as memerr:
-                    print("Can't Analyse", actual_cmd, "with chattymalloc because",
-                            "to much memory would be needed.")
+                except MemoryError:
+                    print("Can't Analyse", actual_cmd, "with chattymalloc",
+                          "because to much memory would be needed.")
                     continue
             else:
                 with open(file_name + ".hist", "w") as f:
@@ -190,7 +190,7 @@ class Benchmark (object):
 
             i = 0
             for tname, t in self.targets.items():
-                if not tname in self.results:
+                if tname not in self.results:
                     self.results[tname] = {}
 
                 os.environ["LD_PRELOAD"] = "build/print_status_on_exit.so "
@@ -202,7 +202,7 @@ class Benchmark (object):
 
                 for perm in self.iterate_args():
                     i += 1
-                    print(i, "of", n,"\r", end='')
+                    print(i, "of", n, "\r", end='')
 
                     actual_cmd = self.measure_cmd + " "
 
@@ -211,19 +211,21 @@ class Benchmark (object):
                     actual_cmd += self.cmd.format(**perm_dict)
 
                     res = subprocess.run(actual_cmd.split(),
-                                        stderr=subprocess.PIPE,
-                                        stdout=subprocess.PIPE,
-                                        universal_newlines=True)
+                                         stderr=subprocess.PIPE,
+                                         stdout=subprocess.PIPE,
+                                         universal_newlines=True)
 
                     if res.returncode != 0:
-                        print("\n" + actual_cmd, "exited with", res.returncode, "for", tname)
+                        print("\n" + actual_cmd, "exited with", res.returncode,
+                              "for", tname)
                         print("Aborting Benchmark.")
                         print("Stdout:\n" + res.stdout)
                         print("Stderr:\n" + res.stderr)
                         return False
 
                     if "ERROR: ld.so" in res.stderr:
-                        print("\nPreloading of", t["LD_PRELOAD"], "failed for", tname)
+                        print("\nPreloading of", t["LD_PRELOAD"],
+                              "failed for", tname)
                         print("Stderr:\n" + res.stderr)
                         print("Aborting Benchmark.")
                         return False
@@ -241,17 +243,19 @@ class Benchmark (object):
 
                     if hasattr(self, "process_output"):
                         self.process_output(result, res.stdout, res.stderr,
-                                                tname, perm, verbose)
+                                            tname, perm, verbose)
 
                     # Parse perf output if available
                     if self.measure_cmd == self.defaults["measure_cmd"]:
-                        csvreader = csv.reader(res.stderr.splitlines(), delimiter=',')
+                        csvreader = csv.reader(res.stderr.splitlines(),
+                                               delimiter=',')
                         for row in csvreader:
                             # Split of the user/kernel space info to be better portable
                             try:
                                 result[row[2].split(":")[0]] = row[0]
                             except Exception as e:
-                                print("Exception", e, "occured on", row, "for", tname, "and", perm)
+                                print("Exception", e, "occured on", row, "for",
+                                      tname, "and", perm)
 
                     if run == 1:
                         self.results[tname][perm] = []
@@ -261,11 +265,12 @@ class Benchmark (object):
                     if self.posttarget_hook((tname, t), run, verbose):
                         return False
             print()
-        os.environ["PATH"] = os.environ["PATH"].replace(":build/"+self.name, "")
+        os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
         return True
 
-    def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'", autoticks=True,
-                        title="default title", filepostfix="", sumdir="", arg=""):
+    def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
+                        autoticks=True, title="default title", filepostfix="",
+                        sumdir="", arg=""):
 
         args = self.results["args"]
         targets = self.results["targets"]
@@ -284,7 +289,7 @@ class Benchmark (object):
             else:
                 x_vals = args[arg]
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                label=target, color=targets[target]["color"])
+                     label=target, color=targets[target]["color"])
 
         plt.legend()
         if not autoticks:
@@ -295,8 +300,9 @@ class Benchmark (object):
         plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, "png"])))
         plt.clf()
 
-    def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg", autoticks=True,
-                        title="'default title'", filepostfix="", sumdir="", fixed=[]):
+    def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
+                       autoticks=True, title="'default title'", filepostfix="",
+                       sumdir="", fixed=[]):
 
         args = self.results["args"]
         targets = self.results["targets"]
@@ -306,7 +312,7 @@ class Benchmark (object):
             for arg_value in args[arg]:
                 for target in targets:
                     y_vals = []
-                    for perm in self.iterate_args_fixed({arg : arg_value}, args=args):
+                    for perm in self.iterate_args_fixed({arg: arg_value}, args=args):
                         d = []
                         for m in self.results[target][perm]:
                             d.append(eval(yval.format(**m)))
@@ -316,7 +322,7 @@ class Benchmark (object):
                     else:
                         x_vals = args[loose_arg]
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                        label=target, color=targets[target]["color"])
+                             label=target, color=targets[target]["color"])
 
                 plt.legend()
                 if not autoticks:
@@ -325,10 +331,11 @@ class Benchmark (object):
                 plt.ylabel(eval(ylabel))
                 plt.title(eval(title))
                 plt.savefig(os.path.join(sumdir, ".".join([self.name, arg,
-                    str(arg_value), filepostfix, "png"])))
+                            str(arg_value), filepostfix, "png"])))
                 plt.clf()
 
-    def write_best_doublearg_tex_table(self, evaluation, sort=">", filepostfix="", sumdir="", std=False):
+    def write_best_doublearg_tex_table(self, evaluation, sort=">",
+                                       filepostfix="", sumdir="", std=False):
         args = self.results["args"]
         keys = list(args.keys())
         targets = self.results["targets"]
@@ -353,7 +360,8 @@ class Benchmark (object):
                     if not best_val:
                         best = [target]
                         best_val = mean
-                    elif (sort == ">" and mean > best_val) or (sort == "<" and mean < best_val):
+                    elif ((sort == ">" and mean > best_val)
+                          or (sort == "<" and mean < best_val)):
                         best = [target]
                         best_val = mean
                     elif mean == best_val:
@@ -362,11 +370,10 @@ class Benchmark (object):
                 row.append("{}: {:.3f}".format(best[0], best_val))
             cell_text.append(row)
 
-
         fname = os.path.join(sumdir, ".".join([self.name, filepostfix, "tex"]))
-        with open(fname , "w") as f:
+        with open(fname, "w") as f:
             print("\\begin{tabular}{|", end="", file=f)
-            print(" l |" * len(headers),"}", file=f)
+            print(" l |" * len(headers), "}", file=f)
 
             print(header_arg+"/"+row_arg, end=" & ", file=f)
             for header in headers[:-1]:
@@ -376,6 +383,6 @@ class Benchmark (object):
             for i, row in enumerate(cell_text):
                 print(rows[i], end=" & ", file=f)
                 for e in row[:-1]:
-                    print(e, end=" & ",file=f)
+                    print(e, end=" & ", file=f)
                 print(row[-1], "\\\\", file=f)
             print("\\end{tabular}", file=f)

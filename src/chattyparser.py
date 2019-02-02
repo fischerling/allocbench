@@ -1,6 +1,5 @@
 import re
 import matplotlib.pyplot as plt
-import numpy as np
 
 ptr = "(?:0x)?(?P<ptr>(?:\w+)|(?:\(nil\)))"
 size = "(?P<size>\d+)"
@@ -11,7 +10,9 @@ calloc_re = re.compile("^c (?P<nmemb>\d+) {} {}$".format(size, ptr))
 realloc_re = re.compile("^r {} {} {}$".format(ptr, size, ptr.replace("ptr", "nptr")))
 memalign_re = re.compile("^mm (?P<alignment>\d+) {} {}$".format(size, ptr))
 
-def record_allocation(hist, total_size, allocations, ptr, size, coll_size, req_size, nohist, optr=None, add=True):
+
+def record_allocation(hist, total_size, allocations, ptr, size, coll_size,
+                      req_size, nohist, optr=None, add=True):
     size = int(size)
     if add:
         if optr and optr in allocations:
@@ -44,8 +45,9 @@ def record_allocation(hist, total_size, allocations, ptr, size, coll_size, req_s
     elif coll_size:
         total_size.append(total_size[-1])
 
+
 def parse(path="chattymalloc.data", coll_size=True, req_size=None, nohist=False):
-    tmalloc, tcalloc, trealloc, tfree, tmemalign= 0, 0, 0, 0, 0
+    tmalloc, tcalloc, trealloc, tfree, tmemalign = 0, 0, 0, 0, 0
     allocations = {}
     requested_size = [0]
     hist = {}
@@ -55,49 +57,52 @@ def parse(path="chattymalloc.data", coll_size=True, req_size=None, nohist=False)
         for i, l in enumerate(f.readlines()):
             ln += 1
             res = malloc_re.match(l)
-            if res != None:
+            if res is not None:
                 res = res.groupdict()
                 record_allocation(hist, requested_size, allocations, res["ptr"],
-                    res["size"], coll_size, req_size, nohist)
+                                  res["size"], coll_size, req_size, nohist)
                 tmalloc += 1
                 continue
 
             res = free_re.match(l)
-            if res != None:
+            if res is not None:
                 res = res.groupdict()
                 record_allocation(hist, requested_size, allocations, res["ptr"],
-                    0, coll_size, req_size, nohist, add=False)
-                tfree +=1
+                                  0, coll_size, req_size, nohist, add=False)
+                tfree += 1
                 continue
 
             res = calloc_re.match(l)
-            if res != None:
+            if res is not None:
                 res = res.groupdict()
                 size = int(res["nmemb"]) * int(res["size"])
                 record_allocation(hist, requested_size, allocations, res["ptr"],
-                    size, coll_size, req_size, nohist)
+                                  size, coll_size, req_size, nohist)
                 tcalloc += 1
                 continue
 
             res = realloc_re.match(l)
-            if res != None:
+            if res is not None:
                 res = res.groupdict()
                 record_allocation(hist, requested_size, allocations, res["nptr"],
-                    res["size"], coll_size, req_size, nohist, optr=res["ptr"])
+                                  res["size"], coll_size, req_size, nohist,
+                                  optr=res["ptr"])
                 trealloc += 1
                 continue
 
             res = memalign_re.match(l)
-            if res != None:
+            if res is not None:
                 res = res.groupdict()
                 record_allocation(hist, requested_size, allocations, res["ptr"],
-                    res["size"], coll_size, req_size, nohist)
+                                  res["size"], coll_size, req_size, nohist)
                 tmemalign += 1
                 continue
 
             print("\ninvalid line at", ln, ":", l)
-    calls = {"malloc": tmalloc, "free": tfree, "calloc": tcalloc, "realloc": trealloc, "memalign": tmemalign}
+    calls = {"malloc": tmalloc, "free": tfree, "calloc": tcalloc,
+             "realloc": trealloc, "memalign": tmemalign}
     return hist, calls, requested_size
+
 
 def plot(path):
     hist, calls, _ = parse(req_size=None)
@@ -113,7 +118,8 @@ def plot_profile(path, top5):
     _, calls, total_size = parse(nohist=True)
     x_vals = range(0, sum(calls.values()) + 1)
 
-    plt.plot(x_vals, total_size, marker='', linestyle='-', label="Total requested")
+    plt.plot(x_vals, total_size, marker='',
+             linestyle='-', label="Total requested")
 
     for s in top5:
         _, calls, total_size = parse(nohist=True, req_size=s)
@@ -125,6 +131,7 @@ def plot_profile(path, top5):
     plt.title("Memusage profile")
     plt.savefig(path)
     plt.clf()
+
 
 def plot_hist_ascii(path, hist, calls):
     bins = {}
@@ -142,8 +149,8 @@ def plot_hist_ascii(path, hist, calls):
         print("memalign:", calls["memalign"], file=f)
         print(file=f)
 
-        print("< 1024", sum([n for s,n in hist.items() if s < 1024]), file=f)
-        print("< 4096", sum([n for s,n in hist.items() if s < 4096]), file=f)
+        print("< 1024", sum([n for s, n in hist.items() if s < 1024]), file=f)
+        print("< 4096", sum([n for s, n in hist.items() if s < 4096]), file=f)
         print(file=f)
 
         print("Histogram of sizes:", file=f)

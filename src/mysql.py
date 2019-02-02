@@ -15,16 +15,18 @@ from src.targets import targets
 cwd = os.getcwd()
 
 prepare_cmd = ("sysbench oltp_read_only --db-driver=mysql --mysql-user=root "
-              "--mysql-socket="+cwd+"/mysql_test/socket --tables=5 --table-size=1000000 prepare").split()
+               "--mysql-socket=" + cwd + "/mysql_test/socket --tables=5 "
+               "--table-size=1000000 prepare").split()
 
 cmd = ("sysbench oltp_read_only --threads={nthreads} --time=60 --tables=5 "
-       "--db-driver=mysql --mysql-user=root --mysql-socket="+cwd+"/mysql_test/socket run")
+       "--db-driver=mysql --mysql-user=root --mysql-socket="
+       + cwd + "/mysql_test/socket run")
 
-server_cmd = (shutil.which("mysqld")+" -h "+cwd+"/mysql_test --socket="+cwd+"/mysql_test/socket "
-              "--secure-file-priv= ").split()
+server_cmd = ("{0} -h {1}/mysql_test --socket={1}/mysql_test/socket "
+              "--secure-file-priv=").format(shutil.which("mysqld"), cwd).split()
 
 
-class Benchmark_MYSQL( Benchmark ):
+class Benchmark_MYSQL(Benchmark):
     def __init__(self):
         self.name = "mysql"
         self.descrition = """See sysbench documentation."""
@@ -34,7 +36,7 @@ class Benchmark_MYSQL( Benchmark ):
         if "hoard" in self.targets:
             del(self.targets["hoard"])
 
-        self.args = {"nthreads" : range(1, multiprocessing.cpu_count() + 1)}
+        self.args = {"nthreads": range(1, multiprocessing.cpu_count() + 1)}
         self.cmd = cmd
         self.measure_cmd = ""
 
@@ -50,9 +52,9 @@ class Benchmark_MYSQL( Benchmark ):
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE,
                                        universal_newlines=True)
-        #TODO make sure server comes up !
+        # TODO make sure server comes up !
         sleep(10)
-        return self.server.poll() == None
+        return self.server.poll() is None
 
     def prepare(self, verbose=False):
         if not super().prepare(verbose=verbose):
@@ -66,12 +68,12 @@ class Benchmark_MYSQL( Benchmark ):
             if b"MariaDB" in subprocess.run(["mysqld", "--version"],
                                             stdout=PIPE).stdout:
                 init_db_cmd = ["mysql_install_db", "--basedir=/usr",
-                                "--datadir="+cwd+"/mysql_test"]
+                               "--datadir="+cwd+"/mysql_test"]
                 if verbose:
                     print("MariaDB detected")
             else:
                 init_db_cmd = ["mysqld", "-h", cwd+"/mysql_test",
-                                "--initialize-insecure"]
+                               "--initialize-insecure"]
                 if verbose:
                     print("Oracle MySQL detected")
 
@@ -86,8 +88,9 @@ class Benchmark_MYSQL( Benchmark ):
                 return False
 
             # Create sbtest TABLE
-            p = subprocess.run("mysql -u root -S {}/mysql_test/socket".format(cwd).split(" "),
-                input = b"CREATE DATABASE sbtest;\n", stdout=PIPE, stderr=PIPE)
+            p = subprocess.run("mysql -u root -S "+cwd+"/mysql_test/socket".split(" "),
+                               input=b"CREATE DATABASE sbtest;\n",
+                               stdout=PIPE, stderr=PIPE)
 
             if not p.returncode == 0:
                 print(p.stderr)
@@ -148,7 +151,6 @@ class Benchmark_MYSQL( Benchmark ):
         nthreads = [0] + list(self.args["nthreads"])
         failed = False
 
-
         runs = len(nthreads)
         for i, t in enumerate(nthreads):
             print("analysing", i + 1, "of", runs, "\r", end='')
@@ -168,7 +170,8 @@ class Benchmark_MYSQL( Benchmark ):
                                    universal_newlines=True)
 
                 if p.returncode != 0:
-                    print("\n" + " ".join(target_cmd), "exited with", p.returncode, ".\n Aborting analysing.")
+                    print("\n" + " ".join(target_cmd), "exited with",
+                          p.returncode, ".\n Aborting analysing.")
                     print(p.stderr)
                     print(p.stdout)
                     failed = True
@@ -177,8 +180,9 @@ class Benchmark_MYSQL( Benchmark ):
             self.server.wait()
 
             hist, calls, reqsize, top5reqsize = chattyparser.parse()
-            chattyparser.plot_hist_ascii(hist, calls, ".".join([self.name, str(t),
-                                            "memusage", "hist"]))
+            chattyparser.plot_hist_ascii(hist, calls,
+                                         ".".join([self.name, str(t),
+                                                  "memusage", "hist"]))
 
             if failed:
                 print(self.server.stdout.read())
@@ -189,14 +193,13 @@ class Benchmark_MYSQL( Benchmark ):
     def summary(self):
         targets = self.results["targets"]
         args = self.results["args"]
-        nthreads = list(args["nthreads"])
 
         # linear plot
         self.plot_single_arg("{transactions}",
-                    xlabel = '"threads"',
-                    ylabel = '"transactions"',
-                    title = '"sysbench oltp read only"',
-                    filepostfix = "l.ro")
+                             xlabel='"threads"',
+                             ylabel='"transactions"',
+                             title='"sysbench oltp read only"',
+                             filepostfix="l.ro")
 
         # bar plot
         for i, target in enumerate(targets):
@@ -206,7 +209,7 @@ class Benchmark_MYSQL( Benchmark ):
                 y_vals.append(np.mean(d))
             x_vals = [x-i/8 for x in range(1, len(y_vals) + 1)]
             plt.bar(x_vals, y_vals, width=0.2, label=target, align="center",
-                        color=targets[target]["color"])
+                    color=targets[target]["color"])
 
         plt.legend()
         plt.xlabel("threads")
@@ -218,10 +221,10 @@ class Benchmark_MYSQL( Benchmark ):
 
         # Memusage
         self.plot_single_arg("{rssmax}",
-                    xlabel = '"threads"',
-                    ylabel = '"VmHWM in kB"',
-                    title = '"Memusage sysbench oltp read only"',
-                    filepostfix = "ro.mem")
+                             xlabel='"threads"',
+                             ylabel='"VmHWM in kB"',
+                             title='"Memusage sysbench oltp read only"',
+                             filepostfix="ro.mem")
 
         # Colored latex table showing transactions count
         d = {target: {} for target in targets}
@@ -230,7 +233,7 @@ class Benchmark_MYSQL( Benchmark ):
                 t = [float(x["transactions"]) for x in self.results[target][perm]]
                 m = np.mean(t)
                 s = np.std(t)/m
-                d[target][perm] = {"mean": m, "std" : s}
+                d[target][perm] = {"mean": m, "std": s}
 
         mins = {}
         maxs = {}
@@ -249,7 +252,7 @@ class Benchmark_MYSQL( Benchmark ):
         fname = ".".join([self.name, "transactions.tex"])
         headers = [perm.nthreads for perm in self.iterate_args(args=args)]
         with open(fname, "w") as f:
-            print("\\begin{tabular}{| l" + " l"*len(headers) + " |}" , file=f)
+            print("\\begin{tabular}{| l" + " l"*len(headers) + " |}", file=f)
             print("Fäden / Allokator ", end=" ", file=f)
             for head in headers:
                 print("& {}".format(head), end=" ", file=f)
