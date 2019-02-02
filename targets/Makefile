@@ -10,16 +10,13 @@ CFLAGS ?= $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 
 LDFLAGS ?= -pthread -static-libgcc
 
-.PHONY = all clean
+.PHONY: all clean
 
-all: $(OBJDIR)/trace_run
-
-$(OBJDIR)/trace_run: trace_run.c | $(OBJDIR)
-	@echo compiling $@...
-	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
+all: $(OBJDIR)
+	@echo building targets
 
 $(OBJDIR):
-	mkdir -p $@
+	mkdir $@
 
 clean:
 	rm -rf $(OBJDIR)

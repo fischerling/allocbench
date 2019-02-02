@@ -15,10 +15,11 @@ LDFLAGS ?= -pthread -static-libgcc
 all: $(OBJDIR)/loop
 
 $(OBJDIR)/loop: loop.c | $(OBJDIR)
+	@echo compiling $@...
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
 
 $(OBJDIR):
-	mkdir $@
+	mkdir -p $@
 
 clean:
 	rm -rf $(OBJDIR)

@@ -17,13 +17,15 @@ HEADER = cpuinfo.h fred.h timer.h
 all: $(OBJDIR)/cache-thrash $(OBJDIR)/cache-scratch
 
 $(OBJDIR)/cache-thrash: cache-thrash.cc $(HEADER) | $(OBJDIR)
+	@echo compiling $@...
 	$(CXX) $(LDXXFLAGS) $(CXXFLAGS) -o $@ $<
 
 $(OBJDIR)/cache-scratch: cache-scratch.cc $(HEADER) | $(OBJDIR)
+	@echo compiling $@...
 	$(CXX) $(LDXXFLAGS) $(CXXFLAGS) -o $@ $<
 
 $(OBJDIR):
-	mkdir $@
+	mkdir -p $@
 
 clean:
 	rm -rf $(OBJDIR)

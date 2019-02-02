@@ -15,10 +15,11 @@ LDXXFLAGS ?= -pthread -static-libgcc -static-libstdc++
 all: $(OBJDIR)/larson
 
 $(OBJDIR)/larson: larson.cc | $(OBJDIR)
+	@echo compiling $@...
 	$(CXX) $(LDXXFLAGS) $(CXXFLAGS) -o $@ $<
 
 $(OBJDIR):
-	mkdir $@
+	mkdir -p $@
 
 clean:
 	rm -rf $(OBJDIR)

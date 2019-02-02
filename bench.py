@@ -4,6 +4,7 @@ import argparse
 import datetime
 import importlib
 import os
+import subprocess
 
 import src.facter
 import src.targets
@@ -26,9 +27,17 @@ parser.add_argument("--license", help="print license info and exit", action='sto
 def main():
     args = parser.parse_args()
     if args.license:
-        print("Copyright (C) 2018-1029 Florian Fischer")
+        print("Copyright (C) 2018-2019 Florian Fischer")
         print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
         return
+
+    # Prepare allocbench
+    print("Building allocbench")
+    make_cmd = ["make"]
+    if not args.verbose:
+        make_cmd.append("-s")
+
+    subprocess.run(make_cmd)
 
     if args.verbose:
         print(args)

@@ -81,16 +81,20 @@ class Benchmark (object):
             self.results[target] = d
 
     def prepare(self, verbose=False):
-        os.environ["PATH"] += ":build/" + self.name
         def is_exe(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+        os.environ["PATH"] += ":" + os.path.join("build", "benchmarks",
+                                                 self.name)
 
         for r in self.requirements:
             fpath, fname = os.path.split(r)
 
+            # Search for file
             if fpath:
                 if not is_exe(r):
                     return False
+            # Search in PATH
             else:
                 found = False
                 for path in os.environ["PATH"].split(os.pathsep):

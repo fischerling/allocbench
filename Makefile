@@ -1,11 +1,4 @@
-.PHONY: all clean bench
-
-.DEFAULT_GOAL = all
-
-SRCDIR = src
-
-BENCHSRCDIR = $(SRCDIR)/benchmarks
-BENCHMARKS = $(shell dirname $(shell find $(BENCHSRCDIR) -name Makefile))
+MAKEFILES = $(shell dirname $(shell find . -name Makefile ! -path ./Makefile))
 
 OBJDIR = $(PWD)/build
 
@@ -23,18 +16,11 @@ CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
 LDFLAGS = -pthread -static-libgcc
 LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 
-GLIBC_NOTC = $(PWD)/../glibc/glibc-install-nofs/lib
+.PHONY: all clean $(MAKEFILES)
+all: $(OBJDIR)/ccinfo  $(MAKEFILES)
 
-MAKEFILE_LIST = Makefile
-
-.PHONY: all clean $(SRCDIR) $(BENCHMARKS)
-all: $(OBJDIR)/ccinfo $(BENCHMARKS) $(SRCDIR)
-
-$(SRCDIR):
-	make -C $@ OBJDIR=$(OBJDIR)
-
-$(BENCHMARKS): $(MAKEFILE_LIST)
-	$(MAKE) -C $@ all OBJDIR=$(OBJDIR)/$(shell basename $@)
+$(MAKEFILES):
+	$(MAKE) -C $@ OBJDIR=$(OBJDIR)/$(shell echo $@ | sed s/src//)
 
 $(OBJDIR)/ccinfo: | $(OBJDIR)
 	$(CC) -v 2> $@

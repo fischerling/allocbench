@@ -1,6 +1,6 @@
 build/*
 results/*
-targets/*
+targets/*.so
 dj_workloads/*
 *.png
 *__pycache__*
