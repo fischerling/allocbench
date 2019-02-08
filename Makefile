@@ -1,4 +1,4 @@
-MAKEFILES = $(shell dirname $(shell find . -name Makefile ! -path ./Makefile))
+MAKEFILES = $(shell dirname $(shell find . -name Makefile ! -path ./Makefile ! -path "./build/*"))
 
 OBJDIR = $(PWD)/build
 
