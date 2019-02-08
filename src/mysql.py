@@ -10,7 +10,7 @@ from subprocess import PIPE
 from time import sleep
 
 from src.benchmark import Benchmark
-from src.targets import targets
+from src.allocators import allocators
 
 cwd = os.getcwd()
 
@@ -32,9 +32,9 @@ class Benchmark_MYSQL(Benchmark):
         self.descrition = """See sysbench documentation."""
 
         # mysqld fails with hoard somehow
-        self.targets = copy.copy(targets)
-        if "hoard" in self.targets:
-            del(self.targets["hoard"])
+        self.allocators = copy.copy(allocators)
+        if "hoard" in self.allocators:
+            del(self.allocators["hoard"])
 
         self.args = {"nthreads": range(1, multiprocessing.cpu_count() + 1)}
         self.cmd = cmd
@@ -88,7 +88,7 @@ class Benchmark_MYSQL(Benchmark):
                 return False
 
             # Create sbtest TABLE
-            p = subprocess.run("mysql -u root -S "+cwd+"/mysql_test/socket".split(" "),
+            p = subprocess.run(("mysql -u root -S "+cwd+"/mysql_test/socket").split(" "),
                                input=b"CREATE DATABASE sbtest;\n",
                                stdout=PIPE, stderr=PIPE)
 
@@ -118,20 +118,20 @@ class Benchmark_MYSQL(Benchmark):
             print("Delete mysqld directory")
             shutil.rmtree("mysql_test")
 
-    def pretarget_hook(self, target, run, verbose):
+    def preallocator_hook(self, allocator, run, verbose):
         if not self.start_and_wait_for_server(verbose,
-                                              cmd_prefix=target[1]["cmd_prefix"]):
-            print("Can't start server for", target[0] + ".")
+                                              cmd_prefix=allocator[1]["cmd_prefix"]):
+            print("Can't start server for", allocator[0] + ".")
             print("Aborting Benchmark.")
-            print(target[1]["cmd_prefix"])
+            print(allocator[1]["cmd_prefix"])
             print(self.server.stderr.read())
             return False
 
-    def posttarget_hook(self, target, run, verbose):
+    def postallocator_hook(self, allocator, run, verbose):
         self.server.kill()
         self.server.wait()
 
-    def process_output(self, result, stdout, stderr, target, perm, verbose):
+    def process_output(self, result, stdout, stderr, allocator, perm, verbose):
         result["transactions"] = re.search("transactions:\s*(\d*)", stdout).group(1)
         result["queries"] = re.search("queries:\s*(\d*)", stdout).group(1)
         # Latency
@@ -145,53 +145,8 @@ class Benchmark_MYSQL(Benchmark):
                     result["rssmax"] = int(l.replace("VmHWM:", "").strip().split()[0])
                     break
 
-    def analyse(self, verbose=False, nolibmemusage=""):
-        import chattyparser
-
-        nthreads = [0] + list(self.args["nthreads"])
-        failed = False
-
-        runs = len(nthreads)
-        for i, t in enumerate(nthreads):
-            print("analysing", i + 1, "of", runs, "\r", end='')
-
-            os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
-            if not self.start_and_wait_for_server(verbose):
-                print("Can't start server.")
-                print("Aborting analysing.")
-                failed = True
-            os.environ["LD_PRELOAD"] = ""
-
-            if not failed and t != 0:
-                target_cmd = self.cmd.format(nthreads=t).split(" ")
-                p = subprocess.run(target_cmd,
-                                   stderr=PIPE,
-                                   stdout=PIPE,
-                                   universal_newlines=True)
-
-                if p.returncode != 0:
-                    print("\n" + " ".join(target_cmd), "exited with",
-                          p.returncode, ".\n Aborting analysing.")
-                    print(p.stderr)
-                    print(p.stdout)
-                    failed = True
-
-            self.server.kill()
-            self.server.wait()
-
-            hist, calls, reqsize, top5reqsize = chattyparser.parse()
-            chattyparser.plot_hist_ascii(hist, calls,
-                                         ".".join([self.name, str(t),
-                                                  "memusage", "hist"]))
-
-            if failed:
-                print(self.server.stdout.read())
-                print(self.server.stderr.read())
-                return False
-        print()
-
     def summary(self):
-        targets = self.results["targets"]
+        allocators = self.results["allocators"]
         args = self.results["args"]
 
         # linear plot
@@ -202,14 +157,14 @@ class Benchmark_MYSQL(Benchmark):
                              filepostfix="l.ro")
 
         # bar plot
-        for i, target in enumerate(targets):
+        for i, allocator in enumerate(allocators):
             y_vals = []
             for perm in self.iterate_args(args=self.results["args"]):
-                d = [int(m["transactions"]) for m in self.results[target][perm]]
+                d = [int(m["transactions"]) for m in self.results[allocator][perm]]
                 y_vals.append(np.mean(d))
             x_vals = [x-i/8 for x in range(1, len(y_vals) + 1)]
-            plt.bar(x_vals, y_vals, width=0.2, label=target, align="center",
-                    color=targets[target]["color"])
+            plt.bar(x_vals, y_vals, width=0.2, label=allocator, align="center",
+                    color=allocators[allocator]["color"])
 
         plt.legend()
         plt.xlabel("threads")
@@ -227,21 +182,21 @@ class Benchmark_MYSQL(Benchmark):
                              filepostfix="ro.mem")
 
         # Colored latex table showing transactions count
-        d = {target: {} for target in targets}
+        d = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
-            for i, target in enumerate(targets):
-                t = [float(x["transactions"]) for x in self.results[target][perm]]
+            for i, allocator in enumerate(allocators):
+                t = [float(x["transactions"]) for x in self.results[allocator][perm]]
                 m = np.mean(t)
                 s = np.std(t)/m
-                d[target][perm] = {"mean": m, "std": s}
+                d[allocator][perm] = {"mean": m, "std": s}
 
         mins = {}
         maxs = {}
         for perm in self.iterate_args(args=args):
             cmax = None
             cmin = None
-            for i, target in enumerate(targets):
-                m = d[target][perm]["mean"]
+            for i, allocator in enumerate(allocators):
+                m = d[allocator][perm]["mean"]
                 if not cmax or m > cmax:
                     cmax = m
                 if not cmin or m < cmin:
@@ -258,10 +213,10 @@ class Benchmark_MYSQL(Benchmark):
                 print("& {}".format(head), end=" ", file=f)
             print("\\\\\n\\hline", file=f)
 
-            for target in targets:
-                print(target, end=" ", file=f)
+            for allocator in allocators:
+                print(allocator, end=" ", file=f)
                 for perm in self.iterate_args(args=args):
-                    m = d[target][perm]["mean"]
+                    m = d[allocator][perm]["mean"]
                     s = "& \\textcolor{{{}}}{{{:.3f}}}"
                     if m == maxs[perm]:
                         color = "green"

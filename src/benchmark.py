@@ -8,7 +8,7 @@ import pickle
 import shutil
 import subprocess
 
-from src.targets import targets
+from src.allocators import allocators
 
 
 class Benchmark (object):
@@ -19,9 +19,8 @@ class Benchmark (object):
                         "your own useful one."),
 
         "measure_cmd": "perf stat -x, -d",
-        "analyse_cmd": "memusage -p {} -t",
         "cmd": "true",
-        "targets": targets,
+        "allocators": allocators,
     }
 
     def __init__(self):
@@ -39,8 +38,8 @@ class Benchmark (object):
         if not hasattr(self, "results"):
             self.results = {}
         self.results["args"] = self.args
-        self.results["targets"] = self.targets
-        self.results.update({t: {} for t in self.targets})
+        self.results["allocators"] = self.allocators
+        self.results.update({t: {} for t in self.allocators})
 
         if not hasattr(self, "requirements"):
             self.requirements = []
@@ -53,11 +52,11 @@ class Benchmark (object):
         # into lists of dicts.
         save_data = {}
         save_data.update(self.results)
-        for target in self.results["targets"]:
+        for allocator in self.results["allocators"]:
             tmp_list = []
-            for ntuple, measures in self.results[target].items():
+            for ntuple, measures in self.results[allocator].items():
                 tmp_list.append((ntuple._asdict(), measures))
-            save_data[target] = tmp_list
+            save_data[allocator] = tmp_list
 
         with open(f, "wb") as f:
             pickle.dump(save_data, f)
@@ -75,11 +74,11 @@ class Benchmark (object):
         with open(f, "rb") as f:
             self.results = pickle.load(f)
         # Build new named tuples
-        for target in self.results["targets"]:
+        for allocator in self.results["allocators"]:
             d = {}
-            for dic, measures in self.results[target]:
+            for dic, measures in self.results[allocator]:
                 d[self.Perm(**dic)] = measures
-            self.results[target] = d
+            self.results[allocator] = d
 
     def prepare(self, verbose=False):
         def is_exe(fpath):
@@ -128,76 +127,23 @@ class Benchmark (object):
             if is_fixed:
                 yield p
 
-    def analyse(self, verbose=False, nolibmemusage=True):
-        if not nolibmemusage and not shutil.which("memusage"):
-            print("memusage not found. Using chattymalloc.")
-            nolibmemusage = True
-
-        if nolibmemusage:
-            import chattyparser
-            actual_cmd = ""
-            old_preload = os.environ.get("LD_PRELOAD", None)
-            os.environ["LD_PRELOAD"] = "build/chattymalloc.so"
-
-        n = len(list(self.iterate_args()))
-        for i, perm in enumerate(self.iterate_args()):
-            print(i + 1, "of", n, "\r", end='')
-            perm = perm._asdict()
-            file_name = self.name + "."
-            file_name += ".".join([str(x) for x in perm.values()])
-            file_name += ".memusage"
-
-            if not nolibmemusage:
-                actual_cmd = self.analyse_cmd.format(file_name + ".png") + " "
-
-            if "binary_suffix" in self.cmd:
-                perm["binary_suffix"] = ""
-            actual_cmd += self.cmd.format(**perm)
-
-            res = subprocess.run(actual_cmd.split(),
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 universal_newlines=True)
-
-            if res.returncode != 0:
-                print(actual_cmd, "failed.")
-                print("Stdout:", res.stdout)
-                print("Stderr:", res.stderr)
-                print("Aborting analysing.")
-                return
-
-            if nolibmemusage:
-                try:
-                    chattyparser.plot()
-                except MemoryError:
-                    print("Can't Analyse", actual_cmd, "with chattymalloc",
-                          "because to much memory would be needed.")
-                    continue
-            else:
-                with open(file_name + ".hist", "w") as f:
-                    f.write(res.stderr)
-
-        if nolibmemusage:
-            os.environ["LD_PRELOAD"] = old_preload or ""
-        print()
-
     def run(self, verbose=False, runs=5):
         if runs > 0:
             print("Running", self.name, "...")
-        n = len(list(self.iterate_args())) * len(self.targets)
+        n = len(list(self.iterate_args())) * len(self.allocators)
         for run in range(1, runs + 1):
             print(str(run) + ". run")
 
             i = 0
-            for tname, t in self.targets.items():
+            for tname, t in self.allocators.items():
                 if tname not in self.results:
                     self.results[tname] = {}
 
                 os.environ["LD_PRELOAD"] = "build/print_status_on_exit.so "
                 os.environ["LD_PRELOAD"] += t["LD_PRELOAD"]
 
-                if hasattr(self, "pretarget_hook"):
-                    if self.pretarget_hook((tname, t), run, verbose):
+                if hasattr(self, "preallocator_hook"):
+                    if self.preallocator_hook((tname, t), run, verbose):
                         return False
 
                 for perm in self.iterate_args():
@@ -261,8 +207,8 @@ class Benchmark (object):
                         self.results[tname][perm] = []
                     self.results[tname][perm].append(result)
 
-                if hasattr(self, "posttarget_hook"):
-                    if self.posttarget_hook((tname, t), run, verbose):
+                if hasattr(self, "postallocator_hook"):
+                    if self.postallocator_hook((tname, t), run, verbose):
                         return False
             print()
         os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
@@ -273,15 +219,15 @@ class Benchmark (object):
                         sumdir="", arg=""):
 
         args = self.results["args"]
-        targets = self.results["targets"]
+        allocators = self.results["allocators"]
 
         arg = arg or list(args.keys())[0]
 
-        for target in targets:
+        for allocator in allocators:
             y_vals = []
             for perm in self.iterate_args(args=args):
                 d = []
-                for m in self.results[target][perm]:
+                for m in self.results[allocator][perm]:
                     d.append(eval(yval.format(**m)))
                 y_vals.append(np.mean(d))
             if not autoticks:
@@ -289,7 +235,7 @@ class Benchmark (object):
             else:
                 x_vals = args[arg]
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                     label=target, color=targets[target]["color"])
+                     label=allocator, color=allocators[allocator]["color"])
 
         plt.legend()
         if not autoticks:
@@ -305,16 +251,16 @@ class Benchmark (object):
                        sumdir="", fixed=[]):
 
         args = self.results["args"]
-        targets = self.results["targets"]
+        allocators = self.results["allocators"]
 
         for arg in fixed or args:
             loose_arg = [a for a in args if a != arg][0]
             for arg_value in args[arg]:
-                for target in targets:
+                for allocator in allocators:
                     y_vals = []
                     for perm in self.iterate_args_fixed({arg: arg_value}, args=args):
                         d = []
-                        for m in self.results[target][perm]:
+                        for m in self.results[allocator][perm]:
                             d.append(eval(yval.format(**m)))
                         y_vals.append(np.mean(d))
                     if not autoticks:
@@ -322,7 +268,7 @@ class Benchmark (object):
                     else:
                         x_vals = args[loose_arg]
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                             label=target, color=targets[target]["color"])
+                             label=allocator, color=allocators[allocator]["color"])
 
                 plt.legend()
                 if not autoticks:
@@ -338,7 +284,7 @@ class Benchmark (object):
                                        filepostfix="", sumdir="", std=False):
         args = self.results["args"]
         keys = list(args.keys())
-        targets = self.results["targets"]
+        allocators = self.results["allocators"]
 
         header_arg = keys[0] if len(args[keys[0]]) < len(args[keys[1]]) else keys[1]
         row_arg = [arg for arg in args if arg != header_arg][0]
@@ -352,20 +298,20 @@ class Benchmark (object):
             for perm in self.iterate_args_fixed({row_arg: av}, args=args):
                 best = []
                 best_val = None
-                for target in targets:
+                for allocator in allocators:
                     d = []
-                    for m in self.results[target][perm]:
+                    for m in self.results[allocator][perm]:
                         d.append(eval(evaluation.format(**m)))
                     mean = np.mean(d)
                     if not best_val:
-                        best = [target]
+                        best = [allocator]
                         best_val = mean
                     elif ((sort == ">" and mean > best_val)
                           or (sort == "<" and mean < best_val)):
-                        best = [target]
+                        best = [allocator]
                         best_val = mean
                     elif mean == best_val:
-                        best.append(target)
+                        best.append(allocator)
 
                 row.append("{}: {:.3f}".format(best[0], best_val))
             cell_text.append(row)

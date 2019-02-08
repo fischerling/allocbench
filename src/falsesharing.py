@@ -26,31 +26,31 @@ class Benchmark_Falsesharing(Benchmark):
         self.requirements = ["cache-thrash", "cache-scratch"]
         super().__init__()
 
-    def process_output(self, result, stdout, stderr, target, perm, verbose):
+    def process_output(self, result, stdout, stderr, allocator, perm, verbose):
         result["time"] = time_re.match(stdout).group("time")
 
     def summary(self):
         # Speedup thrash
         args = self.results["args"]
         nthreads = args["threads"]
-        targets = self.results["targets"]
+        allocators = self.results["allocators"]
 
         for bench in self.results["args"]["bench"]:
-            for target in targets:
+            for allocator in allocators:
                 y_vals = []
 
                 single_threaded_perm = self.Perm(bench=bench, threads=1)
                 single_threaded = np.mean([float(m["time"])
-                                          for m in self.results[target][single_threaded_perm]])
+                                          for m in self.results[allocator][single_threaded_perm]])
 
                 for perm in self.iterate_args_fixed({"bench": bench}, args=args):
 
-                    d = [float(m["time"]) for m in self.results[target][perm]]
+                    d = [float(m["time"]) for m in self.results[allocator][perm]]
 
                     y_vals.append(single_threaded / np.mean(d))
 
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-',
-                         label=target, color=targets[target]["color"])
+                         label=allocator, color=allocators[allocator]["color"])
 
             plt.legend()
             plt.xlabel("threads")

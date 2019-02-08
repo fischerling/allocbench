@@ -1,6 +1,6 @@
 build/*
 results/*
-targets/*.so
+allocators/*.so
 dj_workloads/*
 *.png
 *__pycache__*

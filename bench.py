@@ -7,22 +7,21 @@ import os
 import subprocess
 
 import src.facter
-import src.targets
+import src.allocators
 
 benchmarks = ["loop", "mysql", "falsesharing", "dj_trace", "larson"]
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-s", "--save", help="save benchmark results to disk", action='store_true')
 parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
-parser.add_argument("-t", "--targets", help="load target definitions from file", type=str)
+parser.add_argument("-a", "--allocators", help="load allocator definitions from file", type=str)
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='store_true')
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
 parser.add_argument("-sd", "--resultdir", help="directory where all results go", type=str)
-parser.add_argument("-a", "--analyse", help="collect allocation sizes", action='store_true')
-parser.add_argument("--nolibmemusage", help="don't use libmemusage to analyse", action='store_true')
 parser.add_argument("--license", help="print license info and exit", action='store_true')
+
 
 def main():
     args = parser.parse_args()
@@ -30,6 +29,9 @@ def main():
         print("Copyright (C) 2018-2019 Florian Fischer")
         print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
         return
+
+    if args.verbose:
+        print(args)
 
     # Prepare allocbench
     print("Building allocbench")
@@ -39,16 +41,18 @@ def main():
 
     subprocess.run(make_cmd)
 
-    if args.verbose:
-        print(args)
+    allocators_file = os.path.join("build", "allocators", "allocators.py")
 
-    if args.targets:
-        with open(args.targets, "r") as f:
-            g = {}
+    if args.allocators or os.path.isfile(allocators_file):
+        allocators_files = args.allocators or allocators_file
+
+        with open(allocators_files, "r") as f:
+            g = {"verbose": args.verbose}
             exec(f.read(), g)
-        src.targets.targets = g["targets"]
-        if args.verbose:
-            print("Targets:", src.targets.targets.keys())
+        src.allocators.allocators = g["allocators"]
+
+    if args.verbose:
+        print("Allocators:", *src.allocators.allocators.keys())
 
     if args.save or not args.nosum and not (args.runs < 1 and not args.load):
         if args.resultdir:
@@ -68,16 +72,11 @@ def main():
         if args.load:
             bench.load(path=args.load)
 
-        if args.runs > 0 or args.analyse:
+        if args.runs > 0:
             print("Preparing", bench.name, "...")
             if not bench.prepare():
                 print("Preparing", bench.name, "failed!")
                 return
-
-        if args.analyse and hasattr(bench, "analyse") and callable(bench.analyse):
-            print("Analysing", bench.name, "...")
-            analyse_args = {"nolibmemusage": args.nolibmemusage, "verbose": args.verbose}
-            bench.analyse(**analyse_args)
 
         if not bench.run(runs=args.runs, verbose=args.verbose):
             continue
@@ -100,7 +99,7 @@ def main():
 
             os.chdir(old_cwd)
 
-        if (args.runs > 0 or args.analyse) and hasattr(bench, "cleanup"):
+        if args.runs > 0 and hasattr(bench, "cleanup"):
             print("Cleaning up", bench.name, "...")
             bench.cleanup()
 
