@@ -1,0 +1,17 @@
+diff --git a/src/thread_cache.cc b/src/thread_cache.cc
+index 6d2f832..2074f4a 100644
+--- a/src/thread_cache.cc
++++ b/src/thread_cache.cc
+@@ -120,7 +120,11 @@ void* ThreadCache::FetchFromCentralCache(uint32 cl, int32_t byte_size,
+   ASSERT(list->empty());
+   const int batch_size = Static::sizemap()->num_objects_to_move(cl);
+ 
+-  const int num_to_move = min<int>(list->max_length(), batch_size);
++  int num_to_move = min<int>(list->max_length(), batch_size);
++  const int cache_line_parts = 64 / byte_size;
++  if (cache_line_parts > 0 && cache_line_parts > num_to_move)
++      num_to_move = cache_line_parts;
++
+   void *start, *end;
+   int fetch_count = Static::central_cache()[cl].RemoveRange(
+       &start, &end, num_to_move);
