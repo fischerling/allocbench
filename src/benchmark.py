@@ -150,11 +150,19 @@ class Benchmark (object):
                     i += 1
                     print(i, "of", n, "\r", end='')
 
-                    actual_cmd = self.measure_cmd + " "
-
                     perm_dict = perm._asdict()
                     perm_dict.update(t)
-                    actual_cmd += self.cmd.format(**perm_dict)
+                    actual_cmd = self.cmd.format(**perm_dict)
+
+                    # Find absolute path of executable
+                    binary_end = actual_cmd.find(" ")
+                    binary = subprocess.check_output(["whereis", actual_cmd[0:binary_end]],
+                                                     universal_newlines=True).split()[1]
+                    actual_cmd = binary + actual_cmd[binary_end:]
+
+                    actual_cmd = t["cmd_prefix"] + " " + actual_cmd
+
+                    actual_cmd = self.measure_cmd + " " + actual_cmd
 
                     res = subprocess.run(actual_cmd.split(),
                                          stderr=subprocess.PIPE,
