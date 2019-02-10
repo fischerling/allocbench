@@ -156,8 +156,10 @@ class Benchmark (object):
 
                     # Find absolute path of executable
                     binary_end = actual_cmd.find(" ")
-                    binary = subprocess.check_output(["whereis", actual_cmd[0:binary_end]],
-                                                     universal_newlines=True).split()[1]
+                    binary = subprocess.run(["whereis", actual_cmd[0:binary_end]],
+                                            stdout=subprocess.PIPE,
+                                            universal_newlines=True).stdout.split()[1]
+
                     actual_cmd = binary + actual_cmd[binary_end:]
 
                     actual_cmd = t["cmd_prefix"] + " " + actual_cmd

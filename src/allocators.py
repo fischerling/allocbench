@@ -12,8 +12,9 @@ allocators = {"libc": {"cmd_prefix"    : "",
 
 for i, t in enumerate(maybe_allocators):
     try:
-        path = subprocess.check_output('whereis lib{} | cut -d":" -f2'.format(t),
-                                       shell=True, text=True).strip()
+        path = subprocess.run('whereis lib{} | cut -d":" -f2'.format(t),
+                              shell=True, stdout=subprocess.PIPE,
+                              universal_newlines=True).stdout.strip()
 
         if path != "":
             allocators[t] = {"cmd_prefix": "", "binary_suffix": "",
