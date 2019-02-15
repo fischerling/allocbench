@@ -23,4 +23,5 @@ and a python script exporting a global dictionary with the name `allocators`.
 To reproducible build allocators and patched version you can use the
 classes `Allocator{_Sources,_Patched}``` provided in ```src/allocator.py`.
 
-See [](allocators/no_falsesharing.py) or [](allocators/BA_allocators.py) for examples.
+See [allocators/no_falsesharing.py](allocators/no_falsesharing.py) or
+[allocators/BA_allocators.py](allocators/BA_allocators.py) for examples.
