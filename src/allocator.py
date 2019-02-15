@@ -1,5 +1,6 @@
 import copy
 import os
+import pickle
 import shutil
 import subprocess
 import sys
@@ -19,10 +20,6 @@ if not os.path.isdir(srcdir):
 
 
 class Allocator_Sources (object):
-    # indicate if this source was patched
-    available = False
-    clean = True
-
     def __init__(self, name, retrieve_cmds=[], prepare_cmds=[], reset_cmds=[]):
         self.name = name
         self.dir = os.path.join(srcdir, self.name)
@@ -53,17 +50,14 @@ class Allocator_Sources (object):
 
                 shutil.rmtree(self.dir, ignore_errors=True)
                 exit(1)
-        
-        self.available = True
-        return True
 
     def reset(self, verbose):
         if not self.run_cmds("reset", verbose, cwd=self.dir):
             exit(1)
-        self.clean = True
 
     def patch(self, patches, verbose):
         self.prepare(verbose)
+        self.reset(verbose)
         stdout = subprocess.PIPE if not verbose else None
         stderr = subprocess.PIPE
         cwd = os.path.join(srcdir, self.name)
@@ -95,12 +89,17 @@ class Allocator (object):
                 setattr(self, attr, None)
 
     def build(self, verbose=False):
-        if not os.path.isdir(self.dir):
+        build_needed = not os.path.isdir(self.dir)
+
+        if not build_needed:
+            old_def = ""
+            with open(os.path.join(self.dir, ".builddef"), "rb") as f:
+                old_def = f.read()
+            build_needed = old_def != pickle.dumps(self)
+
+        if build_needed:
             if self.sources:
-                if not self.sources.available:
-                    self.sources.prepare(verbose)
-                if not self.sources.clean:
-                    self.sources.reset(verbose)
+                self.sources.prepare(verbose)
                 
             if self.build_cmds:
                 print("Building", self.name, "...")
@@ -116,7 +115,10 @@ class Allocator (object):
                         print(p.stderr)
                         print("Building", self.name, "failed ...")
                         shutil.rmtree(self.dir, ignore_errors=True)
-                        exit(1)
+                        exit(2)
+
+                with open(os.path.join(self.dir, ".builddef"), "wb") as f:
+                    pickle.dump(self, f)
 
         for attr in ["LD_PRELOAD", "cmd_prefix"]:
             try:
