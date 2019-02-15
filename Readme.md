@@ -46,7 +46,7 @@ results in `$PWD/results/$HOSTNAME/<time>/loop`
 
 	./bench.py -a allocators/BA_allocators.py
 
-builds all allocators used in my [BA thesis](muhq.space/ba.html) and runs all
+builds all allocators used in my [BA thesis](https://muhq.space/ba.html) and runs all
 default benchmarks
 
 	./bench.py -r 0 -l <path/to/saved/results>
