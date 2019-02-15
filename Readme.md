@@ -56,14 +56,14 @@ doesn't run any benchmark just summarizes the loaded results
 ## Benchmarks
 
 You want to compare allocators with your own software or add a new benchmark,
-have a look at [doc/Benchmarks.md]().
+have a look at [](doc/Benchmarks.md).
 
 ## Allocators
 
 By default tcmalloc, jemalloc, Hoard and your libc's allocator will be used
 if found and the `-a` option is not used.
 
-For more control about used allocators have a look at [doc/Allocators.md]().
+For more control about used allocators have a look at [](doc/Allocators.md).
 
 ## License
 

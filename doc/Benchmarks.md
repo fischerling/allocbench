@@ -129,16 +129,16 @@ for number_of_runs
 
 #### run hooks
 
-* ```preallocator_hook((alloc_name, alloc_definition), current_run, verbose)``` is called
+* `preallocator_hook((alloc_name, alloc_definition), current_run, verbose)` is called
 	if available once per allocator before any command is executed. This hook may
 	be useful if you want to prepare stuff for each allocator. The mysql benchmark
 	uses this hook to start the mysql server with the current allocator.
 
-* ```process_output(result_dict, stdout, stderr, allocator_name, permutation, verbose)```
+* `process_output(result_dict, stdout, stderr, allocator_name, permutation, verbose)`
 	is called after each run of your command. Store relevant data in result_dict
 	to use it for your summary.
 
-* ```postallocator_hook((alloc_name, alloc_definition), current_run, verbose)``
+* `postallocator_hook((alloc_name, alloc_definition), current_run, verbose)`
 	is called after all permutations are done for the current allocator.
 	The mysql benchmark uses this hook to terminate the in preallocator_hook started
 	mysql server.
