@@ -6,9 +6,8 @@ from src.benchmark import Benchmark
 class Benchmark_Loop(Benchmark):
     def __init__(self):
         self.name = "loop"
-        self.descrition = """This benchmark makes n allocations in t concurrent
-                             threads. How allocations are freed can be changed
-                             with the benchmark version""",
+        self.descrition = """This benchmark allocates and frees n blocks in t concurrent
+                             threads."""
 
         self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
