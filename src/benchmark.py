@@ -127,7 +127,7 @@ class Benchmark (object):
             if is_fixed:
                 yield p
 
-    def run(self, verbose=False, runs=5):
+    def run(self, runs=5, verbose=False):
         if runs > 0:
             print("Running", self.name, "...")
         n = len(list(self.iterate_args())) * len(self.allocators)
