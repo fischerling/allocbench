@@ -13,6 +13,8 @@ from src.allocators import allocators
 
 class Benchmark (object):
 
+    perf_allowed = None
+
     defaults = {
         "name": "default_benchmark",
         "description": ("This is the default benchmark description please add"
@@ -132,6 +134,23 @@ class Benchmark (object):
     def run(self, runs=5, verbose=False):
         if runs > 0:
             print("Running", self.name, "...")
+
+        # check if perf is allowed on this system
+        if self.measure_cmd == self.defaults["measure_cmd"]:
+            if perf_allowed == None:
+                res = subprocess.run(["perf", "stat", "ls"],
+                                     stdout=None, stderr=subprocess.PIPE,
+                                     universal_newlines=True)
+                if res.returncode != 0:
+                    print("Test perf run failed with:")
+                    print(res.stderr)
+                    perf_allowed = False
+
+            if not perf_allowed:
+                print("Skipping", self.name, "because you don't have the",
+                      "needed permissions to use perf")
+                return False
+
         n = len(list(self.iterate_args())) * len(self.allocators)
         for run in range(1, runs + 1):
             print(str(run) + ". run")
