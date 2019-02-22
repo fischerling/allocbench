@@ -76,7 +76,7 @@ def main():
             print("Preparing", bench.name, "...")
             if not bench.prepare():
                 print("Preparing", bench.name, "failed!")
-                return
+                continue
 
         if not bench.run(runs=args.runs, verbose=args.verbose):
             continue
