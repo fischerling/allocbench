@@ -85,7 +85,7 @@ def main():
             old_cwd = os.getcwd()
             os.chdir(resdir)
 
-            if args.save:
+            if args.save or args.nosum:
                 bench.save()
 
             if not args.nosum and not (args.runs < 1 and not args.load):
