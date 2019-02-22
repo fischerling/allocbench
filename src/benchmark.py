@@ -93,6 +93,7 @@ class Benchmark (object):
             # Search for file
             if fpath:
                 if not is_exe(r):
+                    print("requirement:", r, "not found")
                     return False
             # Search in PATH
             else:
@@ -103,6 +104,7 @@ class Benchmark (object):
                         found = True
 
                 if not found:
+                    print("requirement:", r, "not found")
                     return False
 
         return True
