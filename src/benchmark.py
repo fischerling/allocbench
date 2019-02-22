@@ -137,7 +137,7 @@ class Benchmark (object):
 
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
-            if perf_allowed == None:
+            if self.perf_allowed == None:
                 res = subprocess.run(["perf", "stat", "ls"],
                                      stdout=None, stderr=subprocess.PIPE,
                                      universal_newlines=True)
@@ -146,7 +146,7 @@ class Benchmark (object):
                     print(res.stderr)
                     perf_allowed = False
 
-            if not perf_allowed:
+            if not self.perf_allowed:
                 print("Skipping", self.name, "because you don't have the",
                       "needed permissions to use perf")
                 return False
