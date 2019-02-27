@@ -11,10 +11,15 @@ class Benchmark_Loop(Benchmark):
 
         self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
-        self.args = {
-                        "maxsize":  [2 ** x for x in range(6, 16)],
-                        "nthreads": range(1, multiprocessing.cpu_count() * 2 + 1)
-                    }
+        cpus = multiprocessing.cpu_count()
+        steps = 1
+        if cpus > 20:
+            steps = 2
+        if cpus > 50:
+            steps = 5
+
+        self.args = {"maxsize":  [2 ** x for x in range(6, 16)],
+                     "nthreads": range(1, multiprocessing.cpu_count() * 2 + 1, steps)}
 
         self.requirements = ["loop"]
         super().__init__()
