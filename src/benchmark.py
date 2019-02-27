@@ -139,7 +139,8 @@ class Benchmark (object):
         if self.measure_cmd == self.defaults["measure_cmd"]:
             if self.perf_allowed == None:
                 res = subprocess.run(["perf", "stat", "ls"],
-                                     stdout=None, stderr=subprocess.PIPE,
+                                     stdout=subprocess.PIPE,
+                                     stderr=subprocess.PIPE,
                                      universal_newlines=True)
                 if res.returncode != 0:
                     print("Test perf run failed with:")
