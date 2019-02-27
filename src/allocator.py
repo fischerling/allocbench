@@ -35,7 +35,7 @@ class Allocator_Sources (object):
             stderr = subprocess.PIPE if not verbose else None
             p = subprocess.run(cmd, shell=True, cwd=cwd, stderr=stderr,
                                stdout=stdout)
-            
+
             if p.returncode:
                 print(function, self.name, "failed with", p.returncode,
                       file=sys.stderr)
@@ -50,6 +50,8 @@ class Allocator_Sources (object):
 
                 shutil.rmtree(self.dir, ignore_errors=True)
                 exit(1)
+        else:
+            self.reset(verbose)
 
     def reset(self, verbose):
         if not self.run_cmds("reset", verbose, cwd=self.dir):
@@ -67,11 +69,11 @@ class Allocator_Sources (object):
             with open(patch, "rb") as f:
                 p = subprocess.run("patch -p1", shell=True, cwd=cwd, stderr=stderr,
                                    stdout=stdout, input=f.read())
-        
+
                 if p.returncode:
                     print("Patching of", self.name, "failed.", file=sys.stderr)
                     exit(1)
-        
+
 
 class Allocator (object):
     allowed_attributes = ["binary_suffix", "version", "sources", "build_cmds",
@@ -94,13 +96,13 @@ class Allocator (object):
         if not build_needed:
             old_def = ""
             with open(os.path.join(self.dir, ".builddef"), "rb") as f:
-                old_def = f.read()
+                old_def = pickle.dumps(pickle.load(f))
             build_needed = old_def != pickle.dumps(self)
 
         if build_needed:
             if self.sources:
                 self.sources.prepare(verbose)
-                
+
             if self.build_cmds:
                 print("Building", self.name, "...")
                 for cmd in self.build_cmds:
@@ -127,7 +129,7 @@ class Allocator (object):
                                                   "srcdir": self.sources.dir}))
             except AttributeError:
                 setattr(self, attr, "")
-        
+
         return {"cmd_prefix": self.cmd_prefix,
                 "binary_suffix": self.binary_suffix or "",
                 "LD_PRELOAD": self.LD_PRELOAD,
