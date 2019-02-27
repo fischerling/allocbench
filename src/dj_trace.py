@@ -99,15 +99,42 @@ class Benchmark_DJ_Trace(Benchmark):
         if not os.path.isdir("dj_workloads"):
             os.mkdir("dj_workloads")
 
+        download_all = None
+        wl_sizes = {"dj": "14M", "oocalc": "65M", "mt_test_one_alloc": "5.7M",
+                    "proprietary-1": "2.8G", "qemu-virtio": "34M",
+                    "proprietary-2": "92M", "qemu-win7": "23M",
+                    "389-ds-2": "3.4G", "dj2": "294M"}
+
         for wl in self.args["workload"]:
             file_name = wl + ".wl"
             file_path = os.path.join("dj_workloads", file_name)
             if not os.path.isfile(file_path):
-                if input("want to download " + wl + " [Y/n] ") in ["", "Y", "y"]:
-                    url = "http://www.delorie.com/malloc/" + file_name
-                    urlretrieve(url, file_path, reporthook)
-                    sys.stderr.write("\n")
-        return True
+                if download_all == None:
+                    download_all = input(("Download all workloads (~6.7GB)"
+                                          " [Y/n] ")) in ["", "Y", "y"]
+                if (not download_all and
+                    input("want to download {} ({}) [Y/n] ".format(wl, wl_sizes[wl])) not in ["", "Y", "y"]):
+                    continue
+
+                if download_all:
+                    print("downloading {} ({}) ...".format(wl, wl_sizes[wl]))
+
+                url = "http://www.delorie.com/malloc/" + file_name
+                urlretrieve(url, file_path, reporthook)
+                sys.stderr.write("\n")
+
+        available_workloads = []
+        for wl in self.args["workload"]:
+            file_name = wl + ".wl"
+            file_path = os.path.join("dj_workloads", file_name)
+            if os.path.isfile(file_path):
+                available_workloads.append(wl)
+
+        if len(available_workloads) > 0:
+            self.args["workload"] = available_workloads
+            return True
+        
+        return False
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
         def to_int(s):
