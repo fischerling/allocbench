@@ -18,8 +18,12 @@ class Benchmark_Loop(Benchmark):
         if cpus > 50:
             steps = 5
 
+        # Special thread counts
+        nthreads = set([1, cpus/2, cpus, cpus*2])
+        nthreads.update(range(steps, cpus * 2 + 1, steps))
+
         self.args = {"maxsize":  [2 ** x for x in range(6, 16)],
-                     "nthreads": range(1, multiprocessing.cpu_count() * 2 + 1, steps)}
+                     "nthreads": list(nthreads)}
 
         self.requirements = ["loop"]
         super().__init__()
