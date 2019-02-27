@@ -10,3 +10,4 @@ dj_workloads/*
 *.log
 *.hist
 status
+tags
