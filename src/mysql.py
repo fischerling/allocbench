@@ -102,7 +102,7 @@ class Benchmark_MYSQL(Benchmark):
             ret = True
             p = subprocess.run(prepare_cmd, stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
-                print(p.stout)
+                print(p.stdout)
                 print(p.stderr)
                 ret = False
 
