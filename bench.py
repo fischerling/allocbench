@@ -65,11 +65,12 @@ def main():
     allocators_file = os.path.join("build", "allocators", "allocators.py")
 
     if args.allocators or os.path.isfile(allocators_file):
-        allocators_files = args.allocators or allocators_file
+        allocators_file = args.allocators or allocators_file
+        src.globalvars.allocators_file = allocators_file
 
-        with open(allocators_files, "r") as f:
+        with open(allocators_file, "r") as f:
             print_status("Sourcing allocators definition ...")
-            g= {}
+            g = {}
             exec(f.read(), g)
         src.allocators.allocators = g["allocators"]
 

@@ -1,6 +1,6 @@
 import copy
+from datetime import datetime
 import os
-import pickle
 import shutil
 import subprocess
 import sys
@@ -20,7 +20,6 @@ srcdir = os.path.join(builddir, "src")
 
 if not os.path.isdir(srcdir):
     os.makedirs(srcdir)
-
 
 class Allocator_Sources (object):
     def __init__(self, name, retrieve_cmds=[], prepare_cmds=[], reset_cmds=[]):
@@ -99,18 +98,22 @@ class Allocator (object):
 
     def build(self):
         build_needed = not os.path.isdir(self.dir)
-        builddef_file = os.path.join(self.dir, ".builddef")
+        buildtimestamp_file = os.path.join(self.dir, ".buildtime")
 
         if not build_needed:
-            print_info2("Old build found. Comparing builddefs")
+            print_info2("Old build found. Comparing build time with mtime")
 
-            old_def = ""
-            with open(builddef_file, "rb") as f:
-                old_def = pickle.dumps(pickle.load(f))
-            build_needed = old_def != pickle.dumps(self)
+            with open(buildtimestamp_file, "r") as f:
+                timestamp = datetime.fromisoformat(f.read())
 
-            print_debug("Old Def.:", old_def)
-            print_debug("New Def.:", pickle.dumps(self))
+            # print(globals())
+            modtime = os.stat(os.path.realpath(src.globalvars.allocators_file)).st_mtime
+            modtime = datetime.fromtimestamp(modtime)
+
+            build_needed = timestamp < modtime
+
+            print_debug("Time of last build:", timestamp.isoformat())
+            print_debug("Last modification of allocators file:", modtime.isoformat())
             print_info2("Build needed:", build_needed)
 
         if build_needed:
@@ -136,9 +139,9 @@ class Allocator (object):
                         shutil.rmtree(self.dir, ignore_errors=True)
                         exit(2)
 
-                with open(builddef_file, "wb") as f:
-                    print_info2("Save build definition to:", builddef_file)
-                    pickle.dump(self, f)
+                with open(buildtimestamp_file, "w") as f:
+                    print_info2("Save build time to:", buildtimestamp_file)
+                    f.write(str(datetime.now().isoformat()))
 
         print_info2("Create allocator dictionary")
         for attr in ["LD_PRELOAD", "cmd_prefix"]:
