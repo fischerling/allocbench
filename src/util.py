@@ -1,4 +1,3 @@
-import colorama
 import sys
 
 import src.globalvars
@@ -6,10 +5,14 @@ import src.globalvars
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout, flush=False):
     if src.globalvars.verbosity < 0:
         return
-    color = getattr(colorama.Fore, color)
+    
+    color = {"YELLOW": "\x1b[33m",
+             "GREEN": "\x1b[32m",
+             "RED": "\x1b[31m"}[color]
+
     print(color, end="", file=file)
     print(*objects, sep=sep, end=end, file=file)
-    print(colorama.Fore.RESET, end="", file=file, flush=flush)
+    print("\x1b[0m", end="", file=file, flush=flush)
 
 def print_debug(*objects, sep=' ', end='\n', file=sys.stdout, flush=False):
     if src.globalvars.verbosity < 99:
