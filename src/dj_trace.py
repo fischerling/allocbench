@@ -83,8 +83,8 @@ class Benchmark_DJ_Trace(Benchmark):
         self.requirements = ["trace_run"]
         super().__init__()
 
-    def prepare(self, verbose=False):
-        super().prepare(verbose=verbose)
+    def prepare(self):
+        super().prepare()
 
         def reporthook(blocknum, blocksize, totalsize):
             readsofar = blocknum * blocksize
@@ -117,7 +117,7 @@ class Benchmark_DJ_Trace(Benchmark):
                     continue
 
                 if download_all:
-                    print("downloading {} ({}) ...".format(wl, wl_sizes[wl]))
+                    print_status("downloading {} ({}) ...".format(wl, wl_sizes[wl]))
 
                 url = "http://www.delorie.com/malloc/" + file_name
                 urlretrieve(url, file_path, reporthook)

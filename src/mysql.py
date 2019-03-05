@@ -6,10 +6,12 @@ import re
 import shutil
 import subprocess
 from subprocess import PIPE
+import sys
 from time import sleep
 
-from src.benchmark import Benchmark
 from src.allocators import allocators
+from src.benchmark import Benchmark
+from src.util import *
 
 cwd = os.getcwd()
 
@@ -42,25 +44,22 @@ class Benchmark_MYSQL(Benchmark):
         self.requirements = ["mysqld", "sysbench"]
         super().__init__()
 
-    def start_and_wait_for_server(self, verbose, cmd_prefix=""):
+    def start_and_wait_for_server(self, cmd_prefix=""):
         actual_cmd = cmd_prefix.split() + server_cmd
-        if verbose:
-            print("Starting server with:", actual_cmd)
+        print_info("Starting server with:", actual_cmd)
 
-        self.server = subprocess.Popen(actual_cmd,
-                                       stdout=subprocess.PIPE,
-                                       stderr=subprocess.PIPE,
+        self.server = subprocess.Popen(actual_cmd, stdout=PIPE, stderr=PIPE,
                                        universal_newlines=True)
         # TODO make sure server comes up !
         sleep(10)
         return self.server.poll() is None
 
-    def prepare(self, verbose=False):
-        if not super().prepare(verbose=verbose):
+    def prepare(self):
+        if not super().prepare():
             return False
         # Setup Test Environment
         if not os.path.exists("mysql_test"):
-            print("Prepare mysqld directory and database")
+            print_status("Prepare mysqld directory and database")
             os.makedirs("mysql_test")
 
             # Init database
@@ -68,22 +67,22 @@ class Benchmark_MYSQL(Benchmark):
                                             stdout=PIPE).stdout:
                 init_db_cmd = ["mysql_install_db", "--basedir=/usr",
                                "--datadir="+cwd+"/mysql_test"]
-                if verbose:
-                    print("MariaDB detected")
+                print_info2("MariaDB detected")
             else:
                 init_db_cmd = ["mysqld", "-h", cwd+"/mysql_test",
                                "--initialize-insecure"]
-                if verbose:
-                    print("Oracle MySQL detected")
+                print_info2("Oracle MySQL detected")
 
             p = subprocess.run(init_db_cmd, stdout=PIPE, stderr=PIPE)
 
             if not p.returncode == 0:
-                print(p.stderr)
+                print_error("Creating test DB failed with:", p.returncode)
+                print_debug(p.stderr, file=sys.stderr)
                 return False
 
-            if not self.start_and_wait_for_server(verbose):
-                print("Starting mysqld failed")
+            if not self.start_and_wait_for_server():
+                print_error("Starting mysqld failed")
+                print_debug(self.server.stderr, file=sys.stderr)
                 return False
 
             # Create sbtest TABLE
@@ -92,17 +91,19 @@ class Benchmark_MYSQL(Benchmark):
                                stdout=PIPE, stderr=PIPE)
 
             if not p.returncode == 0:
-                print(p.stderr)
+                print_error("Creating test table failed with:", p.returncode)
+                print_debug(p.stderr, file=sys.stderr)
                 self.server.kill()
                 self.server.wait()
                 return False
 
-            print("Prepare test tables")
+            print_status("Prepare test tables ...")
             ret = True
             p = subprocess.run(prepare_cmd, stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
-                print(p.stdout)
-                print(p.stderr)
+                print_error("Preparing test tables failed with:", p.returncode)
+                print_debug(p.stdout, file=sys.stderr)
+                print_debug(p.stderr, file=sys.stderr)
                 ret = False
 
             self.server.kill()
@@ -114,16 +115,15 @@ class Benchmark_MYSQL(Benchmark):
 
     def cleanup(self):
         if os.path.exists("mysql_test"):
-            print("Delete mysqld directory")
+            print_status("Delete mysqld directory")
             shutil.rmtree("mysql_test")
 
     def preallocator_hook(self, allocator, run, verbose):
-        if not self.start_and_wait_for_server(verbose,
-                                              cmd_prefix=allocator[1]["cmd_prefix"]):
-            print("Can't start server for", allocator[0] + ".")
-            print("Aborting Benchmark.")
-            print(allocator[1]["cmd_prefix"])
-            print(self.server.stderr.read())
+        if not self.start_and_wait_for_server(cmd_prefix=allocator[1]["cmd_prefix"]):
+            print_error("Can't start server for", allocator[0] + ".")
+            print_error("Aborting Benchmark.")
+            print_debug(allocator[1]["cmd_prefix"], file=sys.stderr)
+            print_debug(self.server.stderr, file=sys.stderr)
             return False
 
     def postallocator_hook(self, allocator, run, verbose):
