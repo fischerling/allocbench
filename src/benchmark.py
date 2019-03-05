@@ -2,6 +2,7 @@ from collections import namedtuple
 import csv
 import itertools
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
 import os
 import pickle
@@ -27,6 +28,26 @@ class Benchmark (object):
         "allocators": allocators,
     }
 
+    @staticmethod
+    def scale_threads_for_cpus(factor):
+        cpus = multiprocessing.cpu_count()
+        max_threads = cpus * factor
+        steps = 1
+        if max_threads > 40:
+            steps = 2
+        if max_threads > 100:
+            steps = 5
+        if max_threads > 200:
+            steps = 10
+
+        # Special thread counts
+        nthreads = set([1, cpus/2, cpus, cpus*factor])
+        nthreads.update(range(steps, cpus * factor + 1, steps))
+        nthreads = list(nthreads)
+        nthreads.sort()
+
+        return nthreads
+
     def __init__(self):
         # Set default values
         for k in Benchmark.defaults:
@@ -47,6 +68,12 @@ class Benchmark (object):
 
         if not hasattr(self, "requirements"):
             self.requirements = []
+
+        print_debug("Creating benchmark", self.name)
+        print_debug("Cmd:", self.cmd)
+        print_debug("Args:", self.args)
+        print_debug("Requirements:", self.requirements)
+        print_debug("Results dictionary:", self.results)
 
     def save(self, path=None):
         f = path if path else self.name + ".save"

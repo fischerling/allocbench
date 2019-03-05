@@ -54,8 +54,6 @@ Delorie using the tools from dj/malloc branch of the glibc.
 #### loop.py as Example
 
 ```python
-import multiprocessing
-
 from src.benchmark import Benchmark
 
 
@@ -69,7 +67,7 @@ class Benchmark_Loop(Benchmark):
 
         self.args = {
                         "maxsize":  [2 ** x for x in range(6, 16)],
-                        "nthreads": range(1, multiprocessing.cpu_count() * 2 + 1)
+                        "nthreads": Benchmark.scale_threads_for_cpus(2)
                     }
 
         self.requirements = ["loop"]

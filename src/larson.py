@@ -1,4 +1,3 @@
-import multiprocessing
 import re
 
 from src.benchmark import Benchmark
@@ -19,7 +18,7 @@ class Benchmark_Larson(Benchmark):
 
         self.args = {
                         "maxsize": [8, 32, 64, 128, 256, 512, 1024],
-                        "threads": range(1, multiprocessing.cpu_count() * 2 + 1)
+                        "threads": Benchmark.scale_threads_for_cpus(2)
                     }
 
         self.requirements = ["larson"]

@@ -1,5 +1,4 @@
 import matplotlib.pyplot as plt
-import multiprocessing
 import numpy as np
 import re
 
@@ -20,7 +19,7 @@ class Benchmark_Falsesharing(Benchmark):
 
         self.args = {
                         "bench": ["thrash", "scratch"],
-                        "threads": range(1, multiprocessing.cpu_count() * 2 + 1)
+                        "threads": Benchmark.scale_threads_for_cpus(2)
                     }
 
         self.requirements = ["cache-thrash", "cache-scratch"]

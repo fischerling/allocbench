@@ -1,5 +1,3 @@
-import multiprocessing
-
 from src.benchmark import Benchmark
 
 
@@ -11,19 +9,8 @@ class Benchmark_Loop(Benchmark):
 
         self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
-        cpus = multiprocessing.cpu_count()
-        steps = 1
-        if cpus > 20:
-            steps = 2
-        if cpus > 50:
-            steps = 5
-
-        # Special thread counts
-        nthreads = set([1, cpus/2, cpus, cpus*2])
-        nthreads.update(range(steps, cpus * 2 + 1, steps))
-
         self.args = {"maxsize":  [2 ** x for x in range(6, 16)],
-                     "nthreads": list(nthreads)}
+                     "nthreads": Benchmark.scale_threads_for_cpus(2)}
 
         self.requirements = ["loop"]
         super().__init__()

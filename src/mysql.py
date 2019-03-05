@@ -1,6 +1,5 @@
 import copy
 import matplotlib.pyplot as plt
-import multiprocessing
 import numpy as np
 import os
 import re
@@ -36,7 +35,7 @@ class Benchmark_MYSQL(Benchmark):
         if "hoard" in self.allocators:
             del(self.allocators["hoard"])
 
-        self.args = {"nthreads": range(1, multiprocessing.cpu_count() + 1)}
+        self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
         self.cmd = cmd
         self.measure_cmd = ""
 
