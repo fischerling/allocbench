@@ -6,17 +6,23 @@ import importlib
 import os
 import subprocess
 
-import src.facter
 import src.allocators
+import src.facter
+import src.globalvars
+from src.util import *
+
 
 benchmarks = ["loop", "mysql", "falsesharing", "dj_trace", "larson"]
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
-parser.add_argument("-s", "--save", help="save benchmark results in RESULTDIR", action='store_true')
+parser.add_argument("-ds, --dont-save", action='store_true', dest="dont_save",
+                    help="don't save benchmark results in RESULTDIR")
 parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
 parser.add_argument("-a", "--allocators", help="load allocator definitions from file", type=str)
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
-parser.add_argument("-v", "--verbose", help="more output", action='store_true')
+parser.add_argument("-v", "--verbose", help="more output", action='count')
+parser.add_argument("-vdebug", "--verbose-debug", help="debug output",
+                    action='store_true', dest="verbose_debug")
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
 parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
@@ -30,77 +36,104 @@ def main():
         print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
         return
 
-    if args.verbose:
-        print(args)
+    # Set global verbosity
+    # quiet | -1: Don't output to stdout
+    # default | 0: Only print status and errors
+    # 1: Print warnings and some infos
+    # 2: Print all infos
+    # debug | 99: Print all awailable infos
+    if args.verbose_debug:
+        src.globalvars.verbosity = 99
+    elif args.verbose:
+        src.globalvars.verbosity = args.verbose
+
+    verbosity = src.globalvars.verbosity
+
+    print_info2("Arguments:", args)
 
     # Prepare allocbench
-    print("Building allocbench")
+    print_status("Building allocbench ...")
     make_cmd = ["make"]
-    if not args.verbose:
+    if verbosity < 1:
         make_cmd.append("-s")
+    else:
+        # Flush stdout so the color reset from print_status works
+        print("", end="", flush=True)
 
     subprocess.run(make_cmd)
 
+    # Prepare compared allocators
     allocators_file = os.path.join("build", "allocators", "allocators.py")
 
     if args.allocators or os.path.isfile(allocators_file):
         allocators_files = args.allocators or allocators_file
 
         with open(allocators_files, "r") as f:
-            g = {"verbose": args.verbose}
+            g = {"verbosity": verbosity}
             exec(f.read(), g)
         src.allocators.allocators = g["allocators"]
 
-    if args.verbose:
-        print("Allocators:", *src.allocators.allocators.keys())
+    print_info("Allocators:", *src.allocators.allocators.keys())
 
-    if args.save or not args.nosum and not (args.runs < 1 and not args.load):
+    # Create result directory if we save or summarize results
+    need_resultdir = not (args.nosum and args.dont_save)
+    if need_resultdir:
         if args.resultdir:
             resdir = os.path.join(args.resultdir)
         else:
-            resdir = os.path.join("results", src.facter.get_hostname(),
+            hostname = src.facter.get_hostname()
+            # TODO use saved hostname
+            if args.load and args.runs < 2:
+                pass
+            resdir = os.path.join("results", hostname,
                                     datetime.datetime.now().strftime("%Y-%m-%dT%H:%M"))
         try:
+            print_info2("Creating result dir:", resdir)
             os.makedirs(resdir)
         except FileExistsError:
             pass
+
+    # TODO load all results at once
 
     for bench in benchmarks:
         bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
         if args.benchmarks and not bench.name in args.benchmarks:
             continue
+
         if args.load:
             bench.load(path=args.load)
 
         if args.runs > 0:
-            print("Preparing", bench.name, "...")
+            print_status("Preparing", bench.name, "...")
             if not bench.prepare():
-                print("Preparing", bench.name, "failed!")
+                print_error("Preparing", bench.name, "failed!")
                 continue
 
-        if not bench.run(runs=args.runs, verbose=args.verbose):
+        print_status("Running", bench.name, "...")
+        if not bench.run(runs=args.runs):
             continue
 
-        if args.save or not args.nosum and not (args.runs < 1 and not args.load):
+        if need_resultdir:
+            print_info2("Changing cwd to:", resdir)
             old_cwd = os.getcwd()
             os.chdir(resdir)
 
-            if args.save or args.nosum:
+            if not args.dont_save:
                 bench.save()
 
-            if not args.nosum and not (args.runs < 1 and not args.load):
+            if not args.nosum:
                 try:
                     os.mkdir(bench.name)
                 except FileExistsError:
                     pass
                 os.chdir(bench.name)
-                print("Summarizing", bench.name, "...")
+                print_status("Summarizing", bench.name, "...")
                 bench.summary()
 
             os.chdir(old_cwd)
 
         if args.runs > 0 and hasattr(bench, "cleanup"):
-            print("Cleaning up", bench.name, "...")
+            print_status("Cleaning up", bench.name, "...")
             bench.cleanup()
 
 if __name__ == "__main__":

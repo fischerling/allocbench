@@ -9,6 +9,8 @@ import shutil
 import subprocess
 
 from src.allocators import allocators
+import src.globalvars
+from src.util import *
 
 
 class Benchmark (object):
@@ -46,10 +48,9 @@ class Benchmark (object):
         if not hasattr(self, "requirements"):
             self.requirements = []
 
-    def save(self, path=None, verbose=False):
+    def save(self, path=None):
         f = path if path else self.name + ".save"
-        if verbose:
-            print("Saving results to:", self.name + ".save")
+        print_info("Saving results to:", self.name + ".save")
         # Pickle can't handle namedtuples so convert the dicts of namedtuples
         # into lists of dicts.
         save_data = {}
@@ -63,7 +64,7 @@ class Benchmark (object):
         with open(f, "wb") as f:
             pickle.dump(save_data, f)
 
-    def load(self, path=None, verbose=False):
+    def load(self, path=None):
         if not path:
             f = self.name + ".save"
         else:
@@ -71,8 +72,8 @@ class Benchmark (object):
                 f = os.path.join(path, self.name + ".save")
             else:
                 f = path
-        if verbose:
-            print("Loading results from:", self.name + ".save")
+
+        print_info("Loading results from:", self.name + ".save")
         with open(f, "rb") as f:
             self.results = pickle.load(f)
         # Build new named tuples
@@ -82,7 +83,7 @@ class Benchmark (object):
                 d[self.Perm(**dic)] = measures
             self.results[allocator] = d
 
-    def prepare(self, verbose=False):
+    def prepare(self):
         def is_exe(fpath):
             return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
@@ -95,7 +96,7 @@ class Benchmark (object):
             # Search for file
             if fpath:
                 if not is_exe(r):
-                    print("requirement:", r, "not found")
+                    print_error("requirement:", r, "not found")
                     return False
             # Search in PATH
             else:
@@ -106,7 +107,7 @@ class Benchmark (object):
                         found = True
 
                 if not found:
-                    print("requirement:", r, "not found")
+                    print_error("requirement:", r, "not found")
                     return False
 
         return True
@@ -131,34 +132,30 @@ class Benchmark (object):
             if is_fixed:
                 yield p
 
-    def run(self, runs=5, verbose=False):
-        if runs > 0:
-            print("Running", self.name, "...")
-
+    def run(self, runs=5):
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
             if Benchmark.perf_allowed == None:
-                if verbose:
-                    print("Check if you are allowed to use perf ...")
+                print_info("Check if you are allowed to use perf ...")
                 res = subprocess.run(["perf", "stat", "ls"],
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      universal_newlines=True)
                 if res.returncode != 0:
-                    print("Test perf run failed with:")
-                    print(res.stderr)
+                    print_error("Test perf run failed with:")
+                    print(res.stderr, file=sys.stderr)
                     Benchmark.perf_allowed = False
                 else:
                     Benchmark.perf_allowed = True
 
             if not Benchmark.perf_allowed:
-                print("Skipping", self.name, "because you don't have the",
+                print_error("Skipping", self.name, "because you don't have the",
                       "needed permissions to use perf")
                 return False
 
         n = len(list(self.iterate_args())) * len(self.allocators)
         for run in range(1, runs + 1):
-            print(str(run) + ". run")
+            print_status(run, ". run", sep='')
 
             i = 0
             for tname, t in self.allocators.items():
@@ -169,12 +166,13 @@ class Benchmark (object):
                 os.environ["LD_PRELOAD"] += t["LD_PRELOAD"]
 
                 if hasattr(self, "preallocator_hook"):
-                    if self.preallocator_hook((tname, t), run, verbose):
+                    if self.preallocator_hook((tname, t), run,
+                                              verbose=src.globalvars.verbosity):
                         return False
 
                 for perm in self.iterate_args():
                     i += 1
-                    print(i, "of", n, "\r", end='')
+                    print_info0(i, "of", n, "\r", end='')
 
                     perm_dict = perm._asdict()
                     perm_dict.update(t)
@@ -192,24 +190,25 @@ class Benchmark (object):
 
                     actual_cmd = self.measure_cmd + " " + actual_cmd
 
+                    print_debug("Cmd:", actual_cmd)
                     res = subprocess.run(actual_cmd.split(),
                                          stderr=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
                                          universal_newlines=True)
 
                     if res.returncode != 0:
-                        print("\n" + actual_cmd, "exited with", res.returncode,
+                        print_error("\n" + actual_cmd, "exited with", res.returncode,
                               "for", tname)
-                        print("Aborting Benchmark.")
-                        print("Stdout:\n" + res.stdout)
-                        print("Stderr:\n" + res.stderr)
+                        print_debug("Stdout:\n" + res.stdout)
+                        print_debug("Stderr:\n" + res.stderr)
+                        print_error("Aborting Benchmark.")
                         return False
 
                     if "ERROR: ld.so" in res.stderr:
-                        print("\nPreloading of", t["LD_PRELOAD"],
+                        print_error("\nPreloading of", t["LD_PRELOAD"],
                               "failed for", tname)
-                        print("Stderr:\n" + res.stderr)
-                        print("Aborting Benchmark.")
+                        print_debug("Stderr:\n" + res.stderr)
+                        print_error("Aborting Benchmark.")
                         return False
 
                     result = {}
@@ -225,7 +224,8 @@ class Benchmark (object):
 
                     if hasattr(self, "process_output"):
                         self.process_output(result, res.stdout, res.stderr,
-                                            tname, perm, verbose)
+                                            tname, perm,
+                                            verbose=src.globalvars.verbosity)
 
                     # Parse perf output if available
                     if self.measure_cmd == self.defaults["measure_cmd"]:
@@ -236,7 +236,7 @@ class Benchmark (object):
                             try:
                                 result[row[2].split(":")[0]] = row[0]
                             except Exception as e:
-                                print("Exception", e, "occured on", row, "for",
+                                print_warn("Exception", e, "occured on", row, "for",
                                       tname, "and", perm)
 
                     if run == 1:
@@ -244,9 +244,11 @@ class Benchmark (object):
                     self.results[tname][perm].append(result)
 
                 if hasattr(self, "postallocator_hook"):
-                    if self.postallocator_hook((tname, t), run, verbose):
+                    if self.postallocator_hook((tname, t), run,
+                                               verbose=src.globalvars.verbosity):
                         return False
             print()
+        # Reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
         return True
 
