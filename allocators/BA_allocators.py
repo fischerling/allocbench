@@ -1,11 +1,9 @@
 import os
 import subprocess
 
-from src.allocator import library_path
+from src.allocator import *
 from src.allocator import Allocator as Alloc
-from src.allocator import Allocator_Patched as Alloc_Patched
 from src.allocator import Allocator_Sources as Alloc_Src
-from src.allocator import builddir
 
 optimisation_flag = "-O2"
 
@@ -47,17 +45,16 @@ jemalloc = Alloc("jemalloc",
                              "mkdir {dir}"],
                  color="C4")
 
-hoard = Alloc_Patched("Hoard",
-                      Alloc("Hoard", sources=Alloc_Src("Hoard",
+hoard = Alloc("Hoard", sources=Alloc_Src("Hoard",
                                         retrieve_cmds=["git clone https://github.com/emeryberger/Hoard.git"]),
                             LD_PRELOAD="{srcdir}/src/libhoard.so",
                             build_cmds=["cd {srcdir}/src; make",
                                         "mkdir {dir}"],
-                            color="C5"),
-                      ["allocators/hoard_make.patch"])
+                            color="C5",
+                            patches=["allocators/hoard_make.patch"])
 
 
 
 allocators_to_build = [glibc, glibc_notc, tcmalloc, jemalloc, hoard]
 
-allocators = {a.name: a.build(verbose=verbose) for a in allocators_to_build}
+allocators = {a.name: a.build() for a in allocators_to_build}

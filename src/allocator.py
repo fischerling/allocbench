@@ -5,6 +5,9 @@ import shutil
 import subprocess
 import sys
 
+import src.globalvars
+from src.util import *
+
 library_path = ""
 for l in subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
@@ -27,57 +30,61 @@ class Allocator_Sources (object):
         self.prepare_cmds = prepare_cmds
         self.reset_cmds = reset_cmds
 
-    def run_cmds(self, function, verbose, cwd=srcdir):
-        print(function, self.name, "...")
+    def run_cmds(self, function, cwd=srcdir):
+        print_status(function, self.name, "...", flush=True)
+
         cmds = getattr(self, function+"_cmds")
+
+        stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
+
         for cmd in cmds:
-            stdout = subprocess.PIPE if not verbose else None
-            stderr = subprocess.PIPE if not verbose else None
-            p = subprocess.run(cmd, shell=True, cwd=cwd, stderr=stderr,
+            p = subprocess.run(cmd, shell=True, cwd=cwd, stderr=stderr.PIPE,
                                stdout=stdout)
 
             if p.returncode:
-                print(function, self.name, "failed with", p.returncode,
+                print_error(function, self.name, "failed with", p.returncode,
                       file=sys.stderr)
-                print(p.stderr, file=sys.stderr)
+                print_debug(p.stderr, file=sys.stderr)
                 return False
         return True
 
-    def prepare(self, verbose):
+    def prepare(self):
         if not os.path.isdir(self.dir):
-            if (not self.run_cmds("retrieve", verbose) or
-                    not self.run_cmds("prepare", verbose, cwd=self.dir)):
+            if (not self.run_cmds("retrieve") or
+                    not self.run_cmds("prepare", cwd=self.dir)):
 
                 shutil.rmtree(self.dir, ignore_errors=True)
                 exit(1)
         else:
-            self.reset(verbose)
+            self.reset()
 
-    def reset(self, verbose):
-        if not self.run_cmds("reset", verbose, cwd=self.dir):
+    def reset(self):
+        if not self.run_cmds("reset", cwd=self.dir):
             exit(1)
 
-    def patch(self, patches, verbose):
-        self.prepare(verbose)
-        self.reset(verbose)
-        stdout = subprocess.PIPE if not verbose else None
-        stderr = subprocess.PIPE
+    def patch(self, patches):
+        if not patches:
+            return
+
+        stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
         cwd = os.path.join(srcdir, self.name)
 
-        print("Patching", self.name, "...")
+        print_status("Patching", self.name, "...", flush=True)
         for patch in patches:
             with open(patch, "rb") as f:
-                p = subprocess.run("patch -p1", shell=True, cwd=cwd, stderr=stderr,
-                                   stdout=stdout, input=f.read())
+                p = subprocess.run("patch -p1", shell=True, cwd=cwd,
+                                   stderr=subprocess.PIPE, stdout=stdout,
+                                   input=f.read())
 
                 if p.returncode:
-                    print("Patching of", self.name, "failed.", file=sys.stderr)
+                    print_error("Patching of", self.name, "failed.", file=sys.stderr)
+                    print_debug(p.stderr, file=sys.stderr)
                     exit(1)
 
 
 class Allocator (object):
     allowed_attributes = ["binary_suffix", "version", "sources", "build_cmds",
-                          "LD_PRELOAD", "cmd_prefix", "color"]
+                          "LD_PRELOAD", "cmd_prefix", "color", "patches"]
 
     def __init__(self, name, **kwargs):
         self.name = name
@@ -90,38 +97,50 @@ class Allocator (object):
             if not hasattr(self, attr):
                 setattr(self, attr, None)
 
-    def build(self, verbose=False):
+    def build(self):
         build_needed = not os.path.isdir(self.dir)
+        builddef_file = os.path.join(self.dir, ".builddef")
 
         if not build_needed:
+            print_info2("Old build found. Comparing builddefs")
+
             old_def = ""
-            with open(os.path.join(self.dir, ".builddef"), "rb") as f:
+            with open(builddef_file, "rb") as f:
                 old_def = pickle.dumps(pickle.load(f))
             build_needed = old_def != pickle.dumps(self)
 
+            print_debug("Old Def.:", old_def)
+            print_debug("New Def.:", pickle.dumps(self))
+            print_info2("Build needed:", build_needed)
+
         if build_needed:
             if self.sources:
-                self.sources.prepare(verbose)
+                self.sources.prepare()
+                self.sources.patch(self.patches)
 
             if self.build_cmds:
-                print("Building", self.name, "...")
+                print_status("Building", self.name, "...", flush=True)
+
+                stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
+
                 for cmd in self.build_cmds:
                     cmd = cmd.format(**{"dir": self.dir,
                                         "srcdir": self.sources.dir})
-                    stdout = subprocess.PIPE if not verbose else None
-                    stderr = subprocess.PIPE
+
                     p = subprocess.run(cmd, cwd=builddir, shell=True,
-                                       stderr=stderr, stdout=stdout)
+                                       stderr=subprocess.PIPE, stdout=stdout)
                     if p.returncode:
-                        print(cmd)
-                        print(p.stderr)
-                        print("Building", self.name, "failed ...")
+                        print_error(cmd, "failed with:", p.returncode)
+                        print_debug(p.stderr, file=sys.stderr)
+                        print_error("Building", self.name, "failed ...")
                         shutil.rmtree(self.dir, ignore_errors=True)
                         exit(2)
 
-                with open(os.path.join(self.dir, ".builddef"), "wb") as f:
+                with open(builddef_file, "wb") as f:
+                    print_info2("Save build definition to:", builddef_file)
                     pickle.dump(self, f)
 
+        print_info2("Create allocator dictionary")
         for attr in ["LD_PRELOAD", "cmd_prefix"]:
             try:
                 value = getattr(self, attr)
@@ -130,25 +149,21 @@ class Allocator (object):
             except AttributeError:
                 setattr(self, attr, "")
 
-        return {"cmd_prefix": self.cmd_prefix,
-                "binary_suffix": self.binary_suffix or "",
-                "LD_PRELOAD": self.LD_PRELOAD,
-                "color": self.color}
+        res_dict =  {"cmd_prefix": self.cmd_prefix,
+                     "binary_suffix": self.binary_suffix or "",
+                     "LD_PRELOAD": self.LD_PRELOAD,
+                     "color": self.color}
+        print_debug("Resulting dictionary:", res_dict)
+        return res_dict
 
 
-class Allocator_Patched (object):
-    def __init__(self, name, alloc, patches, **kwargs):
-        self.name = name
-        self.patches = patches
+def patch_alloc(name, alloc, patches, **kwargs):
+    new_alloc = copy.deepcopy(alloc)
+    new_alloc.name = name
+    new_alloc.patches = patches
 
-        self.alloc = copy.deepcopy(alloc)
-        self.alloc.name = self.name
-        self.alloc.dir = os.path.join(builddir, self.name)
-        self.alloc.__dict__.update((k, v) for k, v in kwargs.items() if k in self.alloc.allowed_attributes)
+    new_alloc.dir = os.path.join(builddir, name)
+    new_alloc.__dict__.update((k, v) for k, v in kwargs.items() if k in alloc.allowed_attributes)
 
-    def build(self, verbose=False):
+    return new_alloc
 
-        if not os.path.isdir(self.alloc.dir):
-            self.alloc.sources.patch(self.patches, verbose)
-
-        return self.alloc.build(verbose=verbose)

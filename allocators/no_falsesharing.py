@@ -1,11 +1,9 @@
 import os
 import subprocess
 
-from src.allocator import library_path
+from src.allocator import *
 from src.allocator import Allocator as Alloc
-from src.allocator import Allocator_Patched as Alloc_Patched
 from src.allocator import Allocator_Sources as Alloc_Src
-from src.allocator import builddir
 
 optimisation_flag = "-O2"
 
@@ -21,7 +19,7 @@ glibc = Alloc("glibc", sources=glibc_src,
                           "cd glibc-build; make install"],
               cmd_prefix="{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:"+library_path)
 
-glibc_nofs = Alloc_Patched("glibc_nofs", glibc,
+glibc_nofs = patch_alloc("glibc_nofs", glibc,
                            ["allocators/glibc_2.28_no_passive_falsesharing.patch"])
 
 tcmalloc_src = Alloc_Src("gperftools",
@@ -35,10 +33,10 @@ tcmalloc = Alloc("tcmalloc", sources=tcmalloc_src,
                              "cd {srcdir}; make install -j4"],
                  color="C3")
 
-tcmalloc_nofs = Alloc_Patched("tcmalloc_nofs", tcmalloc,
+tcmalloc_nofs = patch_alloc("tcmalloc_nofs", tcmalloc,
                               ["allocators/tcmalloc_2.7_no_active_falsesharing.patch"],
                               color="C4")
 
 allocators_to_build = [glibc, glibc_nofs, tcmalloc, tcmalloc_nofs]
 
-allocators = {a.name: a.build(verbose=verbose) for a in allocators_to_build}
+allocators = {a.name: a.build() for a in allocators_to_build}

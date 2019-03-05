@@ -62,14 +62,14 @@ def main():
 
     subprocess.run(make_cmd)
 
-    # Prepare compared allocators
     allocators_file = os.path.join("build", "allocators", "allocators.py")
 
     if args.allocators or os.path.isfile(allocators_file):
         allocators_files = args.allocators or allocators_file
 
         with open(allocators_files, "r") as f:
-            g = {"verbosity": verbosity}
+            print_status("Sourcing allocators definition ...")
+            g= {}
             exec(f.read(), g)
         src.allocators.allocators = g["allocators"]
 
