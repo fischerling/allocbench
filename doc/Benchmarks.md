@@ -4,7 +4,7 @@ A benchmark in the context of allocbench is a command usable with exec and a
 list of all possible arguments. The command is executed and measured for each
 permutation of the specified arguments and for each allocator to test.
 
-Benchmarks are implemented as python objects that have a function `run(runs, verbose)`.
+Benchmarks are implemented as python objects that have a function `run(runs)`.
 Other non mandatory functions are:
 
 * load

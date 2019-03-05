@@ -16,20 +16,22 @@ git clone https://muhq.space/software/allocbench.git
 
 ## Usage
 
-	usage: bench.py [-h] [-s] [-l LOAD] [-a ALLOCATORS] [-r RUNS] [-v]
-	                [-b BENCHMARKS [BENCHMARKS ...]] [-ns] [-rd RESULTDIR]
-	                [--license]
+	usage: bench.py [-h] [-ds, --dont-save] [-l LOAD] [-a ALLOCATORS] [-r RUNS]
+	                [-v] [-vdebug] [-b BENCHMARKS [BENCHMARKS ...]] [-ns]
+	                [-rd RESULTDIR] [--license]
 
 	benchmark memory allocators
 
 	optional arguments:
 	  -h, --help            show this help message and exit
-	  -s, --save            save benchmark results in RESULTDIR
+	  -ds, --dont-save      don't save benchmark results in RESULTDIR
 	  -l LOAD, --load LOAD  load benchmark results from directory
 	  -a ALLOCATORS, --allocators ALLOCATORS
 	                        load allocator definitions from file
 	  -r RUNS, --runs RUNS  how often the benchmarks run
 	  -v, --verbose         more output
+	  -vdebug, --verbose-debug
+	                        debug output
 	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
 	                        benchmarks to run
 	  -ns, --nosum          don't produce plots
