@@ -38,7 +38,7 @@ class Allocator_Sources (object):
         stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
 
         for cmd in cmds:
-            p = subprocess.run(cmd, shell=True, cwd=cwd, stderr=stderr.PIPE,
+            p = subprocess.run(cmd, shell=True, cwd=cwd, stderr=subprocess.PIPE,
                                stdout=stdout)
 
             if p.returncode:
