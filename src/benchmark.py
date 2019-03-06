@@ -28,16 +28,17 @@ class Benchmark (object):
     }
 
     @staticmethod
-    def scale_threads_for_cpus(factor):
+    def scale_threads_for_cpus(factor, steps=None):
         cpus = multiprocessing.cpu_count()
         max_threads = cpus * factor
-        steps = 1
-        if max_threads > 40:
-            steps = 2
-        if max_threads > 100:
-            steps = 5
-        if max_threads > 200:
-            steps = 10
+        if not steps:
+            steps = 1
+            if max_threads >= 20 and max_threads < 50:
+                steps = 2
+            if max_threads >= 50 max_threads < 100:
+                steps = 5
+            if max_threads >= 100:
+                steps = 10
 
         # Special thread counts
         nthreads = set([1, int(cpus/2), cpus, cpus*factor])
