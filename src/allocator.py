@@ -15,7 +15,7 @@ for l in subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
     if not l.startswith('\t'):
         library_path += l
 
-builddir = os.path.join(os.getcwd(), "build", "allocators")
+builddir = os.path.join(src.globalvars.builddir, "allocators")
 srcdir = os.path.join(builddir, "src")
 
 if not os.path.isdir(srcdir):
@@ -104,7 +104,7 @@ class Allocator (object):
             print_info2("Old build found. Comparing build time with mtime")
 
             with open(buildtimestamp_file, "r") as f:
-                timestamp = datetime.fromisoformat(f.read())
+                timestamp = datetime.fromtimestamp(float(f.read()))
 
             # print(globals())
             modtime = os.stat(os.path.realpath(src.globalvars.allocators_file)).st_mtime
@@ -141,7 +141,7 @@ class Allocator (object):
 
                 with open(buildtimestamp_file, "w") as f:
                     print_info2("Save build time to:", buildtimestamp_file)
-                    f.write(str(datetime.now().isoformat()))
+                    f.write(str(datetime.now().timestamp()))
 
         print_info2("Create allocator dictionary")
         for attr in ["LD_PRELOAD", "cmd_prefix"]:
