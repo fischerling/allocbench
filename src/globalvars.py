@@ -15,3 +15,6 @@ allocators_file = None
 
 """Path of the build directory"""
 builddir = os.path.join(os.getcwd(), "build")
+
+"""Directory were the benchmark results are stored"""
+resdir = None

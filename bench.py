@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
+import atexit
 import datetime
 import importlib
 import os
+import pickle
 import subprocess
 
 import src.facter
@@ -28,12 +30,22 @@ parser.add_argument("-rd", "--resultdir", help="directory where all results go",
 parser.add_argument("--license", help="print license info and exit", action='store_true')
 
 
+"""Run tasks on exit"""
+def epilog():
+    if os.listdir(src.globalvars.resdir) == []:
+        os.removedirs(src.globalvars.resdir)
+    else:
+        with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as f:
+            pickle.dump(src.globalvars.facts, f)
+
 def main():
     args = parser.parse_args()
     if args.license:
         print("Copyright (C) 2018-2019 Florian Fischer")
         print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
         return
+
+    atexit.register(epilog)
 
     # Set global verbosity
     # quiet | -1: Don't output to stdout
@@ -81,17 +93,27 @@ def main():
 
     print_info("Allocators:", *src.globalvars.allocators.keys())
 
+    # Load facts
+    if args.load:
+        with open(os.path.join(args.load, "facts.save"), "rb") as f:
+            old_facts = pickle.load(f)
+        if old_facts != src.globalvars.facts and args.runs > 0:
+            print_error("Can't combine benchmarks with different facts")
+            print_error("Aborting.")
+            exit(1)
+        else:
+            src.globalvars.facts = old_facts
+
     # Create result directory if we save or summarize results
     need_resultdir = not (args.nosum and args.dont_save)
     if need_resultdir:
         if args.resultdir:
             resdir = os.path.join(args.resultdir)
         else:
-            # TODO use saved hostname
-            if args.load and args.runs < 2:
-                pass
             resdir = os.path.join("results", src.globalvars.facts["hostname"],
                                     datetime.datetime.now().strftime("%Y-%m-%dT%H:%M"))
+        # make resdir globally available
+        src.globalvars.resdir = resdir
         try:
             print_info2("Creating result dir:", resdir)
             os.makedirs(resdir)
