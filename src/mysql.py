@@ -1,3 +1,4 @@
+import atexit
 import copy
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +10,7 @@ from subprocess import PIPE
 import sys
 from time import sleep
 
-from src.allocators import allocators
+from src.globalvars import allocators
 from src.benchmark import Benchmark
 from src.util import *
 
@@ -42,6 +43,9 @@ class Benchmark_MYSQL(Benchmark):
         self.measure_cmd = ""
 
         self.requirements = ["mysqld", "sysbench"]
+
+        atexit.register(self.terminate_server)
+
         super().__init__()
 
     def start_and_wait_for_server(self, cmd_prefix=""):
@@ -53,6 +57,12 @@ class Benchmark_MYSQL(Benchmark):
         # TODO make sure server comes up !
         sleep(10)
         return self.server.poll() is None
+
+    def terminate_server(self):
+        if self.server:
+            if self.server.poll() == None:
+                print_info("Killing still running mysql server")
+                self.server.kill()
 
     def prepare(self):
         if not super().prepare():

@@ -1,18 +1,22 @@
+import multiprocessing
+import os
 import platform
 import sys
 
-def get_uname():
-    return " ".join(platform.uname())
+import src.globalvars as gv
 
-def get_kernel_version():
-    return get_uname().split()[2]
 
-def get_hostname():
-    return platform.uname().node
+# Populate src.globalvars.facts on import
+_uname = platform.uname()
+gv.facts["hostname"] = _uname.node
+gv.facts["system"] = _uname.system
+gv.facts["kernel"] = _uname.release
+gv.facts["arch"] = _uname.machine
+gv.facts["cpus"] = multiprocessing.cpu_count()
 
-def get_cc_version():
-    with open("build/ccinfo", "r") as ccinfo:
-        return ccinfo.readlines()[-1][:-1]
+with open(os.path.join(gv.builddir, "ccinfo"), "r") as ccinfo:
+    gv.facts["cc"] = ccinfo.readlines()[-1][:-1]
+
 
 def get_libc_version(bin=None):
     bin = bin or sys.executable

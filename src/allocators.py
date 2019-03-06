@@ -3,12 +3,14 @@
 import os
 import subprocess
 
+import src.globalvars
+
 maybe_allocators = ["tcmalloc", "jemalloc", "hoard"]
 
-allocators = {"libc": {"cmd_prefix"    : "",
-                    "binary_suffix" : "",
-                    "LD_PRELOAD"    : "",
-                    "color"         : "C1"}}
+src.globalvars.allocators = {"libc": {"cmd_prefix"    : "",
+                                      "binary_suffix" : "",
+                                      "LD_PRELOAD"    : "",
+                                      "color"         : "C1"}}
 
 for i, t in enumerate(maybe_allocators):
     try:
@@ -17,7 +19,9 @@ for i, t in enumerate(maybe_allocators):
                               universal_newlines=True).stdout.strip()
 
         if path != "":
-            allocators[t] = {"cmd_prefix": "", "binary_suffix": "",
-                          "LD_PRELOAD": path, "color": "C"+str(i+2)}
+            src.globalvars.allocators[t] = {"cmd_prefix": "",
+                                            "binary_suffix": "",
+                                            "LD_PRELOAD": path,
+                                            "color": "C"+str(i+2)}
     except:
         pass

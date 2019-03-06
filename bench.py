@@ -6,7 +6,6 @@ import importlib
 import os
 import subprocess
 
-import src.allocators
 import src.facter
 import src.globalvars
 from src.util import *
@@ -62,6 +61,7 @@ def main():
 
     subprocess.run(make_cmd)
 
+    # Default allocator definition file
     allocators_file = os.path.join("build", "allocators", "allocators.py")
 
     if args.allocators or os.path.isfile(allocators_file):
@@ -69,12 +69,17 @@ def main():
         src.globalvars.allocators_file = allocators_file
 
         with open(allocators_file, "r") as f:
-            print_status("Sourcing allocators definition ...")
+            print_status("Sourcing allocators definitions at", allocators_file,
+                         "...")
             g = {}
             exec(f.read(), g)
-        src.allocators.allocators = g["allocators"]
+        src.globalvars.allocators = g["allocators"]
+    else:
+        print_status("Using system-wide installed allocators ...")
+        # Normal import fails
+        importlib.import_module('src.allocators')
 
-    print_info("Allocators:", *src.allocators.allocators.keys())
+    print_info("Allocators:", *src.globalvars.allocators.keys())
 
     # Create result directory if we save or summarize results
     need_resultdir = not (args.nosum and args.dont_save)
@@ -82,11 +87,10 @@ def main():
         if args.resultdir:
             resdir = os.path.join(args.resultdir)
         else:
-            hostname = src.facter.get_hostname()
             # TODO use saved hostname
             if args.load and args.runs < 2:
                 pass
-            resdir = os.path.join("results", hostname,
+            resdir = os.path.join("results", src.globalvars.facts["hostname"],
                                     datetime.datetime.now().strftime("%Y-%m-%dT%H:%M"))
         try:
             print_info2("Creating result dir:", resdir)

@@ -9,7 +9,6 @@ import pickle
 import shutil
 import subprocess
 
-from src.allocators import allocators
 import src.globalvars
 from src.util import *
 
@@ -25,7 +24,7 @@ class Benchmark (object):
 
         "measure_cmd": "perf stat -x, -d",
         "cmd": "true",
-        "allocators": allocators,
+        "allocators": src.globalvars.allocators,
     }
 
     @staticmethod
@@ -41,7 +40,7 @@ class Benchmark (object):
             steps = 10
 
         # Special thread counts
-        nthreads = set([1, cpus/2, cpus, cpus*factor])
+        nthreads = set([1, int(cpus/2), cpus, cpus*factor])
         nthreads.update(range(steps, cpus * factor + 1, steps))
         nthreads = list(nthreads)
         nthreads.sort()
@@ -64,6 +63,7 @@ class Benchmark (object):
             self.results = {}
         self.results["args"] = self.args
         self.results["allocators"] = self.allocators
+        self.results["facts"] = {"libcs": {}}
         self.results.update({t: {} for t in self.allocators})
 
         if not hasattr(self, "requirements"):
@@ -125,13 +125,17 @@ class Benchmark (object):
                 if not is_exe(r):
                     print_error("requirement:", r, "not found")
                     return False
+                else:
+                    self.results["facts"]["libcs"][exe_file] = src.facter.get_libc_version(bin=exe_file)
             # Search in PATH
             else:
                 found = False
                 for path in os.environ["PATH"].split(os.pathsep):
                     exe_file = os.path.join(path, r)
                     if is_exe(exe_file):
+                        self.results["facts"]["libcs"][exe_file] = src.facter.get_libc_version(bin=exe_file)
                         found = True
+                        break
 
                 if not found:
                     print_error("requirement:", r, "not found")
