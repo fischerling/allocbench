@@ -35,7 +35,7 @@ class Benchmark (object):
             steps = 1
             if max_threads >= 20 and max_threads < 50:
                 steps = 2
-            if max_threads >= 50 max_threads < 100:
+            if max_threads >= 50 and max_threads < 100:
                 steps = 5
             if max_threads >= 100:
                 steps = 10
