@@ -97,9 +97,10 @@ def main():
     # TODO load all results at once
 
     for bench in benchmarks:
-        bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
-        if args.benchmarks and not bench.name in args.benchmarks:
+        if args.benchmarks and not bench in args.benchmarks:
             continue
+
+        bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
 
         if args.load:
             bench.load(path=args.load)
