@@ -106,7 +106,10 @@ def main():
         else:
             src.globalvars.facts = old_facts
     else:
-        src.globalvars.facts["starttime"] = datetime.datetime.now().isoformat(timespec="minutes")
+        start_time = datetime.datetime.now().isoformat()
+        # strip seconds from string
+        start_time = start_time[:start_time.rfind(':')]
+        src.globalvars.facts["starttime"] = start_time
 
     # Create result directory if we save or summarize results
     need_resultdir = not (args.nosum and args.dont_save)
