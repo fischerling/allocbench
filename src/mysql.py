@@ -1,6 +1,7 @@
 import atexit
 import copy
 import matplotlib.pyplot as plt
+import multiprocessing
 import numpy as np
 import os
 import re
@@ -24,8 +25,10 @@ cmd = ("sysbench oltp_read_only --threads={nthreads} --time=60 --tables=5 "
        "--db-driver=mysql --mysql-user=root --mysql-socket="
        + cwd + "/mysql_test/socket run")
 
-server_cmd = ("{0} -h {1}/mysql_test --socket={1}/mysql_test/socket "
-              "--secure-file-priv=").format(shutil.which("mysqld"), cwd).split()
+server_cmd = ("{0} -h {2}/mysql_test --socket={2}/mysql_test/socket "
+              "--max-connections={1} "
+              "--secure-file-priv=").format(shutil.which("mysqld"),
+                                            multiprocessing.cpu_count(), cwd).split()
 
 
 class Benchmark_MYSQL(Benchmark):
@@ -59,7 +62,7 @@ class Benchmark_MYSQL(Benchmark):
         return self.server.poll() is None
 
     def terminate_server(self):
-        if self.server:
+        if hasattr(self, "server"):
             if self.server.poll() == None:
                 print_info("Killing still running mysql server")
                 self.server.kill()
@@ -126,7 +129,7 @@ class Benchmark_MYSQL(Benchmark):
     def cleanup(self):
         if os.path.exists("mysql_test"):
             print_status("Delete mysqld directory")
-            shutil.rmtree("mysql_test")
+            shutil.rmtree("mysql_test", ignore_errors=True)
 
     def preallocator_hook(self, allocator, run, verbose):
         if not self.start_and_wait_for_server(cmd_prefix=allocator[1]["cmd_prefix"]):
