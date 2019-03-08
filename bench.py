@@ -33,8 +33,10 @@ parser.add_argument("--license", help="print license info and exit", action='sto
 """Run tasks on exit"""
 def epilog():
     if os.listdir(src.globalvars.resdir) == []:
+        print_warn("Remove empty resultdir")
         os.removedirs(src.globalvars.resdir)
     else:
+        src.globalvars.facts["endtime"] = datetime.datetime.now().isoformat(timespec="minutes")
         with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as f:
             pickle.dump(src.globalvars.facts, f)
 
@@ -103,6 +105,8 @@ def main():
             exit(1)
         else:
             src.globalvars.facts = old_facts
+    else:
+        src.globalvars.facts["starttime"] = datetime.datetime.now().isoformat(timespec="minutes")
 
     # Create result directory if we save or summarize results
     need_resultdir = not (args.nosum and args.dont_save)
@@ -111,7 +115,7 @@ def main():
             resdir = os.path.join(args.resultdir)
         else:
             resdir = os.path.join("results", src.globalvars.facts["hostname"],
-                                    datetime.datetime.now().strftime("%Y-%m-%dT%H:%M"))
+                                    src.globalvars.facts["starttime"])
         # make resdir globally available
         src.globalvars.resdir = resdir
         try:
