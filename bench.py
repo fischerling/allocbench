@@ -36,7 +36,9 @@ def epilog():
         print_warn("Remove empty resultdir")
         os.removedirs(src.globalvars.resdir)
     else:
-        src.globalvars.facts["endtime"] = datetime.datetime.now().isoformat(timespec="minutes")
+        endtime = datetime.datetime.now().isoformat()
+        endtime = endtime[:endtime.rfind(':')]
+        src.globalvars.facts["endtime"] = endtime
         with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as f:
             pickle.dump(src.globalvars.facts, f)
 
@@ -106,10 +108,10 @@ def main():
         else:
             src.globalvars.facts = old_facts
     else:
-        start_time = datetime.datetime.now().isoformat()
+        starttime = datetime.datetime.now().isoformat()
         # strip seconds from string
-        start_time = start_time[:start_time.rfind(':')]
-        src.globalvars.facts["starttime"] = start_time
+        starttime = start_time[:start_time.rfind(':')]
+        src.globalvars.facts["starttime"] = starttime
 
     # Create result directory if we save or summarize results
     need_resultdir = not (args.nosum and args.dont_save)
