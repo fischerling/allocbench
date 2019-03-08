@@ -165,6 +165,11 @@ class Benchmark (object):
                 yield p
 
     def run(self, runs=5):
+        if runs < 1:
+            return
+
+        print_status("Running", self.name, "...")
+
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
             if Benchmark.perf_allowed == None:

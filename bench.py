@@ -141,7 +141,6 @@ def main():
                 print_error("Preparing", bench.name, "failed!")
                 continue
 
-        print_status("Running", bench.name, "...")
         if not bench.run(runs=args.runs):
             continue
 
