@@ -9,6 +9,7 @@ git clone https://muhq.space/software/allocbench.git
 ## Requirements
 
 * python3
+* make, find, gcc (build dependencies)
 * perf (`perf stat -d` is the default command to measure benchmark results)
 * util-linux (`whereis` is used to find system installed allocators)
 * (git to clone allocators in `allocators/{no_falsesharing, BA_allocators}.py`)
