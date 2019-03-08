@@ -194,6 +194,8 @@ class Benchmark (object):
                 if tname not in self.results:
                     self.results[tname] = {}
 
+                old_ld_preload = os.environ.get("LD_PRELOAD", None)
+
                 os.environ["LD_PRELOAD"] = "build/print_status_on_exit.so "
                 os.environ["LD_PRELOAD"] += t["LD_PRELOAD"]
 
@@ -274,6 +276,11 @@ class Benchmark (object):
                     if run == 1:
                         self.results[tname][perm] = []
                     self.results[tname][perm].append(result)
+
+                if old_ld_preload == None:
+                    del(os.environ["LD_PRELOAD"])
+                else:
+                    os.environ["LD_PRELOAD"] = old_ld_preload
 
                 if hasattr(self, "postallocator_hook"):
                     if self.postallocator_hook((tname, t), run,
