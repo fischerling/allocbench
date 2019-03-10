@@ -110,7 +110,7 @@ def main():
     else:
         starttime = datetime.datetime.now().isoformat()
         # strip seconds from string
-        starttime = start_time[:start_time.rfind(':')]
+        starttime = starttime[:starttime.rfind(':')]
         src.globalvars.facts["starttime"] = starttime
 
     # Create result directory if we save or summarize results
