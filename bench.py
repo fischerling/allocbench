@@ -77,6 +77,9 @@ def main():
 
     subprocess.run(make_cmd)
 
+    # collect facts
+    src.facter.collect_facts()
+
     # Default allocator definition file
     allocators_file = os.path.join("build", "allocators", "allocators.py")
 
