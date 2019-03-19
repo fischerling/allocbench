@@ -166,7 +166,7 @@ class Benchmark (object):
 
     def run(self, runs=5):
         if runs < 1:
-            return
+            return True
 
         print_status("Running", self.name, "...")
 
