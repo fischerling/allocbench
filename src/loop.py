@@ -22,12 +22,6 @@ class Benchmark_Loop(Benchmark):
                             title='"Loop: " + arg + " " + str(arg_value)',
                             filepostfix="time")
 
-        # Memusage
-        self.plot_fixed_arg("int({VmHWM})",
-                            ylabel='"VmHWM in kB"',
-                            title='"Loop Memusage: " + arg + " " + str(arg_value)',
-                            filepostfix="memusage")
-
         # L1 cache misses
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                             ylabel='"L1 misses in %"',

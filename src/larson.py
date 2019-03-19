@@ -43,11 +43,4 @@ class Benchmark_Larson(Benchmark):
                             title="'Larson cache misses: ' + arg + ' ' + str(arg_value)",
                             filepostfix="cachemisses")
 
-        # Memusage
-        self.plot_fixed_arg("int({VmHWM})",
-                            ylabel='"VmHWM in kB"',
-                            title='"Loop Memusage: " + arg + " " + str(arg_value)',
-                            filepostfix="memusage")
-
-
 larson = Benchmark_Larson()
