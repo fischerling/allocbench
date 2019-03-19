@@ -6,11 +6,13 @@ import sys
 import re
 
 from src.benchmark import Benchmark
+from src.util import print_status
 
 comma_sep_number_re = "(?:\d*(?:,\d*)?)*"
 rss_re = "(?P<rss>" + comma_sep_number_re + ")"
 time_re = "(?P<time>" + comma_sep_number_re + ")"
 
+cycles_re = re.compile("^{} cycles$".format(time_re))
 cpu_time_re = re.compile("^{} usec across.*threads$".format(time_re))
 
 max_rss_re = re.compile("^{} Kb Max RSS".format(rss_re))
@@ -110,10 +112,15 @@ class Benchmark_DJ_Trace(Benchmark):
             file_path = os.path.join("dj_workloads", file_name)
             if not os.path.isfile(file_path):
                 if download_all == None:
-                    download_all = input(("Download all workloads (~6.7GB)"
-                                          " [Y/n] ")) in ["", "Y", "y"]
+                    choice = input(("Download all missing workloads (upto 6.7GB)"
+                                          " [Y/n/x] "))
+                    if choice == "x":
+                        break
+                    else:
+                        download_all = choice in ['', 'Y', 'y']
+
                 if (not download_all and
-                    input("want to download {} ({}) [Y/n] ".format(wl, wl_sizes[wl])) not in ["", "Y", "y"]):
+                    input("want to download {} ({}) [Y/n] ".format(wl, wl_sizes[wl])) not in ['', 'Y', 'y']):
                     continue
 
                 if download_all:
@@ -143,9 +150,11 @@ class Benchmark_DJ_Trace(Benchmark):
         regexs = {7: malloc_re, 8: calloc_re, 9: realloc_re, 10: free_re}
         functions = {7: "malloc", 8: "calloc", 9: "realloc", 10: "free"}
         for i, l in enumerate(stdout.splitlines()):
-            if i == 2:
+            if i == 0:
+                result["cycles"] = to_int(cycles_re.match(l).group("time"))
+            elif i == 2:
                 result["cputime"] = to_int(cpu_time_re.match(l).group("time"))
-            if i == 3:
+            elif i == 3:
                 result["Max_RSS"] = to_int(max_rss_re.match(l).group("rss"))
             elif i == 4:
                 result["Ideal_RSS"] = to_int(ideal_rss_re.match(l).group("rss"))
@@ -158,15 +167,19 @@ class Benchmark_DJ_Trace(Benchmark):
         args = self.results["args"]
         allocators = self.results["allocators"]
 
-        # Total times
+        cpu_time_means = {allocator: {} for allocator in allocators}
+        cycles_means = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
-                d = [float(x["cputime"]) for x in self.results[allocator][perm]]
-                y_val = np.mean(d)/1000
-                plt.bar([i], y_val, label=allocator, color=allocators[allocator]["color"])
+                d = [x["cputime"] for x in self.results[allocator][perm]]
+                # data is in milliseconds
+                cpu_time_means[allocator][perm] = int(np.mean(d)/1000)
 
-            # ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/1000))
-            # plt.gca().yaxis.set_major_formatter(ticks_y)
+                d = [x["cycles"] for x in self.results[allocator][perm]]
+                cycles_means[allocator][perm] = int(np.mean(d))
+
+                plt.bar([i], cpu_time_means[allocator][perm], label=allocator,
+                        color=allocators[allocator]["color"])
 
             plt.legend(loc="best")
             plt.ylabel("Zeit in ms")
@@ -175,17 +188,22 @@ class Benchmark_DJ_Trace(Benchmark):
             plt.clf()
 
         # Function Times
+        func_times_means = {allocator: {} for allocator in allocators}
         xa = np.arange(0, 6, 1.5)
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
                 x_vals = [x+i/len(allocators) for x in xa]
-                y_vals = [0] * 4
-                y_vals[0] = np.mean([x["avg_malloc"] for x in self.results[allocator][perm]])
-                y_vals[1] = np.mean([x["avg_calloc"] for x in self.results[allocator][perm]])
-                y_vals[2] = np.mean([x["avg_realloc"] for x in self.results[allocator][perm]])
-                y_vals[3] = np.mean([x["avg_free"] for x in self.results[allocator][perm]])
-                plt.bar(x_vals, y_vals, width=0.25, align="center",
-                        label=allocator, color=allocators[allocator]["color"])
+
+                func_times_means[allocator][perm] = [0,0,0,0]
+
+                func_times_means[allocator][perm][0] = np.mean([x["avg_malloc"] for x in self.results[allocator][perm]])
+                func_times_means[allocator][perm][1] = np.mean([x["avg_calloc"] for x in self.results[allocator][perm]])
+                func_times_means[allocator][perm][2] = np.mean([x["avg_realloc"] for x in self.results[allocator][perm]])
+                func_times_means[allocator][perm][3] = np.mean([x["avg_free"] for x in self.results[allocator][perm]])
+
+                plt.bar(x_vals, func_times_means[allocator][perm], width=0.25,
+                        align="center", label=allocator,
+                        color=allocators[allocator]["color"])
 
             plt.legend(loc="best")
             plt.xticks(xa + 1/len(allocators)*2,
@@ -199,18 +217,19 @@ class Benchmark_DJ_Trace(Benchmark):
             plt.clf()
 
         # Memusage
+        rss_means = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
                 d = [x["Max_RSS"] for x in self.results[allocator][perm]]
-                y_val = np.mean(d)/1000
-                plt.bar([i], y_val, label=allocator, color=allocators[allocator]["color"])
+                # data is in kB
+                rss_means[allocator][perm] = np.mean(d)/1000
+
+                plt.bar([i], rss_means[allocator][perm], label=allocator,
+                        color=allocators[allocator]["color"])
 
             # add ideal rss
             y_val = self.results[list(allocators.keys())[0]][perm][0]["Ideal_RSS"]/1000
             plt.bar([len(allocators)], y_val, label="Ideal RSS")
-
-            # ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/1000))
-            # plt.gca().yaxis.set_major_formatter(ticks_y)
 
             plt.legend(loc="best")
             plt.ylabel("Max RSS in MB")
@@ -223,14 +242,14 @@ class Benchmark_DJ_Trace(Benchmark):
             # collect data
             d = {allocator: {} for allocator in allocators}
             for i, allocator in enumerate(allocators):
-                d[allocator]["time"] = [float(x["cputime"]) for x in self.results[allocator][perm]]
+                d[allocator]["time"] = [x["cputime"] for x in self.results[allocator][perm]]
                 d[allocator]["rss"] = [x["Max_RSS"] for x in self.results[allocator][perm]]
 
-            times = [np.mean(d[allocator]["time"]) for allocator in allocators]
+            times = {allocator: np.mean(d[allocator]["time"]) for allocator in allocators}
             tmin = min(times)
             tmax = max(times)
 
-            rss = [np.mean(d[allocator]["rss"]) for allocator in allocators]
+            rss = {allocator: np.mean(d[allocator]["rss"]) for allocator in allocators}
             rssmin = min(rss)
             rssmax = max(rss)
 
@@ -243,9 +262,10 @@ class Benchmark_DJ_Trace(Benchmark):
                 for allocator in allocators:
                     print(allocator, end=" & ", file=f)
 
+                    s = "\\textcolor{{{}}}{{{}}} / {}"
+
                     t = d[allocator]["time"]
-                    m = np.mean(t)
-                    s = "\\textcolor{{{}}}{{{:.3f}}} / {:.3f}"
+                    m = times[allocator]
                     if m == tmin:
                         color = "green"
                     elif m == tmax:
@@ -255,16 +275,83 @@ class Benchmark_DJ_Trace(Benchmark):
                     print(s.format(color, m, np.std(t)/m), end=" & ", file=f)
 
                     t = d[allocator]["rss"]
-                    m = np.mean(t)
+                    m = rss[allocator]
                     if m == rssmin:
                         color = "green"
                     elif m == rssmax:
                         color = "red"
                     else:
                         color = "black"
-                    print(s.format(color, m, np.std(t)/m), "\\\\", file=f)
+                    print(s.format(color, m, np.std(t)/m if m else 0), "\\\\", file=f)
 
                 print("\end{tabular}", file=f)
+
+        # Create summary similar to DJ's at
+        # https://sourceware.org/ml/libc-alpha/2017-01/msg00452.html
+        with open(self.name + "_plain.txt", "w") as f:
+            # Absolutes
+            fmt = "{:<20} {:>15} {:>7} {:>7} {:>7} {:>7} {:>7}"
+            for i, allocator in enumerate(allocators):
+                print("{0} {1} {0}".format("-" * 10, allocator), file=f)
+                print(fmt.format("Workload", "Total", "malloc", "calloc",
+                                 "realloc", "free", "RSS"), file=f)
+
+                for perm in self.iterate_args(args=args):
+                    cycles = cycles_means[allocator][perm]
+                    times = [int(t) for t in func_times_means[allocator][perm]]
+                    rss = int(rss_means[allocator][perm])
+                    print(fmt.format(perm.workload, cycles, times[0], times[1],
+                                     times[2], times[3], rss), file=f)
+
+                print(file=f)
+
+            # Changes. First allocator in allocators is the reference
+            fmt_changes = "{:<20} {:>14.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}%"
+            for i, allocator in enumerate(list(allocators)[1:]):
+                print("{0} Changes {1} {0}".format("-" * 10, allocator), file=f)
+                print(fmt.format("Workload", "Total", "malloc", "calloc",
+                                 "realloc", "free", "RSS"), file=f)
+
+                ref_alloc = list(allocators)[0]
+                cycles_change_means = []
+                times_change_means = []
+                rss_change_means = []
+                for perm in self.iterate_args(args=args):
+
+                    normal_cycles = cycles_means[ref_alloc][perm]
+                    if normal_cycles:
+                        cycles = np.round(cycles_means[allocator][perm] / normal_cycles * 100)
+                    else:
+                        cycles = 0
+                    cycles_change_means.append(cycles)
+
+                    normal_times = func_times_means[ref_alloc][perm]
+                    times = [0, 0, 0, 0]
+                    for i in range(0, len(times)):
+                        t = func_times_means[allocator][perm][i]
+                        nt = normal_times[i]
+                        if nt != 0:
+                            times[i] = np.round(t/nt * 100)
+                    times_change_means.append(times)
+
+                    normal_rss = rss_means[ref_alloc][perm]
+                    if normal_rss:
+                        rss = np.round(rss_means[allocator][perm] / normal_rss * 100)
+                    else:
+                        rss = 0
+                    rss_change_means.append(rss)
+
+                    print(fmt_changes.format(perm.workload, cycles, times[0],
+                                             times[1], times[2], times[3], rss),
+                          file=f)
+                print(file=f)
+                tmeans = [0,0,0,0]
+                for i in range(0, len(times)):
+                    tmeans[i] = np.mean([times[i] for times in times_change_means])
+                print(fmt_changes.format("Mean:", np.mean(cycles_change_means),
+                                         tmeans[0], tmeans[1], tmeans[2],
+                                         tmeans[3], np.mean(rss_change_means)),
+                      '\n', file=f)
 
 
 dj_trace = Benchmark_DJ_Trace()
