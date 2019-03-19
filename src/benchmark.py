@@ -298,24 +298,49 @@ class Benchmark (object):
 
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                         autoticks=True, title="default title", filepostfix="",
-                        sumdir="", arg=""):
+                        sumdir="", arg="", scale=None):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
 
         arg = arg or list(args.keys())[0]
 
-        for allocator in allocators:
-            y_vals = []
+        if scale:
+            allocs = [alloc for alloc in allocators if alloc != scale]
+
+            norm_y_vals = []
             for perm in self.iterate_args(args=args):
                 d = []
-                for m in self.results[allocator][perm]:
+                for m in self.results[scale][perm]:
                     d.append(eval(yval.format(**m)))
-                y_vals.append(np.mean(d))
+                norm_y_vals.append(np.mean(d))
+
             if not autoticks:
                 x_vals = list(range(1, len(y_vals) + 1))
             else:
                 x_vals = args[arg]
+
+            plt.plot(x_vals, [1] * len(norm_y_vals), marker='.', linestyle='-',
+                     label=scale, color=allocators[scale]["color"])
+        else:
+            allocs = allocators
+
+        for allocator in allocs:
+            y_vals = []
+            for perm in self.iterate_args(args=args):
+                d = []
+                for i, m in enumerate(self.results[allocator][perm]):
+                    d.append(eval(yval.format(**m)))
+                if scale:
+                    y_vals.append(np.mean(d) / norm_y_vals[i])
+                else:
+                    y_vals.append(np.mean(d))
+
+            if not autoticks:
+                x_vals = list(range(1, len(y_vals) + 1))
+            else:
+                x_vals = args[arg]
+
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                      label=allocator, color=allocators[allocator]["color"])
 
