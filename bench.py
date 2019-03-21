@@ -105,11 +105,13 @@ def main():
     if args.load:
         with open(os.path.join(args.load, "facts.save"), "rb") as f:
             old_facts = pickle.load(f)
+
         if old_facts != src.globalvars.facts and args.runs > 0:
             print_error("Can't combine benchmarks with different facts")
             print_error("Aborting.")
             exit(1)
-        else:
+        # We are just summarizing old results -> use their facts
+        elif args.runs == 0:
             src.globalvars.facts = old_facts
     else:
         starttime = datetime.datetime.now().isoformat()
@@ -137,10 +139,10 @@ def main():
 
     cwd = os.getcwd()
     for bench in benchmarks:
-        try:
-            if args.benchmarks and not bench in args.benchmarks:
-                continue
+        if args.benchmarks and not bench in args.benchmarks:
+            continue
 
+        try:
             bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
 
             if args.load:
@@ -150,8 +152,7 @@ def main():
                 print_status("Preparing", bench.name, "...")
                 bench.prepare()
 
-            if not bench.run(runs=args.runs):
-                continue
+            bench.run(runs=args.runs)
 
             if need_resultdir:
                 print_info2("Changing cwd to:", resdir)

@@ -124,8 +124,7 @@ class Benchmark (object):
             # Search for file
             if fpath:
                 if not is_exe(r):
-                    print_error("requirement:", r, "not found")
-                    return False
+                    raise Exception("Requirement: {} not found".format(r))
                 else:
                     self.results["facts"]["libcs"][exe_file] = src.facter.get_libc_version(bin=exe_file)
             # Search in PATH
@@ -139,10 +138,7 @@ class Benchmark (object):
                         break
 
                 if not found:
-                    print_error("requirement:", r, "not found")
-                    return False
-
-        return True
+                    raise Exception("Requirement: {} not found".format(r))
 
     def iterate_args(self, args=None):
         """Return a dict for each possible combination of args"""
@@ -166,7 +162,7 @@ class Benchmark (object):
 
     def run(self, runs=5):
         if runs < 1:
-            return True
+            return
 
         print_status("Running", self.name, "...")
 
@@ -186,9 +182,7 @@ class Benchmark (object):
                     Benchmark.perf_allowed = True
 
             if not Benchmark.perf_allowed:
-                print_error("Skipping", self.name, "because you don't have the",
-                      "needed permissions to use perf")
-                return False
+                raise Exception("You don't have the needed permissions to use perf")
 
         n = len(list(self.iterate_args())) * len(self.allocators)
         for run in range(1, runs + 1):
@@ -205,9 +199,8 @@ class Benchmark (object):
                 os.environ["LD_PRELOAD"] += t["LD_PRELOAD"]
 
                 if hasattr(self, "preallocator_hook"):
-                    if self.preallocator_hook((tname, t), run,
-                                              verbose=src.globalvars.verbosity):
-                        return False
+                    self.preallocator_hook((tname, t), run,
+                                            verbose=src.globalvars.verbosity)
 
                 for perm in self.iterate_args():
                     i += 1
@@ -236,19 +229,15 @@ class Benchmark (object):
                                          universal_newlines=True)
 
                     if res.returncode != 0:
-                        print_error("\n" + actual_cmd, "exited with", res.returncode,
-                              "for", tname)
+                        print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
-                        print_error("Aborting Benchmark.")
-                        return False
+                        raise Exception("{} failed with exit code {} for {}".format(actual_cmd, res.returncode))
 
                     if "ERROR: ld.so" in res.stderr:
-                        print_error("\nPreloading of", t["LD_PRELOAD"],
-                              "failed for", tname)
+                        print()
                         print_debug("Stderr:\n" + res.stderr)
-                        print_error("Aborting Benchmark.")
-                        return False
+                        raise Exception("Preloading of {} failed for {}".format(t["LD_PRELOAD"], tname))
 
                     result = {}
 
@@ -288,17 +277,15 @@ class Benchmark (object):
                     os.environ["LD_PRELOAD"] = old_ld_preload
 
                 if hasattr(self, "postallocator_hook"):
-                    if self.postallocator_hook((tname, t), run,
-                                               verbose=src.globalvars.verbosity):
-                        return False
+                    self.postallocator_hook((tname, t), run,
+                                            verbose=src.globalvars.verbosity)
             print()
         # Reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
-        return True
 
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                         autoticks=True, title="default title", filepostfix="",
-                        sumdir="", arg="", scale=None):
+                        sumdir="", arg="", scale=None, file_ext="png"):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
@@ -350,12 +337,12 @@ class Benchmark (object):
         plt.xlabel(eval(xlabel))
         plt.ylabel(eval(ylabel))
         plt.title(eval(title))
-        plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, "png"])))
+        plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, file_ext])))
         plt.clf()
 
     def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
                        autoticks=True, title="'default title'", filepostfix="",
-                       sumdir="", fixed=[]):
+                       sumdir="", fixed=[], file_ext="png"):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
@@ -384,7 +371,7 @@ class Benchmark (object):
                 plt.ylabel(eval(ylabel))
                 plt.title(eval(title))
                 plt.savefig(os.path.join(sumdir, ".".join([self.name, arg,
-                            str(arg_value), filepostfix, "png"])))
+                            str(arg_value), filepostfix, file_ext])))
                 plt.clf()
 
     def write_best_doublearg_tex_table(self, evaluation, sort=">",

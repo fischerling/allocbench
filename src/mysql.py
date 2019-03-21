@@ -59,17 +59,31 @@ class Benchmark_MYSQL(Benchmark):
                                        universal_newlines=True)
         # TODO make sure server comes up !
         sleep(10)
-        return self.server.poll() is None
+        if self.server.poll() is not None:
+            print_debug("cmd_prefix:", cmd_prefix, file=sys.stderr)
+            print_debug("Stderr:", self.server.stderr, file=sys.stderr)
+            return False
+
+        return True
 
     def terminate_server(self):
         if hasattr(self, "server"):
-            if self.server.poll() == None:
-                print_info("Killing still running mysql server")
-                self.server.kill()
+            if self.server.poll() is None:
+                print_info("Terminating mysql server")
+                self.server.terminate()
+
+            for i in range(0,10):
+                sleep(1)
+                if self.server.poll() is not None:
+                    return
+
+            print_info("Killing still running mysql server")
+            self.server.kill()
+            self.server.wait()
 
     def prepare(self):
-        if not super().prepare():
-            return False
+        super().prepare()
+
         # Setup Test Environment
         if not os.path.exists("mysql_test"):
             print_status("Prepare mysqld directory and database")
@@ -89,14 +103,11 @@ class Benchmark_MYSQL(Benchmark):
             p = subprocess.run(init_db_cmd, stdout=PIPE, stderr=PIPE)
 
             if not p.returncode == 0:
-                print_error("Creating test DB failed with:", p.returncode)
                 print_debug(p.stderr, file=sys.stderr)
-                return False
+                raise Exception("Creating test DB failed with:", p.returncode)
 
             if not self.start_and_wait_for_server():
-                print_error("Starting mysqld failed")
-                print_debug(self.server.stderr, file=sys.stderr)
-                return False
+                raise Exception("Starting mysql server failed with {}".format(self.server.returncode))
 
             # Create sbtest TABLE
             p = subprocess.run(("mysql -u root -S "+cwd+"/mysql_test/socket").split(" "),
@@ -104,27 +115,20 @@ class Benchmark_MYSQL(Benchmark):
                                stdout=PIPE, stderr=PIPE)
 
             if not p.returncode == 0:
-                print_error("Creating test table failed with:", p.returncode)
-                print_debug(p.stderr, file=sys.stderr)
-                self.server.kill()
-                self.server.wait()
-                return False
+                print_debug("Stderr:", p.stderr, file=sys.stderr)
+                self.terminate_server()
+                raise Exception("Creating test tables failed with:", p.returncode)
 
             print_status("Prepare test tables ...")
             ret = True
             p = subprocess.run(prepare_cmd, stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
-                print_error("Preparing test tables failed with:", p.returncode)
-                print_debug(p.stdout, file=sys.stderr)
-                print_debug(p.stderr, file=sys.stderr)
-                ret = False
+                print_debug("Stdout:", p.stdout, file=sys.stderr)
+                print_debug("Stderr:", p.stderr, file=sys.stderr)
+                self.terminate_server()
+                raise("Preparing test tables failed with:", p.returncode)
 
-            self.server.kill()
-            self.server.wait()
-
-            return ret
-
-        return True
+            self.terminate_server()
 
     def cleanup(self):
         if os.path.exists("mysql_test"):
@@ -133,15 +137,11 @@ class Benchmark_MYSQL(Benchmark):
 
     def preallocator_hook(self, allocator, run, verbose):
         if not self.start_and_wait_for_server(cmd_prefix=allocator[1]["cmd_prefix"]):
-            print_error("Can't start server for", allocator[0] + ".")
-            print_error("Aborting Benchmark.")
             print_debug(allocator[1]["cmd_prefix"], file=sys.stderr)
-            print_debug(self.server.stderr, file=sys.stderr)
-            return False
+            raise Exception("Starting mysql server for {} failed with".format(allocator[0], self.server.returncode))
 
     def postallocator_hook(self, allocator, run, verbose):
-        self.server.kill()
-        self.server.wait()
+        self.terminate_server()
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
         result["transactions"] = re.search("transactions:\s*(\d*)", stdout).group(1)
@@ -220,7 +220,7 @@ class Benchmark_MYSQL(Benchmark):
 
         plt.legend()
         plt.xlabel("threads")
-        plt.xticks(range(1, (len(y_vals) + 1)*3, 3), self.results["args"]["nthreads"])
+        plt.xticks(range(1, len(norm_y_vals)*nallocs + 1, nallocs), self.results["args"]["nthreads"])
         plt.ylabel("transactions normalized")
         plt.title("sysbench oltp read only")
         plt.savefig(self.name + ".norm.b.ro.png")
