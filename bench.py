@@ -7,6 +7,7 @@ import importlib
 import os
 import pickle
 import subprocess
+import traceback
 
 import src.facter
 import src.globalvars
@@ -134,46 +135,50 @@ def main():
 
     # TODO load all results at once
 
+    cwd = os.getcwd()
     for bench in benchmarks:
-        if args.benchmarks and not bench in args.benchmarks:
-            continue
-
-        bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
-
-        if args.load:
-            bench.load(path=args.load)
-
-        if args.runs > 0:
-            print_status("Preparing", bench.name, "...")
-            if not bench.prepare():
-                print_error("Preparing", bench.name, "failed!")
+        try:
+            if args.benchmarks and not bench in args.benchmarks:
                 continue
 
-        if not bench.run(runs=args.runs):
-            continue
+            bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
 
-        if need_resultdir:
-            print_info2("Changing cwd to:", resdir)
-            old_cwd = os.getcwd()
-            os.chdir(resdir)
+            if args.load:
+                bench.load(path=args.load)
 
-            if not args.dont_save:
-                bench.save()
+            if args.runs > 0:
+                print_status("Preparing", bench.name, "...")
+                bench.prepare()
 
-            if not args.nosum:
-                try:
+            if not bench.run(runs=args.runs):
+                continue
+
+            if need_resultdir:
+                print_info2("Changing cwd to:", resdir)
+                os.chdir(resdir)
+
+                if not args.dont_save:
+                    bench.save()
+
+                if not args.nosum:
                     os.mkdir(bench.name)
-                except FileExistsError:
-                    pass
-                os.chdir(bench.name)
-                print_status("Summarizing", bench.name, "...")
-                bench.summary()
+                    os.chdir(bench.name)
+                    print_status("Summarizing", bench.name, "...")
+                    bench.summary()
 
-            os.chdir(old_cwd)
+                os.chdir(cwd)
 
-        if args.runs > 0 and hasattr(bench, "cleanup"):
-            print_status("Cleaning up", bench.name, "...")
-            bench.cleanup()
+            if args.runs > 0 and hasattr(bench, "cleanup"):
+                print_status("Cleaning up", bench.name, "...")
+                bench.cleanup()
+
+        except Exception:
+            # Reset cwd
+            os.chdir(cwd)
+
+            print_error(traceback.format_exc())
+            print_error("Skipping", bench.name, "!")
+            continue
 
 if __name__ == "__main__":
     main()
