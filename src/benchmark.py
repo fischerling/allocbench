@@ -333,7 +333,7 @@ class Benchmark (object):
             y_vals = []
             for perm in self.iterate_args(args=args):
                 if scale:
-                    if scale == alloc:
+                    if scale == allocator
                         y_vals = [1] * len(x_vals)
                     else:
                         mean = eval(yval.format(**self.results["mean"][allocator][perm]))
