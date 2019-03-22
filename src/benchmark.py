@@ -252,7 +252,7 @@ class Benchmark (object):
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
-                        raise Exception("{} failed with exit code {} for {}".format(actual_cmd, res.returncode), tname)
+                        raise Exception("{} failed with exit code {} for {}".format(actual_cmd, res.returncode, tname))
 
                     if "ERROR: ld.so" in res.stderr:
                         print()

@@ -126,7 +126,7 @@ class Benchmark_MYSQL(Benchmark):
                 print_debug("Stdout:", p.stdout, file=sys.stderr)
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
                 self.terminate_server()
-                raise("Preparing test tables failed with:", p.returncode)
+                raise Exception("Preparing test tables failed with:", p.returncode)
 
             self.terminate_server()
 
