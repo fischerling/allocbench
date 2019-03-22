@@ -296,7 +296,10 @@ class Benchmark (object):
                         self.results["std"][tname][perm] = {}
 
                         for datapoint in self.results[tname][perm][0]:
-                            d = [np.float(m[datapoint]) for m in self.results[tname][perm]]
+                            try:
+                                d = [np.float(m[datapoint]) for m in self.results[tname][perm]]
+                            except ValueError:
+                                d = np.NaN
                             self.results["mean"][tname][perm][datapoint] = np.mean(d)
                             self.results["std"][tname][perm][datapoint] = np.std(d)
 
