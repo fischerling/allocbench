@@ -5,14 +5,20 @@ import src.globalvars
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
     if src.globalvars.verbosity < 0:
         return
+
     
     color = {"YELLOW": "\x1b[33m",
              "GREEN": "\x1b[32m",
              "RED": "\x1b[31m"}[color]
 
-    print(color, end="", file=file, flush=True)
+    is_atty = sys.stdout.isatty()
+    if is_atty:
+        print(color, end="", file=file, flush=True)
+
     print(*objects, sep=sep, end=end, file=file)
-    print("\x1b[0m", end="", file=file, flush=True)
+
+    if is_atty:
+        print("\x1b[0m", end="", file=file, flush=True)
 
 def print_debug(*objects, sep=' ', end='\n', file=sys.stdout):
     if src.globalvars.verbosity < 99:
