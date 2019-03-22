@@ -66,9 +66,11 @@ class Benchmark (object):
         if not hasattr(self, "results"):
             self.results = {}
         self.results["args"] = self.args
+        self.results["mean"] = {alloc: {} for alloc in self.allocators}
+        self.results["std"] = {alloc: {} for alloc in self.allocators}
         self.results["allocators"] = self.allocators
         self.results["facts"] = {"libcs": {}}
-        self.results.update({t: {} for t in self.allocators})
+        self.results.update({alloc: {} for alloc in self.allocators})
 
         if not hasattr(self, "requirements"):
             self.requirements = []
@@ -86,11 +88,20 @@ class Benchmark (object):
         # into lists of dicts.
         save_data = {}
         save_data.update(self.results)
+        save_data["mean"] = {}
+        save_data["std"] = {}
         for allocator in self.results["allocators"]:
-            tmp_list = []
-            for ntuple, measures in self.results[allocator].items():
-                tmp_list.append((ntuple._asdict(), measures))
-            save_data[allocator] = tmp_list
+            measures = []
+            means = []
+            stds = []
+            for ntuple in self.iterate_args(args=self.results["args"]):
+                measures.append((ntuple._asdict(), self.results[allocator][ntuple]))
+                means.append((ntuple._asdict(), self.results["mean"][allocator][ntuple]))
+                stds.append((ntuple._asdict(), self.results["std"][allocator][ntuple]))
+
+            save_data[allocator] = measures
+            save_data["mean"][allocator] = means
+            save_data["std"][allocator] = stds
 
         with open(f, "wb") as f:
             pickle.dump(save_data, f)
@@ -113,6 +124,12 @@ class Benchmark (object):
             for dic, measures in self.results[allocator]:
                 d[self.Perm(**dic)] = measures
             self.results[allocator] = d
+
+            for s in ["std", "mean"]:
+                d = {}
+                for dic, value in self.results[s][allocator]:
+                    d[self.Perm(**dic)] = value
+                self.results[s][allocator] = d
 
     def prepare(self):
         def is_exe(fpath):
@@ -235,7 +252,7 @@ class Benchmark (object):
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
-                        raise Exception("{} failed with exit code {} for {}".format(actual_cmd, res.returncode))
+                        raise Exception("{} failed with exit code {} for {}".format(actual_cmd, res.returncode), tname)
 
                     if "ERROR: ld.so" in res.stderr:
                         print()
@@ -274,6 +291,15 @@ class Benchmark (object):
                         self.results[tname][perm] = []
                     self.results[tname][perm].append(result)
 
+                    if run == runs:
+                        self.results["mean"][tname][perm] = {}
+                        self.results["std"][tname][perm] = {}
+
+                        for datapoint in self.results[tname][perm][0]:
+                            d = [np.float(m[datapoint]) for m in self.results[tname][perm]]
+                            self.results["mean"][tname][perm][datapoint] = np.mean(d)
+                            self.results["std"][tname][perm][datapoint] = np.std(d)
+
                 if old_ld_preload == None:
                     del(os.environ["LD_PRELOAD"])
                 else:
@@ -295,41 +321,24 @@ class Benchmark (object):
 
         arg = arg or list(args.keys())[0]
 
-        if scale:
-            allocs = [alloc for alloc in allocators if alloc != scale]
-
-            norm_y_vals = []
-            for perm in self.iterate_args(args=args):
-                d = []
-                for m in self.results[scale][perm]:
-                    d.append(eval(yval.format(**m)))
-                norm_y_vals.append(np.mean(d))
-
-            if not autoticks:
-                x_vals = list(range(1, len(y_vals) + 1))
-            else:
-                x_vals = args[arg]
-
-            plt.plot(x_vals, [1] * len(norm_y_vals), marker='.', linestyle='-',
-                     label=scale, color=allocators[scale]["color"])
+        if not autoticks:
+            x_vals = list(range(1, len(args[arg]) + 1))
         else:
-            allocs = allocators
+            x_vals = args[arg]
 
-        for allocator in allocs:
+        for allocator in allocators:
             y_vals = []
             for perm in self.iterate_args(args=args):
-                d = []
-                for i, m in enumerate(self.results[allocator][perm]):
-                    d.append(eval(yval.format(**m)))
                 if scale:
-                    y_vals.append(np.mean(d) / norm_y_vals[i])
+                    if scale == alloc:
+                        y_vals = [1] * len(x_vals)
+                    else:
+                        mean = eval(yval.format(**self.results["mean"][allocator][perm]))
+                        norm_mean = eval(yval.format(**self.results["mean"][scale][perm]))
+                        y_vals.append(mean / norm_mean)
                 else:
-                    y_vals.append(np.mean(d))
+                    y_vals.append(eval(yval.format(**self.results["mean"][allocator][perm])))
 
-            if not autoticks:
-                x_vals = list(range(1, len(y_vals) + 1))
-            else:
-                x_vals = args[arg]
 
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                      label=allocator, color=allocators[allocator]["color"])
@@ -352,18 +361,19 @@ class Benchmark (object):
 
         for arg in fixed or args:
             loose_arg = [a for a in args if a != arg][0]
+
+            if not autoticks:
+                x_vals = list(range(1, len(args[arg]) + 1))
+            else:
+                x_vals = args[loose_arg]
+
             for arg_value in args[arg]:
                 for allocator in allocators:
                     y_vals = []
                     for perm in self.iterate_args_fixed({arg: arg_value}, args=args):
-                        d = []
-                        for m in self.results[allocator][perm]:
-                            d.append(eval(yval.format(**m)))
-                        y_vals.append(np.mean(d))
-                    if not autoticks:
-                        x_vals = list(range(1, len(y_vals) + 1))
-                    else:
-                        x_vals = args[loose_arg]
+                        y_vals.append(eval(yval.format(**self.results["mean"][allocator][perm])))
+
+
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                              label=allocator, color=allocators[allocator]["color"])
 
