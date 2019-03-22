@@ -14,6 +14,7 @@ def collect_facts():
     gv.facts["kernel"] = _uname.release
     gv.facts["arch"] = _uname.machine
     gv.facts["cpus"] = multiprocessing.cpu_count()
+    gv.facts["LD_PRELOAD"] = os.environ.get("LD_PRELOAD", None)
 
     with open(os.path.join(gv.builddir, "ccinfo"), "r") as ccinfo:
         gv.facts["cc"] = ccinfo.readlines()[-1][:-1]

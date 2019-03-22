@@ -48,6 +48,9 @@ class Benchmark (object):
 
         return nthreads
 
+    def __str__(self):
+        return self.name
+
     def __init__(self):
         # Set default values
         for k in Benchmark.defaults:

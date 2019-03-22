@@ -178,8 +178,17 @@ def main():
             os.chdir(cwd)
 
             print_error(traceback.format_exc())
-            print_error("Skipping", bench.name, "!")
+            print_error("Skipping", bench, "!")
+
+            # reset LD_PRELOAD
+            if src.globalvars.facts["LD_PRELOAD"] != os.environ.get("LD_PRELOAD", None):
+                if src.globalvars.facts["LD_PRELOAD"] is None:
+                    del(os.environ["LD_PRELOAD"])
+                else:
+                    os.environ["LD_PRELOAD"] = src.globalvars.facts["LD_PRELOAD"]
+
             continue
+
 
 if __name__ == "__main__":
     main()
