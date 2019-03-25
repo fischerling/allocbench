@@ -17,7 +17,7 @@ class Benchmark_Loop(Benchmark):
 
     def summary(self):
         # Speed
-        self.plot_fixed_arg("perm.nthreads / (float({task-clock})/1000)",
+        self.plot_fixed_arg("perm.nthreads / ({task-clock}/1000)",
                             ylabel='"MOPS/cpu-second"',
                             title='"Loop: " + arg + " " + str(arg_value)',
                             filepostfix="time")
@@ -29,7 +29,7 @@ class Benchmark_Loop(Benchmark):
                             filepostfix="l1misses")
 
         # Speed Matrix
-        self.write_best_doublearg_tex_table("perm.nthreads / (float({task-clock})/1000)",
+        self.write_best_doublearg_tex_table("perm.nthreads / ({task-clock}/1000)",
                                             filepostfix="memusage.matrix")
 
 

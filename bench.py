@@ -14,7 +14,9 @@ import src.globalvars
 from src.util import *
 
 
-benchmarks = ["loop", "mysql", "falsesharing", "dj_trace", "larson"]
+bench_dir = "src/benchmarks"
+benchmarks = [e[:-3] for e in os.listdir(bench_dir)
+                     if e[-3:] == ".py" and e != "__init__.py"]
 
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-ds, --dont-save", action='store_true', dest="dont_save",
@@ -143,7 +145,7 @@ def main():
             continue
 
         try:
-            bench = eval("importlib.import_module('src.{0}').{0}".format(bench))
+            bench = eval("importlib.import_module('src.benchmarks.{0}').{0}".format(bench))
 
             if args.load:
                 bench.load(path=args.load)
