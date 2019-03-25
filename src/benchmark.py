@@ -333,7 +333,7 @@ class Benchmark (object):
             y_vals = []
             for perm in self.iterate_args(args=args):
                 if scale:
-                    if scale == allocator
+                    if scale == allocator:
                         y_vals = [1] * len(x_vals)
                     else:
                         mean = eval(yval.format(**self.results["mean"][allocator][perm]))
@@ -389,6 +389,48 @@ class Benchmark (object):
                 plt.savefig(os.path.join(sumdir, ".".join([self.name, arg,
                             str(arg_value), filepostfix, file_ext])))
                 plt.clf()
+
+    def export_to_csv(self, datapoints=None, path=None, std=True):
+        args = self.results["args"]
+        allocators = self.results["allocators"]
+
+        if path is None:
+            if datapoints is not None:
+                path = ".".join(datapoints)
+            else:
+                path = "full"
+
+        path = path + ".csv"
+
+        if datapoints is None:
+            first_alloc = list(allocators)[0]
+            first_perm = list(self.results[first_alloc])[0]
+            datapoints = list(self.results[first_alloc][first_perm])
+
+        for allocator in self.results["allocators"]:
+            path_alloc = allocator + '_' + path
+            with open(path_alloc, "w") as f:
+                fieldnames = [*args]
+                for d in datapoints:
+                    fieldnames.append(d)
+                    if std:
+                        fieldnames.append(d + "(std)")
+
+                writer = csv.DictWriter(f, fieldnames, delimiter="\t",
+                                        lineterminator='\n')
+                writer.writeheader()
+
+                for perm in self.iterate_args(args=args):
+                    d = {}
+                    d.update(perm._asdict())
+
+                    for dp in datapoints:
+                        d[dp] = self.results["mean"][allocator][perm][dp]
+                        if std:
+                            fieldname = dp + "(std)"
+                            d[fieldname] = self.results["std"][allocator][perm][dp]
+
+                    writer.writerow(d)
 
     def write_best_doublearg_tex_table(self, evaluation, sort=">",
                                        filepostfix="", sumdir="", std=False):
