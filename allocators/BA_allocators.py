@@ -47,7 +47,8 @@ jemalloc = Alloc("jemalloc",
                  color="C4")
 
 hoard = Alloc("Hoard", sources=Alloc_Src("Hoard",
-                                        retrieve_cmds=["git clone https://github.com/emeryberger/Hoard.git"]),
+                                        retrieve_cmds=["git clone https://github.com/emeryberger/Hoard.git"],
+                                        reset_cmds=["git stash"]),
                             LD_PRELOAD="{srcdir}/src/libhoard.so",
                             build_cmds=["cd {srcdir}/src; make",
                                         "mkdir {dir}"],
