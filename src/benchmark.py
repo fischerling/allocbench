@@ -132,33 +132,14 @@ class Benchmark (object):
                 self.results[s][allocator] = d
 
     def prepare(self):
-        def is_exe(fpath):
-            return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
-
-        os.environ["PATH"] += ":" + os.path.join("build", "benchmarks",
-                                                 self.name)
+        os.environ["PATH"] += os.pathsep + os.path.join("build", "benchmarks", self.name)
 
         for r in self.requirements:
-            fpath, fname = os.path.split(r)
-
-            # Search for file
-            if fpath:
-                if not is_exe(r):
-                    raise Exception("Requirement: {} not found".format(r))
-                else:
-                    self.results["facts"]["libcs"][exe_file] = src.facter.get_libc_version(bin=exe_file)
-            # Search in PATH
+            exe = find_cmd(r)
+            if exe is not None:
+                self.results["facts"]["libc"][r] = src.facter.get_libc_version(bin=exe)
             else:
-                found = False
-                for path in os.environ["PATH"].split(os.pathsep):
-                    exe_file = os.path.join(path, r)
-                    if is_exe(exe_file):
-                        self.results["facts"]["libcs"][exe_file] = src.facter.get_libc_version(bin=exe_file)
-                        found = True
-                        break
-
-                if not found:
-                    raise Exception("Requirement: {} not found".format(r))
+                raise Exception("Requirement: {} not found".format(r))
 
     def iterate_args(self, args=None):
         """Return a dict for each possible combination of args"""

@@ -1,6 +1,27 @@
+import os
 import sys
 
 import src.globalvars
+
+
+def is_exe(fpath):
+    return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+def find_cmd(cmd):
+    fpath, fname = os.path.split(cmd)
+
+    # Search for file
+    if fpath:
+        if is_exe(cmd):
+            return cmd
+    # Search in PATH
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            exe_file = os.path.join(path, cmd)
+            if is_exe(exe_file):
+                return exe_file
+
+    return None
 
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
     if src.globalvars.verbosity < 0:
