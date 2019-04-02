@@ -30,7 +30,7 @@ class Allocator_Sources (object):
         self.reset_cmds = reset_cmds
 
     def run_cmds(self, function, cwd=srcdir):
-        print_status(function, self.name, "...", flush=True)
+        print_status(function, self.name, "...")
 
         cmds = getattr(self, function+"_cmds")
 
@@ -68,7 +68,7 @@ class Allocator_Sources (object):
         stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
         cwd = os.path.join(srcdir, self.name)
 
-        print_status("Patching", self.name, "...", flush=True)
+        print_status("Patching", self.name, "...")
         for patch in patches:
             with open(patch, "rb") as f:
                 p = subprocess.run("patch -p1", shell=True, cwd=cwd,
@@ -122,7 +122,7 @@ class Allocator (object):
                 self.sources.patch(self.patches)
 
             if self.build_cmds:
-                print_status("Building", self.name, "...", flush=True)
+                print_status("Building", self.name, "...")
 
                 stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
 
