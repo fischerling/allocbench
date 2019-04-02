@@ -12,7 +12,7 @@ static size_t _rand() {
 	size_t c = 12345;
 	size_t m = 1 << 31;
 	seed = (a * seed + c) % m;
-		return seed;
+	return seed;
 }
 
 typedef struct ThreadArgs {
