@@ -23,6 +23,7 @@ parser.add_argument("-ds, --dont-save", action='store_true', dest="dont_save",
                     help="don't save benchmark results in RESULTDIR")
 parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
 parser.add_argument("-a", "--allocators", help="load allocator definitions from file", type=str)
+parser.add_argument("--analyse", help="analyse benchmark behaviour using malt", action="store_true")
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='count')
 parser.add_argument("-vdebug", "--verbose-debug", help="debug output",
@@ -121,8 +122,8 @@ def main():
         starttime = starttime[:starttime.rfind(':')]
         src.globalvars.facts["starttime"] = starttime
 
-    # Create result directory if we save or summarize results
-    need_resultdir = not (args.nosum and args.dont_save)
+    # Create result directory if we analyse, save or summarize
+    need_resultdir = not (args.nosum and args.dont_save and not args.analyse)
     if need_resultdir:
         if args.resultdir:
             resdir = os.path.join(args.resultdir)
@@ -131,11 +132,9 @@ def main():
                                     src.globalvars.facts["starttime"])
         # make resdir globally available
         src.globalvars.resdir = resdir
-        try:
-            print_info2("Creating result dir:", resdir)
-            os.makedirs(resdir)
-        except FileExistsError:
-            pass
+
+        print_info2("Creating result dir:", resdir)
+        os.makedirs(resdir, exist_ok=True)
 
     # TODO load all results at once
 
@@ -144,16 +143,32 @@ def main():
         if args.benchmarks and not bench in args.benchmarks:
             continue
 
+        if args.analyse or not args.nosum:
+            bench_res_dir = os.path.join(resdir, bench)
+            print_info2("Creating benchmark result dir:", bench_res_dir)
+            os.makedirs(bench_res_dir, exist_ok=True)
+
         try:
             bench = eval("importlib.import_module('src.benchmarks.{0}').{0}".format(bench))
 
             if args.load:
                 bench.load(path=args.load)
 
-            if args.runs > 0:
+            if args.runs > 0 or args.analyse:
                 print_status("Preparing", bench.name, "...")
                 bench.prepare()
 
+            if args.analyse:
+                if find_cmd("malt") is not None:
+                    print_status("Analysing {} ...".format(bench))
+
+                    malt_cmd = "malt -o output:name={}/malt.{}.%3"
+                    malt_cmd = malt_cmd.format(bench_res_dir, "{perm}")
+                    bench.run(runs=1, dry_run=True, cmd_prefix=malt_cmd)
+                else:
+                    print_error("malt not found. Skipping analyse.")
+
+            print_status("Running", bench.name, "...")
             bench.run(runs=args.runs)
 
             if need_resultdir:
@@ -164,7 +179,6 @@ def main():
                     bench.save()
 
                 if not args.nosum:
-                    os.mkdir(bench.name)
                     os.chdir(bench.name)
                     print_status("Summarizing", bench.name, "...")
                     bench.summary()
@@ -181,13 +195,6 @@ def main():
 
             print_error(traceback.format_exc())
             print_error("Skipping", bench, "!")
-
-            # reset LD_PRELOAD
-            if src.globalvars.facts["LD_PRELOAD"] != os.environ.get("LD_PRELOAD", None):
-                if src.globalvars.facts["LD_PRELOAD"] is None:
-                    del(os.environ["LD_PRELOAD"])
-                else:
-                    os.environ["LD_PRELOAD"] = src.globalvars.facts["LD_PRELOAD"]
 
             continue
 

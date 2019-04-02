@@ -127,7 +127,7 @@ for number_of_runs
 
 #### run hooks
 
-* `preallocator_hook((alloc_name, alloc_definition), current_run, verbose)` is called
+* `preallocator_hook((alloc_name, alloc_definition), current_run, environment, verbose)` is called
 	if available once per allocator before any command is executed. This hook may
 	be useful if you want to prepare stuff for each allocator. The mysql benchmark
 	uses this hook to start the mysql server with the current allocator.

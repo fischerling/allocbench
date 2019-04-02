@@ -51,12 +51,12 @@ class Benchmark_MYSQL(Benchmark):
 
         super().__init__()
 
-    def start_and_wait_for_server(self, cmd_prefix=""):
+    def start_and_wait_for_server(self, cmd_prefix="", env=None):
         actual_cmd = cmd_prefix.split() + server_cmd
         print_info("Starting server with:", actual_cmd)
 
         self.server = subprocess.Popen(actual_cmd, stdout=PIPE, stderr=PIPE,
-                                       universal_newlines=True)
+                                       env=env, universal_newlines=True)
         # TODO make sure server comes up !
         sleep(10)
         if self.server.poll() is not None:
@@ -135,8 +135,8 @@ class Benchmark_MYSQL(Benchmark):
             print_status("Delete mysqld directory")
             shutil.rmtree("mysql_test", ignore_errors=True)
 
-    def preallocator_hook(self, allocator, run, verbose):
-        if not self.start_and_wait_for_server(cmd_prefix=allocator[1]["cmd_prefix"]):
+    def preallocator_hook(self, allocator, run, env, verbose):
+        if not self.start_and_wait_for_server(cmd_prefix=allocator[1]["cmd_prefix"], env=env):
             print_debug(allocator[1]["cmd_prefix"], file=sys.stderr)
             raise Exception("Starting mysql server for {} failed with".format(allocator[0], self.server.returncode))
 

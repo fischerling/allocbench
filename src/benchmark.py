@@ -25,6 +25,7 @@ class Benchmark (object):
         "measure_cmd": "perf stat -x, -d",
         "cmd": "true",
         "allocators": src.globalvars.allocators,
+        "server_benchmark": False,
     }
 
     @staticmethod
@@ -137,7 +138,7 @@ class Benchmark (object):
         for r in self.requirements:
             exe = find_cmd(r)
             if exe is not None:
-                self.results["facts"]["libc"][r] = src.facter.get_libc_version(bin=exe)
+                self.results["facts"]["libcs"][r] = src.facter.get_libc_version(bin=exe)
             else:
                 raise Exception("Requirement: {} not found".format(r))
 
@@ -161,11 +162,9 @@ class Benchmark (object):
             if is_fixed:
                 yield p
 
-    def run(self, runs=5):
+    def run(self, runs=5, dry_run=False, cmd_prefix=""):
         if runs < 1:
             return
-
-        print_status("Running", self.name, "...")
 
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
@@ -175,6 +174,7 @@ class Benchmark (object):
                                      stdout=subprocess.PIPE,
                                      stderr=subprocess.PIPE,
                                      universal_newlines=True)
+
                 if res.returncode != 0:
                     print_error("Test perf run failed with:")
                     print(res.stderr, file=sys.stderr)
@@ -194,37 +194,49 @@ class Benchmark (object):
                 if tname not in self.results:
                     self.results[tname] = {}
 
-                old_ld_preload = os.environ.get("LD_PRELOAD", None)
-
-                os.environ["LD_PRELOAD"] = "build/print_status_on_exit.so "
-                os.environ["LD_PRELOAD"] += t["LD_PRELOAD"]
+                env = dict(os.environ)
+                env["LD_PRELOAD"] = env.get("LD_PRELOAD", "") + "build/print_status_on_exit.so " + t["LD_PRELOAD"]
 
                 if hasattr(self, "preallocator_hook"):
-                    self.preallocator_hook((tname, t), run,
+                    self.preallocator_hook((tname, t), run, env,
                                             verbose=src.globalvars.verbosity)
 
                 for perm in self.iterate_args():
                     i += 1
                     print_info0(i, "of", n, "\r", end='')
 
-                    perm_dict = perm._asdict()
-                    perm_dict.update(t)
-                    actual_cmd = self.cmd.format(**perm_dict)
+                    # Available substitutions in cmd
+                    substitutions = {"run": run}
+                    substitutions.update(perm._asdict())
+                    substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
+                    substitutions.update(t)
 
-                    # Find absolute path of executable
-                    binary_end = actual_cmd.find(" ")
-                    binary = subprocess.run(["whereis", actual_cmd[0:binary_end]],
-                                            stdout=subprocess.PIPE,
-                                            universal_newlines=True).stdout.split()[1]
+                    actual_cmd = self.cmd.format(**substitutions)
+                    actual_env = None
 
-                    actual_cmd = binary + actual_cmd[binary_end:]
+                    if not self.server_benchmark:
+                        # Find absolute path of executable
+                        binary_end = actual_cmd.find(" ")
+                        binary_end = None if binary_end == -1 else binary_end
+                        cmd_start = len(actual_cmd) if binary_end == None else binary_end
 
-                    actual_cmd = t["cmd_prefix"] + " " + actual_cmd
+                        binary = subprocess.run(["whereis", actual_cmd[0:binary_end]],
+                                                stdout=subprocess.PIPE,
+                                                universal_newlines=True).stdout.split()[1]
 
-                    actual_cmd = self.measure_cmd + " " + actual_cmd
+                        actual_cmd = "{} {} {} {}{}".format(self.measure_cmd,
+                                                            t["cmd_prefix"],
+                                                            cmd_prefix,
+                                                            binary,
+                                                            actual_cmd[cmd_start:])
+                        # substitute again
+                        actual_cmd = actual_cmd.format(**substitutions)
+
+                        actual_env = env
 
                     print_debug("Cmd:", actual_cmd)
                     res = subprocess.run(actual_cmd.split(),
+                                         env=actual_env,
                                          stderr=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
                                          universal_newlines=True)
@@ -233,23 +245,26 @@ class Benchmark (object):
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
-                        raise Exception("{} failed with exit code {} for {}".format(actual_cmd, res.returncode, tname))
+                        print_error("{} failed with exit code {} for {}".format(actual_cmd, res.returncode, tname))
+                        break
 
                     if "ERROR: ld.so" in res.stderr:
                         print()
                         print_debug("Stderr:\n" + res.stderr)
-                        raise Exception("Preloading of {} failed for {}".format(t["LD_PRELOAD"], tname))
+                        print_error("Preloading of {} failed for {}".format(t["LD_PRELOAD"], tname))
+                        break
 
                     result = {}
 
-                    # Read VmHWM from status file. If our benchmark didn't fork
-                    # the first occurance of VmHWM is from our benchmark
-                    with open("status", "r") as f:
-                        for l in f.readlines():
-                            if l.startswith("VmHWM:"):
-                                result["VmHWM"] = l.split()[1]
-                                break
-                    os.remove("status")
+                    if not self.server_benchmark:
+                        # Read VmHWM from status file. If our benchmark didn't fork
+                        # the first occurance of VmHWM is from our benchmark
+                        with open("status", "r") as f:
+                            for l in f.readlines():
+                                if l.startswith("VmHWM:"):
+                                    result["VmHWM"] = l.split()[1]
+                                    break
+                        os.remove("status")
 
                     if hasattr(self, "process_output"):
                         self.process_output(result, res.stdout, res.stderr,
@@ -268,36 +283,33 @@ class Benchmark (object):
                                 print_warn("Exception", e, "occured on", row, "for",
                                       tname, "and", perm)
 
-                    if run == 1:
-                        self.results[tname][perm] = []
-                    self.results[tname][perm].append(result)
+                    if not dry_run:
+                        if not perm in self.results[tname]:
+                            self.results[tname][perm] = []
+                        self.results[tname][perm].append(result)
 
-                    if run == runs:
-                        self.results["mean"][tname][perm] = {}
-                        self.results["std"][tname][perm] = {}
+                        if run == runs:
+                            self.results["mean"][tname][perm] = {}
+                            self.results["std"][tname][perm] = {}
 
-                        for datapoint in self.results[tname][perm][0]:
-                            try:
-                                d = [np.float(m[datapoint]) for m in self.results[tname][perm]]
-                            except ValueError:
-                                d = np.NaN
-                            self.results["mean"][tname][perm][datapoint] = np.mean(d)
-                            self.results["std"][tname][perm][datapoint] = np.std(d)
-
-                if old_ld_preload == None:
-                    del(os.environ["LD_PRELOAD"])
-                else:
-                    os.environ["LD_PRELOAD"] = old_ld_preload
+                            for datapoint in self.results[tname][perm][0]:
+                                try:
+                                    d = [np.float(m[datapoint]) for m in self.results[tname][perm]]
+                                except ValueError:
+                                    d = np.NaN
+                                self.results["mean"][tname][perm][datapoint] = np.mean(d)
+                                self.results["std"][tname][perm][datapoint] = np.std(d)
 
                 if hasattr(self, "postallocator_hook"):
                     self.postallocator_hook((tname, t), run,
                                             verbose=src.globalvars.verbosity)
             print()
+
         # Reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
 
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
-                        autoticks=True, title="default title", filepostfix="",
+                        autoticks=True, title="'default title'", filepostfix="",
                         sumdir="", arg="", scale=None, file_ext="png"):
 
         args = self.results["args"]
