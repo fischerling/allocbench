@@ -40,28 +40,25 @@ tcmalloc_src = Alloc_Src("gperftools",
 tcmalloc = Alloc("tcmalloc", sources=tcmalloc_src,
                  LD_PRELOAD="{dir}/lib/libtcmalloc.so",
                  build_cmds=["cd {srcdir}; ./configure --prefix={dir} CXXFLAGS=" + optimisation_flag,
-                             "cd {srcdir}; make install -j4"],
-                 color="C3")
+                             "cd {srcdir}; make install -j4"])
 
 tcmalloc_nofs = patch_alloc("tcmalloc_nofs", tcmalloc,
-                              ["allocators/tcmalloc_2.7_no_active_falsesharing.patch"],
-                              color="C4")
+                              ["allocators/tcmalloc_2.7_no_active_falsesharing.patch"])
 
 jemalloc = Alloc("jemalloc",
                  sources=Alloc_Src("jemalloc",
                           retrieve_cmds=["git clone https://github.com/jemalloc/jemalloc.git"],
                           prepare_cmds=["git checkout 5.1.0", "./autogen.sh"]),
-                 LD_PRELOAD="{dir}/lib/libjemalloc.so",
+                 LD_PRELOAD="{srcdir}/lib/libjemalloc.so",
                  build_cmds=["cd {srcdir}; ./configure --prefix={dir} CFLAGS=" + optimisation_flag,
-                             "mkdir {dir}"],
-                 color="C4")
+                             "cd {srcdir}; make -j4",
+                             "mkdir {dir}"])
 
 hoard = Alloc("Hoard", sources=Alloc_Src("Hoard",
                                         retrieve_cmds=["git clone https://github.com/emeryberger/Hoard.git"]),
                             LD_PRELOAD="{srcdir}/src/libhoard.so",
                             build_cmds=["cd {srcdir}/src; make",
                                         "mkdir {dir}"],
-                            color="C5",
                             patches=["allocators/hoard_make.patch"])
 
 allocators_to_build = [glibc, glibc_notc, glibc_nofs, glibc_nofs_fancy, tcmalloc, tcmalloc_nofs, jemalloc, hoard]

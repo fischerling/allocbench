@@ -40,8 +40,9 @@ jemalloc = Alloc("jemalloc",
                  sources=Alloc_Src("jemalloc",
                           retrieve_cmds=["git clone https://github.com/jemalloc/jemalloc.git"],
                           prepare_cmds=["git checkout 5.1.0", "./autogen.sh"]),
-                 LD_PRELOAD="{dir}/lib/libjemalloc.so",
+                 LD_PRELOAD="{srcdir}/lib/libjemalloc.so",
                  build_cmds=["cd {srcdir}; ./configure --prefix={dir} CFLAGS=" + optimisation_flag,
+                             "cd {srcdir}; make -j4",
                              "mkdir {dir}"],
                  color="C4")
 
