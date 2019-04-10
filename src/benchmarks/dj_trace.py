@@ -255,12 +255,15 @@ class Benchmark_DJ_Trace(Benchmark):
 
             fname = ".".join([self.name, perm.workload, "table.tex"])
             with open(fname, "w") as f:
+                print("\\documentclass{standalone}", file=f)
+                print("\\usepackage{xcolor}", file=f)
+                print("\\begin{document}", file=f)
                 print("\\begin{tabular}{| l | l | l |}", file=f)
                 print("& Zeit (ms) / $\\sigma$ (\\%) & VmHWM (KB) / $\\sigma$ (\\%) \\\\", file=f)
                 print("\\hline", file=f)
 
                 for allocator in allocators:
-                    print(allocator, end=" & ", file=f)
+                    print(allocator.replace("_", "\\_"), end=" & ", file=f)
 
                     s = "\\textcolor{{{}}}{{{}}} / {}"
 
@@ -285,6 +288,7 @@ class Benchmark_DJ_Trace(Benchmark):
                     print(s.format(color, m, np.std(t)/m if m else 0), "\\\\", file=f)
 
                 print("\end{tabular}", file=f)
+                print("\\end{document}", file=f)
 
         # Create summary similar to DJ's at
         # https://sourceware.org/ml/libc-alpha/2017-01/msg00452.html
