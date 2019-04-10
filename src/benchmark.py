@@ -359,7 +359,7 @@ class Benchmark (object):
             loose_arg = [a for a in args if a != arg][0]
 
             if not autoticks:
-                x_vals = list(range(1, len(args[arg]) + 1))
+                x_vals = list(range(1, len(args[loose_arg]) + 1))
             else:
                 x_vals = args[loose_arg]
 
