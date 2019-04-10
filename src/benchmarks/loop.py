@@ -23,6 +23,14 @@ class Benchmark_Loop(Benchmark):
                             filepostfix="time",
                             autoticks=False)
 
+        scale = list(self.allocators.keys())[0]
+        self.plot_fixed_arg("perm.nthreads / ({task-clock}/1000)",
+                            ylabel='"MOPS/cpu-second normalized {}"'.format(scale),
+                            title='"Loop: " + arg + " " + str(arg_value) + " normalized {}"'.format(scale),
+                            filepostfix="time.norm",
+                            scale=scale,
+                            autoticks=False)
+
         # L1 cache misses
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                             ylabel='"L1 misses in %"',
