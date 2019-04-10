@@ -350,7 +350,7 @@ class Benchmark (object):
 
     def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
                        autoticks=True, title="'default title'", filepostfix="",
-                       sumdir="", fixed=[], file_ext="png"):
+                       sumdir="", fixed=[], file_ext="png", scale=None):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
@@ -367,7 +367,15 @@ class Benchmark (object):
                 for allocator in allocators:
                     y_vals = []
                     for perm in self.iterate_args_fixed({arg: arg_value}, args=args):
-                        y_vals.append(eval(yval.format(**self.results["mean"][allocator][perm])))
+                        if scale:
+                            if scale == allocator:
+                                y_vals = [1] * len(x_vals)
+                            else:
+                                mean = eval(yval.format(**self.results["mean"][allocator][perm]))
+                                norm_mean = eval(yval.format(**self.results["mean"][scale][perm]))
+                                y_vals.append(mean / norm_mean)
+                        else:
+                            y_vals.append(eval(yval.format(**self.results["mean"][allocator][perm])))
 
 
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
