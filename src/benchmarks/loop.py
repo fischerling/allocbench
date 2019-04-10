@@ -20,13 +20,15 @@ class Benchmark_Loop(Benchmark):
         self.plot_fixed_arg("perm.nthreads / ({task-clock}/1000)",
                             ylabel='"MOPS/cpu-second"',
                             title='"Loop: " + arg + " " + str(arg_value)',
-                            filepostfix="time")
+                            filepostfix="time",
+                            autoticks=False)
 
         # L1 cache misses
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                             ylabel='"L1 misses in %"',
                             title='"Loop l1 cache misses: " + arg + " " + str(arg_value)',
-                            filepostfix="l1misses")
+                            filepostfix="l1misses",
+                            autoticks=False)
 
         # Speed Matrix
         self.write_best_doublearg_tex_table("perm.nthreads / ({task-clock}/1000)",
