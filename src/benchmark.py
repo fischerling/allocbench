@@ -471,6 +471,8 @@ class Benchmark (object):
 
         fname = os.path.join(sumdir, ".".join([self.name, filepostfix, "tex"]))
         with open(fname, "w") as f:
+            print("\\documentclass{standalone}", file=f)
+            print("\\begin{document}", file=f)
             print("\\begin{tabular}{|", end="", file=f)
             print(" l |" * len(headers), "}", file=f)
 
@@ -485,3 +487,4 @@ class Benchmark (object):
                     print(e, end=" & ", file=f)
                 print(row[-1], "\\\\", file=f)
             print("\\end{tabular}", file=f)
+            print("\\end{document}", file=f)
