@@ -8,8 +8,7 @@ $(OBJDIR)/html: html | $(OBJDIR)
 	cp -r html $(OBJDIR)/html
 
 $(OBJDIR)/nginx: nginx/nginx.conf | $(OBJDIR)
-	mkdir $@
-	mkdir $@/logs
+	mkdir -p $@/logs
 	sed "s|OBJDIR|$(OBJDIR)|" $< > $@/nginx.conf
 
 $(OBJDIR):
