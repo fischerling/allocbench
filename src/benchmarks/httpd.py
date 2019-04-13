@@ -20,7 +20,7 @@ class Benchmark_HTTPD(Benchmark):
         self.name = "httpd"
         self.descrition = """TODO"""
 
-        self.args = {"nthreads": Benchmark.scale_threads_for_cpus(25)}
+        self.args = {"nthreads": Benchmark.scale_threads_for_cpus(2)}
         self.cmd = "ab -n 10000 -c {nthreads} localhost:8080/index.html"
         self.measure_cmd = ""
         self.server_benchmark = True
