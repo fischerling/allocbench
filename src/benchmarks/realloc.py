@@ -33,7 +33,7 @@ class Benchmark_Realloc(Benchmark):
         plt.savefig(self.name + ".png")
         plt.clf()
 
-        self.export_to_csv(datapoints=["task-clock"])
+        self.export_to_csv("task-clock")
 
 
 realloc = Benchmark_Realloc()

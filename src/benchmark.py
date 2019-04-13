@@ -89,20 +89,18 @@ class Benchmark (object):
         # into lists of dicts.
         save_data = {}
         save_data.update(self.results)
-        save_data["mean"] = {}
-        save_data["std"] = {}
+        save_data["stats"] = {}
         for allocator in self.results["allocators"]:
             measures = []
-            means = []
-            stds = []
+            stats = []
             for ntuple in self.iterate_args(args=self.results["args"]):
                 measures.append((ntuple._asdict(), self.results[allocator][ntuple]))
-                means.append((ntuple._asdict(), self.results["mean"][allocator][ntuple]))
-                stds.append((ntuple._asdict(), self.results["std"][allocator][ntuple]))
+                if "stats" in self.results:
+                    stats.append((ntuple._asdict(), self.results["stats"][allocator][ntuple]))
 
             save_data[allocator] = measures
-            save_data["mean"][allocator] = means
-            save_data["std"][allocator] = stds
+            if "stats" in self.results:
+                save_data["stats"][allocator] = stats
 
         with open(f, "wb") as f:
             pickle.dump(save_data, f)
@@ -126,11 +124,15 @@ class Benchmark (object):
                 d[self.Perm(**dic)] = measures
             self.results[allocator] = d
 
-            for s in ["std", "mean"]:
-                d = {}
-                for dic, value in self.results[s][allocator]:
+            d = {}
+            if "stats" in self.results:
+                for dic, value in self.results["stats"][allocator]:
                     d[self.Perm(**dic)] = value
-                self.results[s][allocator] = d
+                self.results["stats"][allocator] = d
+
+        # add missing statistics
+        if not "stats" in self.results:
+            self.calc_desc_statistics()
 
     def prepare(self):
         os.environ["PATH"] += os.pathsep + os.path.join("build", "benchmarks", self.name)
@@ -166,6 +168,7 @@ class Benchmark (object):
         if runs < 1:
             return
 
+        print_status("Running", self.name, "...")
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
             if Benchmark.perf_allowed == None:
@@ -185,20 +188,25 @@ class Benchmark (object):
             if not Benchmark.perf_allowed:
                 raise Exception("You don't have the needed permissions to use perf")
 
+        # save one valid result to expand expand invalid results
+        valid_result = {}
+
         n = len(list(self.iterate_args())) * len(self.allocators)
         for run in range(1, runs + 1):
             print_status(run, ". run", sep='')
 
             i = 0
-            for tname, t in self.allocators.items():
-                if tname not in self.results:
-                    self.results[tname] = {}
+            for alloc_name, t in self.allocators.items():
+                if alloc_name not in self.results:
+                    self.results[alloc_name] = {}
 
                 env = dict(os.environ)
-                env["LD_PRELOAD"] = env.get("LD_PRELOAD", "") + "build/print_status_on_exit.so " + t["LD_PRELOAD"]
+                env["LD_PRELOAD"] = env.get("LD_PRELOAD", "")
+                env["LD_PRELOAD"] += " " + "build/print_status_on_exit.so"
+                env["LD_PRELOAD"] += " " + t["LD_PRELOAD"]
 
                 if hasattr(self, "preallocator_hook"):
-                    self.preallocator_hook((tname, t), run, env,
+                    self.preallocator_hook((alloc_name, t), run, env,
                                             verbose=src.globalvars.verbosity)
 
                 for perm in self.iterate_args():
@@ -234,79 +242,114 @@ class Benchmark (object):
 
                         actual_env = env
 
-                    print_debug("Cmd:", actual_cmd)
+                    print_debug("\nCmd:", actual_cmd)
                     res = subprocess.run(actual_cmd.split(),
                                          env=actual_env,
                                          stderr=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
                                          universal_newlines=True)
 
-                    if res.returncode != 0:
+                    result = {}
+
+                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr:
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
-                        print_error("{} failed with exit code {} for {}".format(actual_cmd, res.returncode, tname))
-                        break
+                        if res.returncode != 0:
+                            print_error("{} failed with exit code {} for {}".format(actual_cmd, res.returncode, alloc_name))
+                        else:
+                            print_error("Preloading of {} failed for {}".format(t["LD_PRELOAD"], alloc_name))
 
-                    if "ERROR: ld.so" in res.stderr:
-                        print()
-                        print_debug("Stderr:\n" + res.stderr)
-                        print_error("Preloading of {} failed for {}".format(t["LD_PRELOAD"], tname))
-                        break
+                    # parse and store results
+                    else:
+                        if not self.server_benchmark:
+                            # Read VmHWM from status file. If our benchmark didn't fork
+                            # the first occurance of VmHWM is from our benchmark
+                            with open("status", "r") as f:
+                                for l in f.readlines():
+                                    if l.startswith("VmHWM:"):
+                                        result["VmHWM"] = l.split()[1]
+                                        break
+                            os.remove("status")
 
-                    result = {}
+                            # Parse perf output if available
+                            if self.measure_cmd == self.defaults["measure_cmd"]:
+                                csvreader = csv.reader(res.stderr.splitlines(),
+                                                       delimiter=',')
+                                for row in csvreader:
+                                    # Split of the user/kernel space info to be better portable
+                                    try:
+                                        result[row[2].split(":")[0]] = row[0]
+                                    except Exception as e:
+                                        print_warn("Exception", e, "occured on", row, "for",
+                                              alloc_name, "and", perm)
 
-                    if not self.server_benchmark:
-                        # Read VmHWM from status file. If our benchmark didn't fork
-                        # the first occurance of VmHWM is from our benchmark
-                        with open("status", "r") as f:
-                            for l in f.readlines():
-                                if l.startswith("VmHWM:"):
-                                    result["VmHWM"] = l.split()[1]
-                                    break
-                        os.remove("status")
+                        if hasattr(self, "process_output"):
+                            self.process_output(result, res.stdout, res.stderr,
+                                                alloc_name, perm,
+                                                verbose=src.globalvars.verbosity)
 
-                    if hasattr(self, "process_output"):
-                        self.process_output(result, res.stdout, res.stderr,
-                                            tname, perm,
-                                            verbose=src.globalvars.verbosity)
-
-                    # Parse perf output if available
-                    if self.measure_cmd == self.defaults["measure_cmd"]:
-                        csvreader = csv.reader(res.stderr.splitlines(),
-                                               delimiter=',')
-                        for row in csvreader:
-                            # Split of the user/kernel space info to be better portable
-                            try:
-                                result[row[2].split(":")[0]] = row[0]
-                            except Exception as e:
-                                print_warn("Exception", e, "occured on", row, "for",
-                                      tname, "and", perm)
+                        # save a valid result so we can expand invalid ones
+                        if valid_result != None:
+                            valid_result = result
 
                     if not dry_run:
-                        if not perm in self.results[tname]:
-                            self.results[tname][perm] = []
-                        self.results[tname][perm].append(result)
-
-                        if run == runs:
-                            self.results["mean"][tname][perm] = {}
-                            self.results["std"][tname][perm] = {}
-
-                            for datapoint in self.results[tname][perm][0]:
-                                try:
-                                    d = [np.float(m[datapoint]) for m in self.results[tname][perm]]
-                                except ValueError:
-                                    d = np.NaN
-                                self.results["mean"][tname][perm][datapoint] = np.mean(d)
-                                self.results["std"][tname][perm][datapoint] = np.std(d)
+                        if not perm in self.results[alloc_name]:
+                            self.results[alloc_name][perm] = []
+                        self.results[alloc_name][perm].append(result)
 
                 if hasattr(self, "postallocator_hook"):
-                    self.postallocator_hook((tname, t), run,
+                    self.postallocator_hook((alloc_name, t), run,
                                             verbose=src.globalvars.verbosity)
             print()
 
         # Reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
+
+        #expand invalid results
+        if valid_result != {}:
+            for allocator in self.allocators:
+                for perm in self.iterate_args():
+                    for i, m in enumerate(self.results[allocator][perm]):
+                        if m == {}:
+                            self.results[allocator][perm][i] = {k: np.NaN for k in valid_result}
+
+        self.calc_desc_statistics()
+
+    def calc_desc_statistics(self):
+        if "stats" in self.results:
+            return
+        allocs = self.results["allocators"]
+        self.results["stats"] = {}
+        for alloc in allocs:
+            self.results["stats"][alloc] = {}
+            for perm in self.iterate_args(self.results["args"]):
+                stats = {s: {} for s in ["min", "max", "mean", "median", "std",
+                                         "lower_quartile", "upper_quartile",
+                                         "lower_whiskers", "upper_whiskers",
+                                         "outliers"]}
+                for dp in self.results[alloc][perm][0]:
+                    try:
+                        data = [float(m[dp]) for m in self.results[alloc][perm]]
+                    except ValueError as e:
+                        print_debug(e)
+                        continue
+                    stats["min"][dp] = np.min(data)
+                    stats["max"][dp] = np.max(data)
+                    stats["mean"][dp] = np.mean(data)
+                    stats["median"][dp] = np.median(data)
+                    stats["std"][dp] = np.std(data, ddof=1)
+                    stats["lower_quartile"][dp], stats["upper_quartile"][dp] = np.percentile(data, [25, 75])
+                    trimmed_range = stats["upper_quartile"][dp] - stats["lower_quartile"][dp]
+                    stats["lower_whiskers"][dp] = stats["lower_quartile"][dp] - trimmed_range
+                    stats["upper_whiskers"][dp] = stats["upper_quartile"][dp] - trimmed_range
+                    outliers = []
+                    for d in data:
+                        if d > stats["upper_whiskers"][dp] or d < stats["lower_whiskers"][dp]:
+                            outliers.append(d)
+                    stats["outliers"][dp] = outliers
+
+                self.results["stats"][alloc][perm] = stats
 
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                         autoticks=True, title="'default title'", filepostfix="",
@@ -329,19 +372,57 @@ class Benchmark (object):
                     if scale == allocator:
                         y_vals = [1] * len(x_vals)
                     else:
-                        mean = eval(yval.format(**self.results["mean"][allocator][perm]))
-                        norm_mean = eval(yval.format(**self.results["mean"][scale][perm]))
+                        mean = eval(yval.format(**self.results["stats"][allocator][perm]["mean"]))
+                        norm_mean = eval(yval.format(**self.results["stats"][scale][perm]["mean"]))
                         y_vals.append(mean / norm_mean)
                 else:
-                    y_vals.append(eval(yval.format(**self.results["mean"][allocator][perm])))
+                    y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
 
 
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                      label=allocator, color=allocators[allocator]["color"])
 
-        plt.legend()
+        plt.legend(loc="best")
         if not autoticks:
             plt.xticks(x_vals, args[arg])
+        plt.xlabel(eval(xlabel))
+        plt.ylabel(eval(ylabel))
+        plt.title(eval(title))
+        plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, file_ext])))
+        plt.clf()
+
+    def barplot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
+                        title="'default title'", filepostfix="", sumdir="",
+                        arg="", scale=None, file_ext="png"):
+
+        args = self.results["args"]
+        allocators = self.results["allocators"]
+        nallocators = len(allocators)
+
+        arg = arg or list(args.keys())[0]
+        narg = len(args[arg])
+
+
+        for i, allocator in enumerate(allocators):
+            x_vals = list(range(i, narg * (nallocators+1), nallocators+1))
+            y_vals = []
+            for perm in self.iterate_args(args=args):
+                if scale:
+                    if scale == allocator:
+                        y_vals = [1] * len(x_vals)
+                    else:
+                        mean = eval(yval.format(**self.results["stats"][allocator][perm]["mean"]))
+                        norm_mean = eval(yval.format(**self.results["stats"][scale][perm]["mean"]))
+                        y_vals.append(mean / norm_mean)
+                else:
+                    y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
+
+
+            plt.bar(x_vals, y_vals, width=1, label=allocator,
+                    color=allocators[allocator]["color"])
+
+        plt.legend(loc="best")
+        plt.xticks(list(range(int(np.floor(nallocators/2)), narg*(nallocators+1), nallocators+1)), args[arg])
         plt.xlabel(eval(xlabel))
         plt.ylabel(eval(ylabel))
         plt.title(eval(title))
@@ -371,17 +452,17 @@ class Benchmark (object):
                             if scale == allocator:
                                 y_vals = [1] * len(x_vals)
                             else:
-                                mean = eval(yval.format(**self.results["mean"][allocator][perm]))
-                                norm_mean = eval(yval.format(**self.results["mean"][scale][perm]))
+                                mean = eval(yval.format(**self.results["stats"][allocator][perm]["mean"]))
+                                norm_mean = eval(yval.format(**self.results["stats"][scale][perm]["mean"]))
                                 y_vals.append(mean / norm_mean)
                         else:
-                            y_vals.append(eval(yval.format(**self.results["mean"][allocator][perm])))
+                            y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
 
 
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                              label=allocator, color=allocators[allocator]["color"])
 
-                plt.legend()
+                plt.legend(loc="best")
                 if not autoticks:
                     plt.xticks(x_vals, args[loose_arg])
                 plt.xlabel(eval(xlabel))
@@ -391,47 +472,54 @@ class Benchmark (object):
                             str(arg_value), filepostfix, file_ext])))
                 plt.clf()
 
-    def export_to_csv(self, datapoints=None, path=None, std=True):
-        args = self.results["args"]
+    def export_to_csv(self, datapoint, path=None):
         allocators = self.results["allocators"]
+        args = self.results["args"]
+        stats = self.results["stats"]
 
         if path is None:
-            if datapoints is not None:
-                path = ".".join(datapoints)
-            else:
-                path = "full"
+            path = datapoint
 
         path = path + ".csv"
 
-        if datapoints is None:
-            first_alloc = list(allocators)[0]
-            first_perm = list(self.results[first_alloc])[0]
-            datapoints = list(self.results[first_alloc][first_perm])
+        stats_fields = list(stats[list(allocators)[0]][list(self.iterate_args(args=args))[0]])
+        fieldnames = ["allocator", *args, *stats_fields]
+        widths = []
+        for fieldname in fieldnames:
+            widths.append(len(fieldname) + 2)
 
-        for allocator in self.results["allocators"]:
-            path_alloc = allocator + '_' + path
-            with open(path_alloc, "w") as f:
-                fieldnames = [*args]
-                for d in datapoints:
-                    fieldnames.append(d)
-                    if std:
-                        fieldnames.append(d + "(std)")
+        # collect rows
+        rows = {}
+        for alloc in allocators:
+            rows[alloc] = {}
+            for perm in self.iterate_args(args=args):
+                d = []
+                d.append(alloc)
+                d += list(perm._asdict().values())
+                d += [stats[alloc][perm][s][datapoint] for s in stats[alloc][perm]]
+                d[-1] = (",".join([str(x) for x in d[-1]]))
+                rows[alloc][perm] = d
 
-                writer = csv.DictWriter(f, fieldnames, delimiter="\t",
-                                        lineterminator='\n')
-                writer.writeheader()
-
+        # calc widths
+        for i in range(0, len(fieldnames)):
+            for alloc in allocators:
                 for perm in self.iterate_args(args=args):
-                    d = {}
-                    d.update(perm._asdict())
+                    field_len = len(str(rows[alloc][perm][i])) + 2
+                    if  field_len > widths[i]:
+                        widths[i] = field_len
 
-                    for dp in datapoints:
-                        d[dp] = self.results["mean"][allocator][perm][dp]
-                        if std:
-                            fieldname = dp + "(std)"
-                            d[fieldname] = self.results["std"][allocator][perm][dp]
+        with open(path, "w") as f:
+            headerline = ""
+            for i, h in enumerate(fieldnames):
+                headerline += h.ljust(widths[i])
+            print(headerline, file=f)
 
-                    writer.writerow(d)
+            for alloc in allocators:
+                for perm in self.iterate_args(args=args):
+                    line = ""
+                    for i, x in enumerate(rows[alloc][perm]):
+                        line += str(x).ljust(widths[i])
+                    print(line, file=f)
 
     def write_best_doublearg_tex_table(self, evaluation, sort=">",
                                        filepostfix="", sumdir="", std=False):

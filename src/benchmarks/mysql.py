@@ -166,72 +166,39 @@ class Benchmark_MYSQL(Benchmark):
                              xlabel='"threads"',
                              ylabel='"transactions"',
                              title='"sysbench oltp read only"',
-                             filepostfix="l.ro")
+                             filepostfix="l")
 
 
-        # linear plot
+        # normalized linear plot
         ref_alloc = list(allocators)[0]
         self.plot_single_arg("{transactions}",
                              xlabel='"threads"',
                              ylabel='"transactions scaled at " + scale',
                              title='"sysbench oltp read only"',
-                             filepostfix="norm.l.ro",
+                             filepostfix="norm.l",
                              scale=ref_alloc)
 
         # bar plot
-        for i, allocator in enumerate(allocators):
-            y_vals = []
-            for perm in self.iterate_args(args=self.results["args"]):
-                d = [int(m["transactions"]) for m in self.results[allocator][perm]]
-                y_vals.append(np.mean(d))
-            x_vals = [x-i/8 for x in range(1, len(y_vals) + 1)]
-            plt.bar(x_vals, y_vals, width=0.2, label=allocator, align="center",
-                    color=allocators[allocator]["color"])
-
-        plt.legend()
-        plt.xlabel("threads")
-        plt.xticks(range(1, len(y_vals) + 1), self.results["args"]["nthreads"])
-        plt.ylabel("transactions")
-        plt.title("sysbench oltp read only")
-        plt.savefig(self.name + ".b.ro.png")
-        plt.clf()
+        self.barplot_single_arg("{transactions}",
+                                xlabel='"threads"',
+                                ylabel='"transactions"',
+                                title='"sysbench oltp read only"',
+                                filepostfix="b")
 
         # normalized bar plot
-        norm_y_vals = []
-        for perm in self.iterate_args(args=self.results["args"]):
-            d = [int(m["transactions"]) for m in self.results[ref_alloc][perm]]
-            norm_y_vals.append(np.mean(d))
-
-        nallocs = len(allocators)
-        x_vals = [x for x in range(1, len(norm_y_vals)*nallocs + 1, nallocs)]
-        plt.bar(x_vals, [1]*len(norm_y_vals), width=0.7, label=ref_alloc,
-                align="center", color=allocators[ref_alloc]["color"])
-
-        for i, allocator in enumerate(list(allocators)[1:]):
-            y_vals = []
-            for y, perm in enumerate(self.iterate_args(args=self.results["args"])):
-                d = [int(m["transactions"]) for m in self.results[allocator][perm]]
-                y_vals.append(np.mean(d) / norm_y_vals[y])
-
-            x_vals = [x+i+1 for x in range(1, len(norm_y_vals)*nallocs + 1, nallocs)]
-
-            plt.bar(x_vals, y_vals, width=0.7, label=allocator, align="center",
-                    color=allocators[allocator]["color"])
-
-        plt.legend()
-        plt.xlabel("threads")
-        plt.xticks(range(1, len(norm_y_vals)*nallocs + 1, nallocs), self.results["args"]["nthreads"])
-        plt.ylabel("transactions normalized")
-        plt.title("sysbench oltp read only")
-        plt.savefig(self.name + ".norm.b.ro.png")
-        plt.clf()
+        self.barplot_single_arg("{transactions}",
+                                xlabel='"threads"',
+                                ylabel='"transactions scaled at " + scale',
+                                title='"sysbench oltp read only"',
+                                filepostfix="norm.b",
+                                scale=ref_alloc)
 
         # Memusage
-        self.plot_single_arg("{rssmax}",
+        self.barplot_single_arg("{rssmax}",
                              xlabel='"threads"',
                              ylabel='"VmHWM in kB"',
                              title='"Memusage sysbench oltp read only"',
-                             filepostfix="ro.mem")
+                             filepostfix="mem")
 
         # Colored latex table showing transactions count
         d = {allocator: {} for allocator in allocators}
@@ -280,6 +247,8 @@ class Benchmark_MYSQL(Benchmark):
                 print("\\\\", file=f)
 
             print("\end{tabular}", file=f)
+
+        self.export_to_csv("transactions")
 
 
 mysql = Benchmark_MYSQL()

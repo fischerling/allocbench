@@ -42,8 +42,7 @@ class Benchmark_Loop(Benchmark):
         self.write_best_doublearg_tex_table("perm.nthreads / ({task-clock}/1000)",
                                             filepostfix="memusage.matrix")
 
-        self.export_to_csv(datapoints=["task-clock", "L1-dcache-load-misses",
-                                       "L1-dcache-loads"])
+        self.export_to_csv("task-clock")
 
 
 loop = Benchmark_Loop()
