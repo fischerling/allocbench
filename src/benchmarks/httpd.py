@@ -33,7 +33,7 @@ class Benchmark_HTTPD(Benchmark):
 
     def terminate_server(self):
         # check if nginx is running
-        if os.path.isfile(os.path.join(builddir, "nginx", "nginx.pid")):
+        if os.path.isfile(os.path.join(builddir, "benchmarks", self.name, "nginx", "nginx.pid")):
             ret = subprocess.run(server_cmd + ["-s", "stop"], stdout=PIPE,
                                  stderr=PIPE, universal_newlines=True)
 
@@ -71,6 +71,8 @@ class Benchmark_HTTPD(Benchmark):
         allocators = self.results["allocators"]
         args = self.results["args"]
 
+        self.calc_desc_statistics()
+        
         # linear plot
         self.plot_single_arg("{requests}",
                              xlabel='"threads"',
@@ -84,6 +86,21 @@ class Benchmark_HTTPD(Benchmark):
                              ylabel='"requests/s scaled at " + scale',
                              title='"ab -n 10000 -c threads (normalized)"',
                              filepostfix="norm",
+                             scale=ref_alloc)
+        
+        # bar plot
+        self.barplot_single_arg("{requests}",
+                             xlabel='"threads"',
+                             ylabel='"requests/s"',
+                             filepostfix="b",
+                             title='"ab -n 10000 -c threads"')
+
+        # bar plot
+        self.barplot_single_arg("{requests}",
+                             xlabel='"threads"',
+                             ylabel='"requests/s scaled at " + scale',
+                             title='"ab -n 10000 -c threads (normalized)"',
+                             filepostfix="norm.b.",
                              scale=ref_alloc)
 
 httpd = Benchmark_HTTPD()
