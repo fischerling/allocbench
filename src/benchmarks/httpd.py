@@ -32,13 +32,15 @@ class Benchmark_HTTPD(Benchmark):
         super().__init__()
 
     def terminate_server(self):
-        ret = subprocess.run(server_cmd + ["-s", "stop"], stdout=PIPE,
-                             stderr=PIPE, universal_newlines=True)
-        
-        if ret.returncode != 0:
-            print_debug("Stdout:", ret.stdout)
-            print_debug("Stderr:", ret.stderr)
-            raise Exception("Stopping {} failed with {}".format(server_cmd[0], ret.returncode))
+        # check if nginx is running
+        if os.path.isfile(os.path.join(builddir, "nginx", "nginx.pid")):
+            ret = subprocess.run(server_cmd + ["-s", "stop"], stdout=PIPE,
+                                 stderr=PIPE, universal_newlines=True)
+
+            if ret.returncode != 0:
+                print_debug("Stdout:", ret.stdout)
+                print_debug("Stderr:", ret.stderr)
+                raise Exception("Stopping {} failed with {}".format(server_cmd[0], ret.returncode))
 
     def preallocator_hook(self, allocator, run, env, verbose):
         actual_cmd = allocator[1]["cmd_prefix"].split() + server_cmd
