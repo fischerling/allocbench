@@ -325,6 +325,7 @@ class Benchmark (object):
             self.results["stats"][alloc] = {}
             for perm in self.iterate_args(self.results["args"]):
                 stats = {s: {} for s in ["min", "max", "mean", "median", "std",
+                                         "std_perc",
                                          "lower_quartile", "upper_quartile",
                                          "lower_whiskers", "upper_whiskers",
                                          "outliers"]}
@@ -339,6 +340,7 @@ class Benchmark (object):
                     stats["mean"][dp] = np.mean(data)
                     stats["median"][dp] = np.median(data)
                     stats["std"][dp] = np.std(data, ddof=1)
+                    stats["std_perc"][dp] = stats["std"][dp] / stats["mean"][dp]
                     stats["lower_quartile"][dp], stats["upper_quartile"][dp] = np.percentile(data, [25, 75])
                     trimmed_range = stats["upper_quartile"][dp] - stats["lower_quartile"][dp]
                     stats["lower_whiskers"][dp] = stats["lower_quartile"][dp] - trimmed_range
