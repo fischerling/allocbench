@@ -13,6 +13,10 @@ import src.globalvars
 from src.util import *
 
 
+# This is useful when evaluating strings in the plot functionsi. str(np.NaN) == "nan"
+nan = np.NaN
+
+
 class Benchmark (object):
 
     perf_allowed = None
@@ -458,7 +462,9 @@ class Benchmark (object):
                                 norm_mean = eval(yval.format(**self.results["stats"][scale][perm]["mean"]))
                                 y_vals.append(mean / norm_mean)
                         else:
-                            y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
+                            eval_dict = self.results["stats"][allocator][perm]["mean"]
+                            eval_str = yval.format(**eval_dict)
+                            y_vals.append(eval(eval_str))
 
 
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
