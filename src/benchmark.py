@@ -168,7 +168,7 @@ class Benchmark (object):
             if is_fixed:
                 yield p
 
-    def run(self, runs=5, dry_run=False, cmd_prefix=""):
+    def run(self, runs=5):
         if runs < 1:
             return
 
@@ -238,7 +238,6 @@ class Benchmark (object):
 
                         actual_cmd = "{} {} {} {}{}".format(self.measure_cmd,
                                                             t["cmd_prefix"],
-                                                            cmd_prefix,
                                                             binary,
                                                             actual_cmd[cmd_start:])
                         # substitute again
@@ -297,10 +296,9 @@ class Benchmark (object):
                         if valid_result != None:
                             valid_result = result
 
-                    if not dry_run:
-                        if not perm in self.results[alloc_name]:
-                            self.results[alloc_name][perm] = []
-                        self.results[alloc_name][perm].append(result)
+                    if not perm in self.results[alloc_name]:
+                        self.results[alloc_name][perm] = []
+                    self.results[alloc_name][perm].append(result)
 
                 if hasattr(self, "postallocator_hook"):
                     self.postallocator_hook((alloc_name, t), run,

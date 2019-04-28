@@ -36,15 +36,17 @@ parser.add_argument("--license", help="print license info and exit", action='sto
 
 """Run tasks on exit"""
 def epilog():
-    if os.listdir(src.globalvars.resdir) == []:
-        print_warn("Remove empty resultdir")
-        os.removedirs(src.globalvars.resdir)
-    else:
-        endtime = datetime.datetime.now().isoformat()
-        endtime = endtime[:endtime.rfind(':')]
-        src.globalvars.facts["endtime"] = endtime
-        with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as f:
-            pickle.dump(src.globalvars.facts, f)
+    # After early errors resdir may not be set
+    if src.globalvars.resdir != None:
+        if os.listdir(src.globalvars.resdir) == []:
+            print_warn("Remove empty resultdir")
+            os.removedirs(src.globalvars.resdir)
+        else:
+            endtime = datetime.datetime.now().isoformat()
+            endtime = endtime[:endtime.rfind(':')]
+            src.globalvars.facts["endtime"] = endtime
+            with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as f:
+                pickle.dump(src.globalvars.facts, f)
 
 def main():
     args = parser.parse_args()
@@ -162,9 +164,28 @@ def main():
                 if find_cmd("malt") is not None:
                     print_status("Analysing {} ...".format(bench))
 
+
                     malt_cmd = "malt -o output:name={}/malt.{}.%3"
                     malt_cmd = malt_cmd.format(bench_res_dir, "{perm}")
-                    bench.run(runs=1, dry_run=True, cmd_prefix=malt_cmd)
+
+                    old_allocs = bench.allocators
+                    # use malt as allocator
+                    src.globalvars.allocators = {"malt": {"cmd_prefix"    : malt_cmd,
+                                                          "binary_suffix" : "",
+                                                          "LD_PRELOAD"    : ""}}
+                    try:
+                        bench.run(runs=1)
+                    except Exception:
+                        print_error(traceback.format_exc())
+                        print_error("Skipping analysis of", bench, "!")
+
+                    if "malt" in bench.results:
+                        del(bench.results["malt"])
+                    if "malt" in bench.results["stats"]
+                        del(bench.results["stats"]["malt"])
+                    # restore allocs
+                    bench.allocators = old_allocs
+
                 else:
                     print_error("malt not found. Skipping analyse.")
 
