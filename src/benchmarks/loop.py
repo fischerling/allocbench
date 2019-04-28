@@ -1,3 +1,4 @@
+from src.allocator import bumpptr
 from src.benchmark import Benchmark
 
 
@@ -14,6 +15,9 @@ class Benchmark_Loop(Benchmark):
 
         self.requirements = ["loop"]
         super().__init__()
+
+        # add bumpptr alloc
+        self.allocators["bumpptr"] = bumpptr.build()
 
     def summary(self):
         # Speed
