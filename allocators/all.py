@@ -62,6 +62,15 @@ hoard = Alloc("Hoard", sources=Alloc_Src("Hoard",
                                         "mkdir {dir}"],
                             patches=["allocators/hoard_make.patch"])
 
-allocators_to_build = [glibc, glibc_notc, glibc_nofs, glibc_nofs_fancy, tcmalloc, tcmalloc_nofs, jemalloc, hoard]
+mesh = Alloc("Mesh", sources=Alloc_Src("Mesh",
+                                        retrieve_cmds=["git clone https://github.com/plasma-umass/Mesh"],
+                                        reset_cmds=["git stash"]),
+                            LD_PRELOAD="{srcdir}/libmesh.so",
+                            build_cmds=["cd {srcdir}; git submodule update --init",
+                                        "cd {srcdir}; ./configure",
+                                        "cd {srcdir}; make -j 4",
+                                        "mkdir {dir}"])
+
+allocators_to_build = [glibc, glibc_notc, glibc_nofs, glibc_nofs_fancy, tcmalloc, tcmalloc_nofs, jemalloc, hoard, mesh]
 
 allocators = {a.name: a.build() for a in allocators_to_build}
