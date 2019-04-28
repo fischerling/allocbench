@@ -236,7 +236,7 @@ class Benchmark (object):
                                                 stdout=subprocess.PIPE,
                                                 universal_newlines=True).stdout.split()[1]
 
-                        actual_cmd = "{} {} {} {}{}".format(self.measure_cmd,
+                        actual_cmd = "{} {} {}{}".format(self.measure_cmd,
                                                             t["cmd_prefix"],
                                                             binary,
                                                             actual_cmd[cmd_start:])
