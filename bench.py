@@ -181,7 +181,7 @@ def main():
 
                     if "malt" in bench.results:
                         del(bench.results["malt"])
-                    if "malt" in bench.results["stats"]
+                    if "malt" in bench.results["stats"]:
                         del(bench.results["stats"]["malt"])
                     # restore allocs
                     bench.allocators = old_allocs
