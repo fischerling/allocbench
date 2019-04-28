@@ -1,5 +1,6 @@
 import copy
 from datetime import datetime
+import inspect
 import os
 import shutil
 import subprocess
@@ -7,6 +8,7 @@ import sys
 
 import src.globalvars
 from src.util import *
+
 
 library_path = ""
 for l in subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
@@ -26,6 +28,7 @@ class Allocator_Sources (object):
         self.name = name
         self.dir = os.path.join(srcdir, self.name)
         self.retrieve_cmds = retrieve_cmds
+        self.patchdir = os.path.join("src/allocators/", self.name)
         self.prepare_cmds = prepare_cmds
         self.reset_cmds = reset_cmds
 
@@ -70,7 +73,7 @@ class Allocator_Sources (object):
 
         print_status("Patching", self.name, "...")
         for patch in patches:
-            with open(patch, "rb") as f:
+            with open(patch.format(patchdir=self.patchdir), "rb") as f:
                 p = subprocess.run("patch -p1", shell=True, cwd=cwd,
                                    stderr=subprocess.PIPE, stdout=stdout,
                                    input=f.read())
@@ -106,8 +109,7 @@ class Allocator (object):
             with open(buildtimestamp_file, "r") as f:
                 timestamp = datetime.fromtimestamp(float(f.read()))
 
-            # print(globals())
-            modtime = os.stat(os.path.realpath(src.globalvars.allocators_file)).st_mtime
+            modtime = os.stat(inspect.getfile(self.__class__)).st_mtime
             modtime = datetime.fromtimestamp(modtime)
 
             build_needed = timestamp < modtime
@@ -170,3 +172,5 @@ def patch_alloc(name, alloc, patches, **kwargs):
 
     return new_alloc
 
+
+bumpptr = Allocator("bumpptr", LD_PRELOAD=os.path.join(builddir, "bumpptr_alloc.so"), color="C8")
