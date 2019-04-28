@@ -2,19 +2,19 @@ MAKEFILES = $(shell dirname $(shell find . -name Makefile ! -path ./Makefile ! -
 
 OBJDIR = $(PWD)/build
 
-CC = gcc
-CXX = g++
+export CC = gcc
+export CXX = g++
 
-WARNFLAGS = -Wall -Wextra
-COMMONFLAGS = -fno-builtin -fPIC -DPIC -pthread
-OPTFLAGS = -O3 -DNDEBUG
-# OPTFLAGS = -O0 -g3
+export WARNFLAGS = -Wall -Wextra
+export COMMONFLAGS = -fno-builtin -fPIC -DPIC -pthread
+# export OPTFLAGS = -O3 -DNDEBUG
+export OPTFLAGS = -O0 -g
 
-CFLAGS = -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
-CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
+export CFLAGS = -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
+export CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
 
-LDFLAGS = -pthread -static-libgcc
-LDXXFLAGS = $(LDFLAGS) -static-libstdc++
+export LDFLAGS = -pthread -static-libgcc
+export LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 
 .PHONY: all clean $(MAKEFILES)
 all: $(OBJDIR)/ccinfo  $(MAKEFILES)
