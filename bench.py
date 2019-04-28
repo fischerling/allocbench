@@ -102,7 +102,7 @@ def main():
     else:
         print_status("Using system-wide installed allocators ...")
         # Normal import fails
-        importlib.import_module('src.allocators')
+        importlib.import_module('src.allocators.installed_allocators')
 
     print_info("Allocators:", *src.globalvars.allocators.keys())
 
