@@ -14,10 +14,6 @@ import src.globalvars
 from src.util import *
 
 
-bench_dir = "src/benchmarks"
-benchmarks = [e[:-3] for e in os.listdir(bench_dir)
-                     if e[-3:] == ".py" and e != "__init__.py"]
-
 parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-ds, --dont-save", action='store_true', dest="dont_save",
                     help="don't save benchmark results in RESULTDIR")
@@ -141,7 +137,7 @@ def main():
     # TODO load all results at once
 
     cwd = os.getcwd()
-    for bench in benchmarks:
+    for bench in src.globalvars.benchmarks:
         if args.benchmarks and not bench in args.benchmarks:
             continue
 
@@ -170,7 +166,7 @@ def main():
 
                     old_allocs = bench.allocators
                     # use malt as allocator
-                    src.globalvars.allocators = {"malt": {"cmd_prefix"    : malt_cmd,
+                    bench.allocators = {"malt": {"cmd_prefix"    : malt_cmd,
                                                           "binary_suffix" : "",
                                                           "LD_PRELOAD"    : ""}}
                     try:
@@ -189,6 +185,8 @@ def main():
                 else:
                     print_error("malt not found. Skipping analyse.")
 
+            if args.runs > 1:
+                print_status("Running", bench.name, "...")
             bench.run(runs=args.runs)
 
             if need_resultdir:

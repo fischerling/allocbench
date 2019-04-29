@@ -1,3 +1,4 @@
+import inspect
 import os
 
 
@@ -13,8 +14,19 @@ allocators = {}
 """File were the allocators definitions are loaded from"""
 allocators_file = None
 
+"""Root directory of allocbench"""
+allocbenchdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+allocbenchdir = os.path.dirname(allocbenchdir)
+
 """Path of the build directory"""
-builddir = os.path.join(os.getcwd(), "build")
+builddir = "build"
 
 """Directory were the benchmark results are stored"""
 resdir = None
+
+"""Source directory for all benchmarks"""
+benchsrcdir = "src/benchmarks"
+
+"""List of available benchmarks"""
+benchmarks = [e[:-3] for e in os.listdir(os.path.join(allocbenchdir, benchsrcdir))
+              if e[-3:] == ".py" and e != "__init__.py"]
