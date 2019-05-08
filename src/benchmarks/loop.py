@@ -47,6 +47,7 @@ class Benchmark_Loop(Benchmark):
                                             filepostfix="memusage.matrix")
 
         self.export_to_csv("task-clock")
+        self.export_to_dataref("task-clock")
 
 
 loop = Benchmark_Loop()

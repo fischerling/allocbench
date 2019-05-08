@@ -24,6 +24,7 @@ class Benchmark_Realloc(Benchmark):
                                 title='"realloc micro benchmark"')
 
         self.export_to_csv("task-clock")
+        self.export_to_dataref("task-clock")
 
 
 realloc = Benchmark_Realloc()

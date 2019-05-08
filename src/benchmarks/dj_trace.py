@@ -187,6 +187,12 @@ class Benchmark_DJ_Trace(Benchmark):
             plt.savefig(".".join([self.name, perm.workload, "runtime", "png"]))
             plt.clf()
 
+
+        self.barplot_single_arg("{cputime}/1000",
+                                ylabel='"time in ms"',
+                                title='"total runtime"',
+                                filepostfix="runtime")
+
         # Function Times
         func_times_means = {allocator: {} for allocator in allocators}
         xa = np.arange(0, 6, 1.5)
@@ -217,6 +223,22 @@ class Benchmark_DJ_Trace(Benchmark):
             plt.clf()
 
         # Memusage
+        # hack ideal rss in data set
+        allocators["Ideal_RSS"] = {"color": "C" + str(len(allocators) + 1)}
+        self.results["stats"]["Ideal_RSS"] = {}
+        for perm in self.iterate_args(args=args):
+            ideal_rss = self.results[list(allocators.keys())[0]][perm][0]["Ideal_RSS"]/1000
+            self.results["stats"]["Ideal_RSS"][perm] = {"mean": {"Max_RSS": ideal_rss}}
+
+
+        self.barplot_single_arg("{Max_RSS}/1000",
+                                ylabel='"Max RSS in MB"',
+                                title='"Highwatermark of Vm (VmHWM)"',
+                                filepostfix="newrss")
+
+        del(allocators["Ideal_RSS"])
+        del(self.results["stats"]["Ideal_RSS"])
+
         rss_means = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
@@ -236,6 +258,12 @@ class Benchmark_DJ_Trace(Benchmark):
             plt.title("Maximal benötigter Speicher (VmHWM)")
             plt.savefig(".".join([self.name, perm.workload, "rss", "png"]))
             plt.clf()
+
+        self.export_to_csv("Max_RSS")
+        self.export_to_csv("cputime")
+
+        self.export_to_dataref("Max_RSS")
+        self.export_to_dataref("cputime")
 
         # Tables
         for perm in self.iterate_args(args=args):

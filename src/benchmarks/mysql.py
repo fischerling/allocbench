@@ -249,6 +249,7 @@ class Benchmark_MYSQL(Benchmark):
             print("\end{tabular}", file=f)
 
         self.export_to_csv("transactions")
+        self.export_to_dataref("transactions")
 
 
 mysql = Benchmark_MYSQL()
