@@ -30,10 +30,10 @@ parser.add_argument("-rd", "--resultdir", help="directory where all results go",
 parser.add_argument("--license", help="print license info and exit", action='store_true')
 
 
-"""Run tasks on exit"""
 def epilog():
+    """Run tasks on exit"""
     # After early errors resdir may not be set
-    if src.globalvars.resdir != None:
+    if src.globalvars.resdir is not None:
         if os.listdir(src.globalvars.resdir) == []:
             print_warn("Remove empty resultdir")
             os.removedirs(src.globalvars.resdir)
@@ -43,6 +43,7 @@ def epilog():
             src.globalvars.facts["endtime"] = endtime
             with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as f:
                 pickle.dump(src.globalvars.facts, f)
+
 
 def main():
     args = parser.parse_args()
@@ -127,7 +128,7 @@ def main():
             resdir = os.path.join(args.resultdir)
         else:
             resdir = os.path.join("results", src.globalvars.facts["hostname"],
-                                    src.globalvars.facts["starttime"])
+                                  src.globalvars.facts["starttime"])
         # make resdir globally available
         src.globalvars.resdir = resdir
 
@@ -138,7 +139,7 @@ def main():
 
     cwd = os.getcwd()
     for bench in src.globalvars.benchmarks:
-        if args.benchmarks and not bench in args.benchmarks:
+        if args.benchmarks and bench not in args.benchmarks:
             continue
 
         if args.analyse or not args.nosum:
@@ -160,15 +161,14 @@ def main():
                 if find_cmd("malt") is not None:
                     print_status("Analysing {} ...".format(bench))
 
-
                     malt_cmd = "malt -o output:name={}/malt.{}.%3"
                     malt_cmd = malt_cmd.format(bench_res_dir, "{perm}")
 
                     old_allocs = bench.allocators
                     # use malt as allocator
-                    bench.allocators = {"malt": {"cmd_prefix"    : malt_cmd,
-                                                          "binary_suffix" : "",
-                                                          "LD_PRELOAD"    : ""}}
+                    bench.allocators = {"malt": {"cmd_prefix":    malt_cmd,
+                                                 "binary_suffix": "",
+                                                 "LD_PRELOAD":    ""}}
                     try:
                         bench.run(runs=1)
                     except Exception:
