@@ -328,7 +328,7 @@ class Benchmark (object):
                 stats = {s: {} for s in ["min", "max", "mean", "median", "std",
                                          "std_perc",
                                          "lower_quartile", "upper_quartile",
-                                         "lower_whiskers", "upper_whiskers",
+                                         "lower_whisker", "upper_whisker",
                                          "outliers"]}
                 for dp in self.results[alloc][perm][0]:
                     try:
@@ -344,11 +344,11 @@ class Benchmark (object):
                     stats["std_perc"][dp] = stats["std"][dp] / stats["mean"][dp]
                     stats["lower_quartile"][dp], stats["upper_quartile"][dp] = np.percentile(data, [25, 75])
                     trimmed_range = stats["upper_quartile"][dp] - stats["lower_quartile"][dp]
-                    stats["lower_whiskers"][dp] = stats["lower_quartile"][dp] - trimmed_range
-                    stats["upper_whiskers"][dp] = stats["upper_quartile"][dp] - trimmed_range
+                    stats["lower_whisker"][dp] = stats["lower_quartile"][dp] - trimmed_range
+                    stats["upper_whisker"][dp] = stats["upper_quartile"][dp] + trimmed_range
                     outliers = []
                     for d in data:
-                        if d > stats["upper_whiskers"][dp] or d < stats["lower_whiskers"][dp]:
+                        if d > stats["upper_whisker"][dp] or d < stats["lower_whisker"][dp]:
                             outliers.append(d)
                     stats["outliers"][dp] = outliers
 
@@ -516,7 +516,7 @@ class Benchmark (object):
         with open(path, "w") as f:
             headerline = ""
             for i, h in enumerate(fieldnames):
-                headerline += h.ljust(widths[i])
+                headerline += h.capitalize().ljust(widths[i]).replace("_", "-")
             print(headerline, file=f)
 
             for alloc in allocators:
