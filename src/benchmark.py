@@ -524,7 +524,33 @@ class Benchmark (object):
                     line = ""
                     for i, x in enumerate(rows[alloc][perm]):
                         line += str(x).ljust(widths[i])
-                    print(line, file=f)
+                    print(line.replace("_", "-"), file=f)
+
+    def export_to_dataref(self, datapoint, path=None):
+        allocators = self.results["allocators"]
+        args = self.results["args"]
+        stats = self.results["stats"]
+
+        if path is None:
+            path = datapoint
+
+        path = path + ".dataref"
+
+        # Example: \drefset{/mysql/glibc/40/Lower-whisker}{71552.0}
+        line = "\drefset{{/{}/{}/{}/{}}}{{{}}}"
+
+        with open(path, "w") as f:
+            for alloc in allocators:
+                for perm in self.iterate_args(args=args):
+                    for statistic, values in stats[alloc][perm].items():
+                        cur_line = line.format(self.name, alloc,
+                                         "/".join([str(p) for p in list(perm)]),
+                                         statistic, values[datapoint])
+                        # Replace empty outliers
+                        cur_line.replace("[]", "")
+                        # Replace underscores
+                        cur_line.replace("_", "-")
+                        print(cur_line, file=f)
 
     def write_best_doublearg_tex_table(self, evaluation, sort=">",
                                        filepostfix="", sumdir="", std=False):
