@@ -19,13 +19,13 @@ allocbenchdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentf
 allocbenchdir = os.path.dirname(allocbenchdir)
 
 """Path of the build directory"""
-builddir = "build"
+builddir = os.path.join(allocbenchdir, "build")
 
 """Directory were the benchmark results are stored"""
 resdir = None
 
 """Source directory for all benchmarks"""
-benchsrcdir = "src/benchmarks"
+benchsrcdir = os.path.join(allocbenchdir, "src", "benchmarks")
 
 """List of available benchmarks"""
 benchmarks = [e[:-3] for e in os.listdir(os.path.join(allocbenchdir, benchsrcdir))
