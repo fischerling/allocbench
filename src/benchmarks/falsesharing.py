@@ -65,7 +65,7 @@ class Benchmark_Falsesharing(Benchmark):
                             fixed=["bench"])
 
         self.plot_fixed_arg("({LLC-load-misses}/{LLC-loads})*100",
-                            ylabel="'l1 cache misses in %'",
+                            ylabel="'llc cache misses in %'",
                             title="'LLC misses: ' + arg + ' ' + str(arg_value)",
                             filepostfix="llc-misses",
                             fixed=["bench"])
