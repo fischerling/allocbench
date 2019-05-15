@@ -300,7 +300,7 @@ class Benchmark (object):
                     # Prepend cmd if we are not measuring servers
                     if self.server_cmds == []:
                         actual_cmd = src.util.prefix_cmd_with_abspath(actual_cmd)
-                        actual_cmd = "{} {} {}{}".format(self.measure_cmd,
+                        actual_cmd = "{} {} {}".format(self.measure_cmd,
                                                             alloc["cmd_prefix"],
                                                             actual_cmd)
                         # substitute again
