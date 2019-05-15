@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 
 import src.globalvars
@@ -22,6 +23,23 @@ def find_cmd(cmd):
                 return exe_file
 
     return None
+
+def prefix_cmd_with_abspath(cmd):
+    """Prefix cmd with the abspath of the first word
+
+    Usefull if cmd should be executed by the loader of a custom glibc."""
+
+    binary_end = cmd.find(" ")
+    binary_end = None if binary_end == -1 else binary_end
+
+    cmd_start = len(cmd) if binary_end == None else binary_end
+
+    binary_abspath = subprocess.run(["whereis", cmd[0:binary_end]],
+                                    stdout=subprocess.PIPE,
+                                    universal_newlines=True).stdout.split()[1]
+
+    return binary_abspath + " " + cmd[binary_end:]
+
 
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
     if src.globalvars.verbosity < 0:
