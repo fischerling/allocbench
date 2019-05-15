@@ -16,7 +16,6 @@ __thread void* mem_start = NULL;
 __thread void* mem_end = NULL;
 
 __thread uintptr_t ptr = 0;
-__thread uintptr_t last_freed_ptr = 0;
 
 void* malloc(size_t size) {
 	if(mem_start == NULL) {
