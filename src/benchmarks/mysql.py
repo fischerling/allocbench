@@ -1,4 +1,3 @@
-import atexit
 import copy
 import matplotlib.pyplot as plt
 import multiprocessing
@@ -21,14 +20,12 @@ prepare_cmd = ("sysbench oltp_read_only --db-driver=mysql --mysql-user=root "
                "--mysql-socket=" + cwd + "/mysql_test/socket --tables=5 "
                "--table-size=1000000 prepare").split()
 
-cmd = ("sysbench oltp_read_only --threads={nthreads} --time=60 --tables=5 "
+cmd = ("sysbench oltp_read_only --threads={nthreads} --time=10 --tables=5 "
        "--db-driver=mysql --mysql-user=root --mysql-socket="
        + cwd + "/mysql_test/socket run")
 
-server_cmd = ("{0} -h {2}/mysql_test --socket={2}/mysql_test/socket "
-              "--max-connections={1} "
-              "--secure-file-priv=").format(shutil.which("mysqld"),
-                                            multiprocessing.cpu_count(), cwd).split()
+server_cmd = ("mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket "
+              "--max-connections={1} --secure-file-priv=").format(cwd, multiprocessing.cpu_count())
 
 
 class Benchmark_MYSQL(Benchmark):
@@ -38,48 +35,17 @@ class Benchmark_MYSQL(Benchmark):
 
         # mysqld fails with hoard somehow
         self.allocators = copy.copy(allocators)
-        if "hoard" in self.allocators:
-            del(self.allocators["hoard"])
+        if "Hoard" in self.allocators:
+            del(self.allocators["Hoard"])
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
         self.cmd = cmd
+        self.server_cmds = [server_cmd]
         self.measure_cmd = ""
 
         self.requirements = ["mysqld", "sysbench"]
 
-        atexit.register(self.terminate_server)
-
         super().__init__()
-
-    def start_and_wait_for_server(self, cmd_prefix="", env=None):
-        actual_cmd = cmd_prefix.split() + server_cmd
-        print_info("Starting server with:", actual_cmd)
-
-        self.server = subprocess.Popen(actual_cmd, stdout=PIPE, stderr=PIPE,
-                                       env=env, universal_newlines=True)
-        # TODO make sure server comes up !
-        sleep(10)
-        if self.server.poll() is not None:
-            print_debug("cmd_prefix:", cmd_prefix, file=sys.stderr)
-            print_debug("Stderr:", self.server.stderr, file=sys.stderr)
-            return False
-
-        return True
-
-    def terminate_server(self):
-        if hasattr(self, "server"):
-            if self.server.poll() is None:
-                print_info("Terminating mysql server")
-                self.server.terminate()
-
-            for i in range(0,10):
-                sleep(1)
-                if self.server.poll() is not None:
-                    return
-
-            print_info("Killing still running mysql server")
-            self.server.kill()
-            self.server.wait()
 
     def prepare(self):
         super().prepare()
@@ -106,8 +72,7 @@ class Benchmark_MYSQL(Benchmark):
                 print_debug(p.stderr, file=sys.stderr)
                 raise Exception("Creating test DB failed with:", p.returncode)
 
-            if not self.start_and_wait_for_server():
-                raise Exception("Starting mysql server failed with {}".format(self.server.returncode))
+            self.start_servers()
 
             # Create sbtest TABLE
             p = subprocess.run(("mysql -u root -S "+cwd+"/mysql_test/socket").split(" "),
@@ -128,20 +93,12 @@ class Benchmark_MYSQL(Benchmark):
                 self.terminate_server()
                 raise Exception("Preparing test tables failed with:", p.returncode)
 
-            self.terminate_server()
+            self.shutdown_servers()
 
     def cleanup(self):
         if os.path.exists("mysql_test"):
             print_status("Delete mysqld directory")
             shutil.rmtree("mysql_test", ignore_errors=True)
-
-    def preallocator_hook(self, allocator, run, env, verbose):
-        if not self.start_and_wait_for_server(cmd_prefix=allocator[1]["cmd_prefix"], env=env):
-            print_debug(allocator[1]["cmd_prefix"], file=sys.stderr)
-            raise Exception("Starting mysql server for {} failed with".format(allocator[0], self.server.returncode))
-
-    def postallocator_hook(self, allocator, run, verbose):
-        self.terminate_server()
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
         result["transactions"] = re.search("transactions:\s*(\d*)", stdout).group(1)
@@ -151,7 +108,7 @@ class Benchmark_MYSQL(Benchmark):
         result["avg"] = re.search("avg:\s*(\d*.\d*)", stdout).group(1)
         result["max"] = re.search("max:\s*(\d*.\d*)", stdout).group(1)
 
-        with open("/proc/"+str(self.server.pid)+"/status", "r") as f:
+        with open("/proc/"+str(self.servers[0].pid)+"/status", "r") as f:
             for l in f.readlines():
                 if l.startswith("VmHWM:"):
                     result["rssmax"] = int(l.replace("VmHWM:", "").strip().split()[0])

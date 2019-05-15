@@ -1,3 +1,4 @@
+import atexit
 from collections import namedtuple
 import csv
 import itertools
@@ -8,13 +9,16 @@ import os
 import pickle
 import shutil
 import subprocess
+from time import sleep
 
 import src.globalvars
+import src.util
 from src.util import *
 
 
 # This is useful when evaluating strings in the plot functionsi. str(np.NaN) == "nan"
 nan = np.NaN
+
 
 
 class Benchmark (object):
@@ -28,9 +32,28 @@ class Benchmark (object):
 
         "measure_cmd": "perf stat -x, -d",
         "cmd": "true",
+        "server_cmds": [],
         "allocators": src.globalvars.allocators,
-        "server_benchmark": False,
     }
+
+    @staticmethod
+    def terminate_subprocess(popen, timeout=5):
+        """Terminate or kill a Popen object"""
+
+        # Skip already terminated subprocess
+        if popen.poll() is not None:
+            return
+
+        print_info("Terminating subprocess", popen.args)
+        popen.terminate()
+        try:
+            print_info("Subprocess exited with ", popen.wait(timeout=timeout))
+        except:
+            print_error("Killing subprocess ", server.args)
+            popen.kill()
+            popen.wait()
+        print_debug("Server Out:", popen.stdout)
+        print_debug("Server Err:", popen.stderr)
 
     @staticmethod
     def scale_threads_for_cpus(factor, steps=None):
@@ -82,6 +105,7 @@ class Benchmark (object):
 
         print_debug("Creating benchmark", self.name)
         print_debug("Cmd:", self.cmd)
+        print_debug("Server Cmds:", self.server_cmds)
         print_debug("Args:", self.args)
         print_debug("Requirements:", self.requirements)
         print_debug("Results dictionary:", self.results)
@@ -168,6 +192,50 @@ class Benchmark (object):
             if is_fixed:
                 yield p
 
+    def start_servers(self, env=None, alloc_name="None", alloc={"cmd_prefix": ""}):
+        """Start Servers
+
+        Servers are not allowed to deamonize because then they can't
+        be terminated with their Popen object."""
+        self.servers = []
+
+        substitutions = {"alloc": alloc_name,
+                         "perm": alloc_name,
+                         "builddir": src.globalvars.builddir}
+
+        substitutions.update(alloc)
+
+        for server_cmd in self.server_cmds:
+            print_info("Starting Server for", alloc_name)
+
+            server_cmd = src.util.prefix_cmd_with_abspath(server_cmd)
+            server_cmd = "{} {} {}".format(self.measure_cmd,
+                                                alloc["cmd_prefix"],
+                                                server_cmd)
+
+            server_cmd = server_cmd.format(**substitutions)
+            print_debug(server_cmd)
+
+            server = subprocess.Popen(server_cmd.split(), env=env,
+                                      stdout=subprocess.PIPE,
+                                      stderr=subprocess.PIPE,
+                                      universal_newlines=True)
+
+            #TODO check if server is up
+            sleep(5)
+
+            ret = server.poll()
+            if ret is not None:
+                raise Exception("Starting Server failed with exit code " + str(ret))
+            # Register termination of the server
+            atexit.register(Benchmark.terminate_subprocess, popen=server)
+            self.servers.append(server)
+
+    def shutdown_servers(self):
+        print_info("Shutting down servers")
+        for server in self.servers:
+            Benchmark.terminate_subprocess(server)
+
     def run(self, runs=5):
         if runs < 1:
             return
@@ -199,19 +267,23 @@ class Benchmark (object):
             print_status(run, ". run", sep='')
 
             i = 0
-            for alloc_name, t in self.allocators.items():
+            for alloc_name, alloc in self.allocators.items():
                 if alloc_name not in self.results:
                     self.results[alloc_name] = {}
 
                 env = dict(os.environ)
                 env["LD_PRELOAD"] = env.get("LD_PRELOAD", "")
                 env["LD_PRELOAD"] += " " + "build/print_status_on_exit.so"
-                env["LD_PRELOAD"] += " " + t["LD_PRELOAD"]
+                env["LD_PRELOAD"] += " " + alloc["LD_PRELOAD"]
 
+                self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
+
+                # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
-                    self.preallocator_hook((alloc_name, t), run, env,
+                    self.preallocator_hook((alloc_name, alloc), run, env,
                                             verbose=src.globalvars.verbosity)
 
+                # Run benchmark for alloc
                 for perm in self.iterate_args():
                     i += 1
                     print_info0(i, "of", n, "\r", end='')
@@ -220,25 +292,17 @@ class Benchmark (object):
                     substitutions = {"run": run}
                     substitutions.update(perm._asdict())
                     substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
-                    substitutions.update(t)
+                    substitutions.update(alloc)
 
                     actual_cmd = self.cmd.format(**substitutions)
                     actual_env = None
 
-                    if not self.server_benchmark:
-                        # Find absolute path of executable
-                        binary_end = actual_cmd.find(" ")
-                        binary_end = None if binary_end == -1 else binary_end
-                        cmd_start = len(actual_cmd) if binary_end == None else binary_end
-
-                        binary = subprocess.run(["whereis", actual_cmd[0:binary_end]],
-                                                stdout=subprocess.PIPE,
-                                                universal_newlines=True).stdout.split()[1]
-
+                    # Prepend cmd if we are not measuring servers
+                    if self.server_cmds == []:
+                        actual_cmd = src.util.prefix_cmd_with_abspath(actual_cmd)
                         actual_cmd = "{} {} {}{}".format(self.measure_cmd,
-                                                            t["cmd_prefix"],
-                                                            binary,
-                                                            actual_cmd[cmd_start:])
+                                                            alloc["cmd_prefix"],
+                                                            actual_cmd)
                         # substitute again
                         actual_cmd = actual_cmd.format(**substitutions)
 
@@ -264,7 +328,7 @@ class Benchmark (object):
 
                     # parse and store results
                     else:
-                        if not self.server_benchmark:
+                        if self.server_cmds == []:
                             # Read VmHWM from status file. If our benchmark didn't fork
                             # the first occurance of VmHWM is from our benchmark
                             with open("status", "r") as f:
@@ -273,18 +337,21 @@ class Benchmark (object):
                                         result["VmHWM"] = l.split()[1]
                                         break
                             os.remove("status")
+                        # TODO get VmHWM from servers
+                        else:
+                            pass
 
-                            # Parse perf output if available
-                            if self.measure_cmd == self.defaults["measure_cmd"]:
-                                csvreader = csv.reader(res.stderr.splitlines(),
-                                                       delimiter=',')
-                                for row in csvreader:
-                                    # Split of the user/kernel space info to be better portable
-                                    try:
-                                        result[row[2].split(":")[0]] = row[0]
-                                    except Exception as e:
-                                        print_warn("Exception", e, "occured on", row, "for",
-                                              alloc_name, "and", perm)
+                        # Parse perf output if available
+                        if self.measure_cmd == self.defaults["measure_cmd"]:
+                            csvreader = csv.reader(res.stderr.splitlines(),
+                                                   delimiter=',')
+                            for row in csvreader:
+                                # Split of the user/kernel space info to be better portable
+                                try:
+                                    result[row[2].split(":")[0]] = row[0]
+                                except Exception as e:
+                                    print_warn("Exception", e, "occured on", row, "for",
+                                          alloc_name, "and", perm)
 
                         if hasattr(self, "process_output"):
                             self.process_output(result, res.stdout, res.stderr,
@@ -299,9 +366,12 @@ class Benchmark (object):
                         self.results[alloc_name][perm] = []
                     self.results[alloc_name][perm].append(result)
 
+                self.shutdown_servers()
+
                 if hasattr(self, "postallocator_hook"):
-                    self.postallocator_hook((alloc_name, t), run,
+                    self.postallocator_hook((alloc_name, alloc), run,
                                             verbose=src.globalvars.verbosity)
+
             print()
 
         # Reset PATH

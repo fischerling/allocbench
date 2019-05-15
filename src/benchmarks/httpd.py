@@ -1,4 +1,3 @@
-import atexit
 import matplotlib.pyplot as plt
 import numpy as np
 import re
@@ -8,11 +7,8 @@ from subprocess import PIPE
 import sys
 from time import sleep
 
-from src.globalvars import builddir
 from src.benchmark import Benchmark
 from src.util import *
-
-server_cmd = "{} -c {}/benchmarks/httpd/nginx/nginx.conf".format(shutil.which("nginx"), builddir).split()
 
 
 class Benchmark_HTTPD(Benchmark):
@@ -20,42 +16,16 @@ class Benchmark_HTTPD(Benchmark):
         self.name = "httpd"
         self.descrition = """TODO"""
 
-        self.args = {"nthreads": Benchmark.scale_threads_for_cpus(2)}
-        self.cmd = "ab -n 10000 -c {nthreads} localhost:8080/index.html"
+        self.args = {"nthreads": Benchmark.scale_threads_for_cpus(2),
+                     "site": ["index.html", "index.php"]}
+        self.cmd = "ab -n 100 -c {nthreads} localhost:8080/{site}"
         self.measure_cmd = ""
-        self.server_benchmark = True
+        self.server_cmds = ["nginx -c {builddir}/benchmarks/httpd/etc/nginx/nginx.conf",
+                            "php-fpm -c {builddir}/benchmarks/httpd/etc/php/php.ini -y {builddir}/benchmarks/httpd/etc/php/php-fpm.conf -F"]
 
         self.requirements = ["nginx", "ab"]
 
-        atexit.register(self.terminate_server)
-
         super().__init__()
-
-    def terminate_server(self):
-        # check if nginx is running
-        if os.path.isfile(os.path.join(builddir, "benchmarks", self.name, "nginx", "nginx.pid")):
-            ret = subprocess.run(server_cmd + ["-s", "stop"], stdout=PIPE,
-                                 stderr=PIPE, universal_newlines=True)
-
-            if ret.returncode != 0:
-                print_debug("Stdout:", ret.stdout)
-                print_debug("Stderr:", ret.stderr)
-                raise Exception("Stopping {} failed with {}".format(server_cmd[0], ret.returncode))
-
-    def preallocator_hook(self, allocator, run, env, verbose):
-        actual_cmd = allocator[1]["cmd_prefix"].split() + server_cmd
-        print_info("Starting server with:", actual_cmd)
-
-        ret = subprocess.run(actual_cmd, stdout=PIPE, stderr=PIPE, env=env,
-                                       universal_newlines=True)
-        if ret.returncode != 0:
-            print_debug("Stdout:", ret.stdout)
-            print_debug("Stderr:", ret.stderr)
-            raise Exception("Starting {} for {} failed with {}".format(server_cmd[0], allocator[0], ret.returncode))
-
-
-    def postallocator_hook(self, allocator, run, verbose):
-        self.terminate_server()
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
         result["time"] = re.search("Time taken for tests:\s*(\d*\.\d*) seconds", stdout).group(1)
@@ -74,33 +44,29 @@ class Benchmark_HTTPD(Benchmark):
         self.calc_desc_statistics()
         
         # linear plot
-        self.plot_single_arg("{requests}",
+        self.plot_fixed_arg("{requests}",
                              xlabel='"threads"',
                              ylabel='"requests/s"',
-                             title='"ab -n 10000 -c threads"')
+                             autoticks=False,
+                             filepostfix="requests",
+                             title='"ab -n 10000 -c " + str(perm.nthreads)')
 
         # linear plot
         ref_alloc = list(allocators)[0]
-        self.plot_single_arg("{requests}",
+        self.plot_fixed_arg("{requests}",
                              xlabel='"threads"',
                              ylabel='"requests/s scaled at " + scale',
-                             title='"ab -n 10000 -c threads (normalized)"',
-                             filepostfix="norm",
+                             title='"ab -n 10000 -c " + str(perm.nthreads) + " (normalized)"',
+                             filepostfix="requests.norm",
+                             autoticks=False,
                              scale=ref_alloc)
         
         # bar plot
-        self.barplot_single_arg("{requests}",
-                             xlabel='"threads"',
-                             ylabel='"requests/s"',
-                             filepostfix="b",
-                             title='"ab -n 10000 -c threads"')
+        # self.barplot_fixed_arg("{requests}",
+                             # xlabel='"threads"',
+                             # ylabel='"requests/s"',
+                             # filepostfix="b",
+                             # title='"ab -n 10000 -c threads"')
 
-        # bar plot
-        self.barplot_single_arg("{requests}",
-                             xlabel='"threads"',
-                             ylabel='"requests/s scaled at " + scale',
-                             title='"ab -n 10000 -c threads (normalized)"',
-                             filepostfix="norm.b.",
-                             scale=ref_alloc)
 
 httpd = Benchmark_HTTPD()
