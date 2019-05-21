@@ -173,4 +173,4 @@ def patch_alloc(name, alloc, patches, **kwargs):
     return new_alloc
 
 
-bumpptr = Allocator("bumpptr", LD_PRELOAD=os.path.join(builddir, "bumpptr_alloc.so"), color="C8")
+bumpptr = Allocator("bumpptr", LD_PRELOAD=os.path.join(builddir, "bumpptr_alloc.so"))
