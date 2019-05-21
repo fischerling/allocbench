@@ -173,10 +173,10 @@ class Benchmark_DJ_Trace(Benchmark):
             for i, allocator in enumerate(allocators):
                 d = [x["cputime"] for x in self.results[allocator][perm]]
                 # data is in milliseconds
-                cpu_time_means[allocator][perm] = int(np.mean(d)/1000)
+                cpu_time_means[allocator][perm] = np.mean(d)/1000
 
                 d = [x["cycles"] for x in self.results[allocator][perm]]
-                cycles_means[allocator][perm] = int(np.mean(d))
+                cycles_means[allocator][perm] = np.mean(d)
 
                 plt.bar([i], cpu_time_means[allocator][perm], label=allocator,
                         color=allocators[allocator]["color"])
@@ -330,8 +330,8 @@ class Benchmark_DJ_Trace(Benchmark):
 
                 for perm in self.iterate_args(args=args):
                     cycles = cycles_means[allocator][perm]
-                    times = [int(t) for t in func_times_means[allocator][perm]]
-                    rss = int(rss_means[allocator][perm])
+                    times = [t for t in func_times_means[allocator][perm]]
+                    rss = rss_means[allocator][perm]
                     print(fmt.format(perm.workload, cycles, times[0], times[1],
                                      times[2], times[3], rss), file=f)
 
