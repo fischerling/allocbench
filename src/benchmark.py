@@ -168,7 +168,7 @@ class Benchmark (object):
         for r in self.requirements:
             exe = find_cmd(r)
             if exe is not None:
-                self.results["facts"]["libcs"][r] = src.facter.get_libc_version(bin=exe)
+                self.results["facts"]["libcs"][r] = src.facter.libc_ver(bin=exe)
             else:
                 raise Exception("Requirement: {} not found".format(r))
 
