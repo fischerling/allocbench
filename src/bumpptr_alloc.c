@@ -32,7 +32,7 @@ void* malloc(size_t size) {
 	return ret;
 }
 
-void free(void* ptr) {
+void free(__attribute__ ((unused)) void* ptr) {
 }
 
 void* realloc(void* ptr, size_t size) {
