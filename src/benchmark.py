@@ -339,7 +339,10 @@ class Benchmark (object):
                             os.remove("status")
                         # TODO get VmHWM from servers
                         else:
-                            pass
+                            result["server_status"] = []
+                            for server in self.servers:
+                                with open("/proc/{}/status".format(server.pid), "r") as f:
+                                    result["server_status"].append(f.read())
 
                         # Parse perf output if available
                         if self.measure_cmd == self.defaults["measure_cmd"]:
