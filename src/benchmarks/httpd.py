@@ -18,7 +18,7 @@ class Benchmark_HTTPD(Benchmark):
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(2),
                      "site": ["index.html", "index.php"]}
-        self.cmd = "ab -n 100 -c {nthreads} localhost:8080/{site}"
+        self.cmd = "ab -n 10000 -c {nthreads} localhost:8080/{site}"
         self.measure_cmd = ""
         self.server_cmds = ["nginx -c {builddir}/benchmarks/httpd/etc/nginx/nginx.conf",
                             "php-fpm -c {builddir}/benchmarks/httpd/etc/php/php.ini -y {builddir}/benchmarks/httpd/etc/php/php-fpm.conf -F"]
@@ -42,7 +42,7 @@ class Benchmark_HTTPD(Benchmark):
         args = self.results["args"]
 
         self.calc_desc_statistics()
-        
+
         # linear plot
         self.plot_fixed_arg("{requests}",
                              xlabel='"threads"',
@@ -60,7 +60,7 @@ class Benchmark_HTTPD(Benchmark):
                              filepostfix="requests.norm",
                              autoticks=False,
                              scale=ref_alloc)
-        
+
         # bar plot
         # self.barplot_fixed_arg("{requests}",
                              # xlabel='"threads"',
