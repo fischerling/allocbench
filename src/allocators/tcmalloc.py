@@ -3,7 +3,7 @@ import src.allocator
 
 version = 2.7
 
-tcmalloc_src = src.allocator.Allocator_Sources("tcmalloc",
+tcmalloc_src = src.allocator.Allocator_Sources("gperftools",
                          ["git clone https://github.com/gperftools/gperftools.git"],
                          ["git checkout gperftools-{}".format(version), "./autogen.sh"],
                          ["git stash"])
