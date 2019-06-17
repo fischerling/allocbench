@@ -12,7 +12,7 @@ class Hoard (src.allocator.Allocator):
 
         kwargs["sources"] = sources
         kwargs["LD_PRELOAD"] = "{srcdir}/src/libhoard.so"
-        kwargs["build_cmds"] = ["cd {srcdir}/src; make", "mkdir {dir}"]
+        kwargs["build_cmds"] = ["cd {srcdir}/src; make", "mkdir -p {dir}"]
         kwargs["patches"] = ["{patchdir}/hoard_make.patch"]
 
         super().__init__(name, **kwargs)
