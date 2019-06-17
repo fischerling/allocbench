@@ -324,7 +324,7 @@ class Benchmark (object):
                         if res.returncode != 0:
                             print_error("{} failed with exit code {} for {}".format(actual_cmd, res.returncode, alloc_name))
                         else:
-                            print_error("Preloading of {} failed for {}".format(t["LD_PRELOAD"], alloc_name))
+                            print_error("Preloading of {} failed for {}".format(alloc["LD_PRELOAD"], alloc_name))
 
                     # parse and store results
                     else:
