@@ -19,6 +19,7 @@ def collect_facts():
     with open(os.path.join(gv.builddir, "ccinfo"), "r") as ccinfo:
         gv.facts["cc"] = ccinfo.readlines()[-1][:-1]
 
+
 # Copied from pip.
 # https://github.com/pypa/pip/blob/master/src/pip/_internal/utils/glibc.py
 # Licensed under MIT.
@@ -45,6 +46,7 @@ def glibc_version_string(bin=None):
         version_str = version_str.decode("ascii")
 
     return version_str
+
 
 # platform.libc_ver regularly returns completely nonsensical glibc
 # versions. E.g. on my computer, platform says:

@@ -7,13 +7,14 @@ import subprocess
 import sys
 
 import src.globalvars
-from src.util import *
+from src.util import print_status, print_debug, print_error, print_info2
 
 
 library_path = ""
 for l in subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 universal_newlines=True).stdout.splitlines():
+                        stderr=subprocess.PIPE,
+                        universal_newlines=True).stdout.splitlines():
+
     if not l.startswith('\t'):
         library_path += l
 
@@ -22,6 +23,7 @@ srcdir = os.path.join(builddir, "src")
 
 if not os.path.isdir(srcdir):
     os.makedirs(srcdir)
+
 
 class Allocator_Sources (object):
     def __init__(self, name, retrieve_cmds=[], prepare_cmds=[], reset_cmds=[]):
@@ -45,7 +47,7 @@ class Allocator_Sources (object):
 
             if p.returncode:
                 print_error(function, self.name, "failed with", p.returncode,
-                      file=sys.stderr)
+                            file=sys.stderr)
                 print_debug(p.stderr, file=sys.stderr)
                 return False
         return True
@@ -79,7 +81,8 @@ class Allocator_Sources (object):
                                    input=f.read())
 
                 if p.returncode:
-                    print_error("Patching of", self.name, "failed.", file=sys.stderr)
+                    print_error("Patching of", self.name, "failed.",
+                                file=sys.stderr)
                     print_debug(p.stderr, file=sys.stderr)
                     exit(1)
 
@@ -92,7 +95,8 @@ class Allocator (object):
         self.name = name
         self.dir = os.path.join(builddir, self.name)
         # Update attributes
-        self.__dict__.update((k, v) for k, v in kwargs.items() if k in self.allowed_attributes)
+        self.__dict__.update((k, v) for k, v in kwargs.items()
+                             if k in self.allowed_attributes)
 
         # create all unset attributes
         for attr in self.allowed_attributes:
@@ -115,7 +119,8 @@ class Allocator (object):
             build_needed = timestamp < modtime
 
             print_debug("Time of last build:", timestamp.isoformat())
-            print_debug("Last modification of allocators file:", modtime.isoformat())
+            print_debug("Last modification of allocators file:",
+                        modtime.isoformat())
             print_info2("Build needed:", build_needed)
 
         if build_needed:
@@ -150,14 +155,14 @@ class Allocator (object):
             try:
                 value = getattr(self, attr)
                 setattr(self, attr, value.format(**{"dir": self.dir,
-                                                  "srcdir": self.sources.dir}))
+                                                 "srcdir": self.sources.dir}))
             except AttributeError:
                 setattr(self, attr, "")
 
-        res_dict =  {"cmd_prefix": self.cmd_prefix,
-                     "binary_suffix": self.binary_suffix or "",
-                     "LD_PRELOAD": self.LD_PRELOAD,
-                     "color": self.color}
+        res_dict = {"cmd_prefix": self.cmd_prefix,
+                    "binary_suffix": self.binary_suffix or "",
+                    "LD_PRELOAD": self.LD_PRELOAD,
+                    "color": self.color}
         print_debug("Resulting dictionary:", res_dict)
         return res_dict
 

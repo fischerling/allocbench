@@ -2,7 +2,7 @@ import re
 
 from src.benchmark import Benchmark
 
-throughput_re = re.compile("^Throughput =\s*(?P<throughput>\d+) operations per second.$")
+throughput_re = re.compile("^Throughput =\\s*(?P<throughput>\\d+) operations per second.$")
 
 
 class Benchmark_Larson(Benchmark):
@@ -42,5 +42,6 @@ class Benchmark_Larson(Benchmark):
                             ylabel="'l1 cache misses in %'",
                             title="'Larson cache misses: ' + arg + ' ' + str(arg_value)",
                             filepostfix="cachemisses")
+
 
 larson = Benchmark_Larson()

@@ -4,7 +4,7 @@ import re
 
 from src.benchmark import Benchmark
 
-time_re = re.compile("^Time elapsed = (?P<time>\d*\.\d*) seconds.$")
+time_re = re.compile("^Time elapsed = (?P<time>\\d*\\.\\d*) seconds.$")
 
 
 class Benchmark_Falsesharing(Benchmark):

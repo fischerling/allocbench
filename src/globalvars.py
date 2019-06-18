@@ -11,9 +11,6 @@ verbosity = 0
 """Dict holding the allocators to compare"""
 allocators = {}
 
-"""File were the allocators definitions are loaded from"""
-allocators_file = None
-
 """Root directory of allocbench"""
 allocbenchdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 allocbenchdir = os.path.dirname(allocbenchdir)

@@ -8,7 +8,7 @@ import re
 from src.benchmark import Benchmark
 from src.util import print_status
 
-comma_sep_number_re = "(?:\d*(?:,\d*)?)*"
+comma_sep_number_re = "(?:\\d*(?:,\\d*)?)*"
 rss_re = "(?P<rss>" + comma_sep_number_re + ")"
 time_re = "(?P<time>" + comma_sep_number_re + ")"
 
@@ -18,10 +18,10 @@ cpu_time_re = re.compile("^{} usec across.*threads$".format(time_re))
 max_rss_re = re.compile("^{} Kb Max RSS".format(rss_re))
 ideal_rss_re = re.compile("^{} Kb Max Ideal RSS".format(rss_re))
 
-malloc_re = re.compile("^Avg malloc time:\s*{} in.*calls$".format(time_re))
-calloc_re = re.compile("^Avg calloc time:\s*{} in.*calls$".format(time_re))
-realloc_re = re.compile("^Avg realloc time:\s*{} in.*calls$".format(time_re))
-free_re = re.compile("^Avg free time:\s*{} in.*calls$".format(time_re))
+malloc_re = re.compile("^Avg malloc time:\\s*{} in.*calls$".format(time_re))
+calloc_re = re.compile("^Avg calloc time:\\s*{} in.*calls$".format(time_re))
+realloc_re = re.compile("^Avg realloc time:\\s*{} in.*calls$".format(time_re))
+free_re = re.compile("^Avg free time:\\s*{} in.*calls$".format(time_re))
 
 
 class Benchmark_DJ_Trace(Benchmark):
@@ -111,16 +111,16 @@ class Benchmark_DJ_Trace(Benchmark):
             file_name = wl + ".wl"
             file_path = os.path.join("dj_workloads", file_name)
             if not os.path.isfile(file_path):
-                if download_all == None:
-                    choice = input(("Download all missing workloads (upto 6.7GB)"
-                                          " [Y/n/x] "))
+                if download_all is None:
+                    choice = input(("Download all missing workloads"
+                                    " (upto 6.7GB) [Y/n/x] "))
                     if choice == "x":
                         break
                     else:
                         download_all = choice in ['', 'Y', 'y']
 
                 if (not download_all and
-                    input("want to download {} ({}) [Y/n] ".format(wl, wl_sizes[wl])) not in ['', 'Y', 'y']):
+                        input("want to download {} ({}) [Y/n] ".format(wl, wl_sizes[wl])) not in ['', 'Y', 'y']):
                     continue
 
                 if download_all:
@@ -140,7 +140,7 @@ class Benchmark_DJ_Trace(Benchmark):
         if len(available_workloads) > 0:
             self.args["workload"] = available_workloads
             return True
-        
+
         return False
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
@@ -187,7 +187,6 @@ class Benchmark_DJ_Trace(Benchmark):
             plt.savefig(".".join([self.name, perm.workload, "runtime", "png"]))
             plt.clf()
 
-
         self.barplot_single_arg("{cputime}/1000",
                                 ylabel='"time in ms"',
                                 title='"total runtime"',
@@ -200,7 +199,7 @@ class Benchmark_DJ_Trace(Benchmark):
             for i, allocator in enumerate(allocators):
                 x_vals = [x+i/len(allocators) for x in xa]
 
-                func_times_means[allocator][perm] = [0,0,0,0]
+                func_times_means[allocator][perm] = [0, 0, 0, 0]
 
                 func_times_means[allocator][perm][0] = np.mean([x["avg_malloc"] for x in self.results[allocator][perm]])
                 func_times_means[allocator][perm][1] = np.mean([x["avg_calloc"] for x in self.results[allocator][perm]])
@@ -229,7 +228,6 @@ class Benchmark_DJ_Trace(Benchmark):
         for perm in self.iterate_args(args=args):
             ideal_rss = self.results[list(allocators.keys())[0]][perm][0]["Ideal_RSS"]/1000
             self.results["stats"]["Ideal_RSS"][perm] = {"mean": {"Max_RSS": ideal_rss}}
-
 
         self.barplot_single_arg("{Max_RSS}/1000",
                                 ylabel='"Max RSS in MB"',
@@ -315,7 +313,7 @@ class Benchmark_DJ_Trace(Benchmark):
                         color = "black"
                     print(s.format(color, m, np.std(t)/m if m else 0), "\\\\", file=f)
 
-                print("\end{tabular}", file=f)
+                print("\\end{tabular}", file=f)
                 print("\\end{document}", file=f)
 
         # Create summary similar to DJ's at
@@ -377,7 +375,7 @@ class Benchmark_DJ_Trace(Benchmark):
                                              times[1], times[2], times[3], rss),
                           file=f)
                 print(file=f)
-                tmeans = [0,0,0,0]
+                tmeans = [0, 0, 0, 0]
                 for i in range(0, len(times)):
                     tmeans[i] = np.mean([times[i] for times in times_change_means])
                 print(fmt_changes.format("Mean:", np.mean(cycles_change_means),

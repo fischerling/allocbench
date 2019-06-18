@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-
 from src.benchmark import Benchmark
 
 
@@ -16,9 +14,6 @@ class Benchmark_Realloc(Benchmark):
         super().__init__()
 
     def summary(self):
-        # bar plot
-        allocators = self.results["allocators"]
-
         self.barplot_single_arg("{task-clock}",
                                 ylabel='"task-clock in ms"',
                                 title='"realloc micro benchmark"')

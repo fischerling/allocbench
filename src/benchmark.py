@@ -7,18 +7,16 @@ import multiprocessing
 import numpy as np
 import os
 import pickle
-import shutil
 import subprocess
 from time import sleep
 
 import src.globalvars
 import src.util
-from src.util import *
+from src.util import print_status, print_error, print_warn
+from src.util import print_info0, print_info, print_debug
 
-
-# This is useful when evaluating strings in the plot functionsi. str(np.NaN) == "nan"
+# This is useful when evaluating strings in the plot functions. str(np.NaN) == "nan"
 nan = np.NaN
-
 
 
 class Benchmark (object):
@@ -48,8 +46,8 @@ class Benchmark (object):
         popen.terminate()
         try:
             print_info("Subprocess exited with ", popen.wait(timeout=timeout))
-        except:
-            print_error("Killing subprocess ", server.args)
+        except subprocess.TimeoutExpired:
+            print_error("Killing subprocess ", popen.args)
             popen.kill()
             popen.wait()
         print_debug("Server Out:", popen.stdout)
@@ -122,9 +120,12 @@ class Benchmark (object):
             measures = []
             stats = []
             for ntuple in self.iterate_args(args=self.results["args"]):
-                measures.append((ntuple._asdict(), self.results[allocator][ntuple]))
+                measures.append((ntuple._asdict(),
+                                 self.results[allocator][ntuple]))
+
                 if "stats" in self.results:
-                    stats.append((ntuple._asdict(), self.results["stats"][allocator][ntuple]))
+                    stats.append((ntuple._asdict(),
+                                  self.results["stats"][allocator][ntuple]))
 
             save_data[allocator] = measures
             if "stats" in self.results:
@@ -159,14 +160,14 @@ class Benchmark (object):
                 self.results["stats"][allocator] = d
 
         # add missing statistics
-        if not "stats" in self.results:
+        if "stats" not in self.results:
             self.calc_desc_statistics()
 
     def prepare(self):
-        os.environ["PATH"] += os.pathsep + os.path.join("build", "benchmarks", self.name)
+        os.environ["PATH"] += os.pathsep + "build/benchmarks/" + self.name
 
         for r in self.requirements:
-            exe = find_cmd(r)
+            exe = src.util.find_cmd(r)
             if exe is not None:
                 self.results["facts"]["libcs"][r] = src.facter.libc_ver(bin=exe)
             else:
@@ -210,8 +211,8 @@ class Benchmark (object):
 
             server_cmd = src.util.prefix_cmd_with_abspath(server_cmd)
             server_cmd = "{} {} {}".format(self.measure_cmd,
-                                                alloc["cmd_prefix"],
-                                                server_cmd)
+                                           alloc["cmd_prefix"],
+                                           server_cmd)
 
             server_cmd = server_cmd.format(**substitutions)
             print_debug(server_cmd)
@@ -221,7 +222,7 @@ class Benchmark (object):
                                       stderr=subprocess.PIPE,
                                       universal_newlines=True)
 
-            #TODO check if server is up
+            # TODO: check if server is up
             sleep(5)
 
             ret = server.poll()
@@ -242,7 +243,7 @@ class Benchmark (object):
 
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
-            if Benchmark.perf_allowed == None:
+            if Benchmark.perf_allowed is None:
                 print_info("Check if you are allowed to use perf ...")
                 res = subprocess.run(["perf", "stat", "ls"],
                                      stdout=subprocess.PIPE,
@@ -251,7 +252,7 @@ class Benchmark (object):
 
                 if res.returncode != 0:
                     print_error("Test perf run failed with:")
-                    print(res.stderr, file=sys.stderr)
+                    print_debug(res.stderr)
                     Benchmark.perf_allowed = False
                 else:
                     Benchmark.perf_allowed = True
@@ -281,7 +282,7 @@ class Benchmark (object):
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
                     self.preallocator_hook((alloc_name, alloc), run, env,
-                                            verbose=src.globalvars.verbosity)
+                                           verbose=src.globalvars.verbosity)
 
                 # Run benchmark for alloc
                 for perm in self.iterate_args():
@@ -301,8 +302,8 @@ class Benchmark (object):
                     if self.server_cmds == []:
                         actual_cmd = src.util.prefix_cmd_with_abspath(actual_cmd)
                         actual_cmd = "{} {} {}".format(self.measure_cmd,
-                                                            alloc["cmd_prefix"],
-                                                            actual_cmd)
+                                                       alloc["cmd_prefix"],
+                                                       actual_cmd)
                         # substitute again
                         actual_cmd = actual_cmd.format(**substitutions)
 
@@ -329,22 +330,23 @@ class Benchmark (object):
                     # parse and store results
                     else:
                         if self.server_cmds == []:
-                            # Read VmHWM from status file. If our benchmark didn't fork
-                            # the first occurance of VmHWM is from our benchmark
+                            # Read VmHWM from status file. If our benchmark
+                            # didn't fork the first occurance of VmHWM is from
+                            # our benchmark
                             with open("status", "r") as f:
                                 for l in f.readlines():
                                     if l.startswith("VmHWM:"):
                                         result["VmHWM"] = l.split()[1]
                                         break
                             os.remove("status")
-                        # TODO get VmHWM from servers
+                        # TODO: get VmHWM from servers
                         else:
                             result["server_status"] = []
                             for server in self.servers:
                                 with open("/proc/{}/status".format(server.pid), "r") as f:
                                     result["server_status"].append(f.read())
 
-                        # Parse perf output if available
+                        # parse perf output if available
                         if self.measure_cmd == self.defaults["measure_cmd"]:
                             csvreader = csv.reader(res.stderr.splitlines(),
                                                    delimiter=',')
@@ -362,10 +364,10 @@ class Benchmark (object):
                                                 verbose=src.globalvars.verbosity)
 
                         # save a valid result so we can expand invalid ones
-                        if valid_result != None:
+                        if valid_result is not None:
                             valid_result = result
 
-                    if not perm in self.results[alloc_name]:
+                    if perm not in self.results[alloc_name]:
                         self.results[alloc_name][perm] = []
                     self.results[alloc_name][perm].append(result)
 
@@ -377,10 +379,10 @@ class Benchmark (object):
 
             print()
 
-        # Reset PATH
+        # reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
 
-        #expand invalid results
+        # expand invalid results
         if valid_result != {}:
             for allocator in self.allocators:
                 for perm in self.iterate_args():
@@ -454,7 +456,6 @@ class Benchmark (object):
                 else:
                     y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
 
-
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                      label=allocator, color=allocators[allocator]["color"])
 
@@ -468,8 +469,8 @@ class Benchmark (object):
         plt.clf()
 
     def barplot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
-                        title="'default title'", filepostfix="", sumdir="",
-                        arg="", scale=None, file_ext="png"):
+                           title="'default title'", filepostfix="", sumdir="",
+                           arg="", scale=None, file_ext="png"):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
@@ -477,7 +478,6 @@ class Benchmark (object):
 
         arg = arg or list(args.keys())[0]
         narg = len(args[arg])
-
 
         for i, allocator in enumerate(allocators):
             x_vals = list(range(i, narg * (nallocators+1), nallocators+1))
@@ -492,7 +492,6 @@ class Benchmark (object):
                         y_vals.append(mean / norm_mean)
                 else:
                     y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
-
 
             plt.bar(x_vals, y_vals, width=1, label=allocator,
                     color=allocators[allocator]["color"])
@@ -535,7 +534,6 @@ class Benchmark (object):
                             eval_dict = self.results["stats"][allocator][perm]["mean"]
                             eval_str = yval.format(**eval_dict)
                             y_vals.append(eval(eval_str))
-
 
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                              label=allocator, color=allocators[allocator]["color"])
@@ -583,7 +581,7 @@ class Benchmark (object):
             for alloc in allocators:
                 for perm in self.iterate_args(args=args):
                     field_len = len(str(rows[alloc][perm][i])) + 2
-                    if  field_len > widths[i]:
+                    if field_len > widths[i]:
                         widths[i] = field_len
 
         with open(path, "w") as f:
@@ -610,7 +608,7 @@ class Benchmark (object):
         path = path + ".dataref"
 
         # Example: \drefset{/mysql/glibc/40/Lower-whisker}{71552.0}
-        line = "\drefset{{/{}/{}/{}/{}}}{{{}}}"
+        line = "\\drefset{{/{}/{}/{}/{}}}{{{}}}"
 
         with open(path, "w") as f:
             for alloc in allocators:

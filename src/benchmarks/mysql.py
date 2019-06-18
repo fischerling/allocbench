@@ -1,5 +1,4 @@
 import copy
-import matplotlib.pyplot as plt
 import multiprocessing
 import numpy as np
 import os
@@ -8,11 +7,10 @@ import shutil
 import subprocess
 from subprocess import PIPE
 import sys
-from time import sleep
 
 from src.globalvars import allocators
 from src.benchmark import Benchmark
-from src.util import *
+from src.util import print_status, print_debug, print_info2
 
 cwd = os.getcwd()
 
@@ -75,7 +73,7 @@ class Benchmark_MYSQL(Benchmark):
             self.start_servers()
 
             # Create sbtest TABLE
-            p = subprocess.run(("mysql -u root -S "+cwd+"/mysql_test/socket").split(" "),
+            p = subprocess.run(("mysql -u root -S " + cwd + "/mysql_test/socket").split(" "),
                                input=b"CREATE DATABASE sbtest;\n",
                                stdout=PIPE, stderr=PIPE)
 
@@ -101,12 +99,12 @@ class Benchmark_MYSQL(Benchmark):
             shutil.rmtree("mysql_test", ignore_errors=True)
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
-        result["transactions"] = re.search("transactions:\s*(\d*)", stdout).group(1)
-        result["queries"] = re.search("queries:\s*(\d*)", stdout).group(1)
+        result["transactions"] = re.search("transactions:\\s*(\\d*)", stdout).group(1)
+        result["queries"] = re.search("queries:\\s*(\\d*)", stdout).group(1)
         # Latency
-        result["min"] = re.search("min:\s*(\d*.\d*)", stdout).group(1)
-        result["avg"] = re.search("avg:\s*(\d*.\d*)", stdout).group(1)
-        result["max"] = re.search("max:\s*(\d*.\d*)", stdout).group(1)
+        result["min"] = re.search("min:\\s*(\\d*.\\d*)", stdout).group(1)
+        result["avg"] = re.search("avg:\\s*(\\d*.\\d*)", stdout).group(1)
+        result["max"] = re.search("max:\\s*(\\d*.\\d*)", stdout).group(1)
 
         with open("/proc/"+str(self.servers[0].pid)+"/status", "r") as f:
             for l in f.readlines():
@@ -124,7 +122,6 @@ class Benchmark_MYSQL(Benchmark):
                              ylabel='"transactions"',
                              title='"sysbench oltp read only"',
                              filepostfix="l")
-
 
         # normalized linear plot
         ref_alloc = list(allocators)[0]
@@ -152,10 +149,10 @@ class Benchmark_MYSQL(Benchmark):
 
         # Memusage
         self.barplot_single_arg("{rssmax}",
-                             xlabel='"threads"',
-                             ylabel='"VmHWM in kB"',
-                             title='"Memusage sysbench oltp read only"',
-                             filepostfix="mem")
+                                xlabel='"threads"',
+                                ylabel='"VmHWM in kB"',
+                                title='"Memusage sysbench oltp read only"',
+                                filepostfix="mem")
 
         # Colored latex table showing transactions count
         d = {allocator: {} for allocator in allocators}
@@ -203,7 +200,7 @@ class Benchmark_MYSQL(Benchmark):
                     print(s.format(color, m), end=" ", file=f)
                 print("\\\\", file=f)
 
-            print("\end{tabular}", file=f)
+            print("\\end{tabular}", file=f)
 
         self.export_to_csv("transactions")
         self.export_to_dataref("transactions")
