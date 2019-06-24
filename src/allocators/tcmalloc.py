@@ -1,12 +1,12 @@
 import src.allocator
 
-
 version = 2.7
 
-tcmalloc_src = src.allocator.Allocator_Sources("gperftools",
-                         ["git clone https://github.com/gperftools/gperftools.git"],
+tcmalloc_src = src.allocator.Allocator_Sources("tcmalloc",
+                         ["git clone https://github.com/gperftools/gperftools.git tcmalloc"],
                          ["git checkout gperftools-{}".format(version), "./autogen.sh"],
                          ["git stash"])
+
 
 class TCMalloc (src.allocator.Allocator):
     """TCMalloc definition for allocbench"""
@@ -18,3 +18,9 @@ class TCMalloc (src.allocator.Allocator):
                                 "cd {srcdir}; make install -j4"]
 
         super().__init__(name, **kwargs)
+
+
+tcmalloc = TCMalloc("TCMalloc")
+
+tcmalloc_nofs = TCMalloc("TCMalloc-NoFalsesharing",
+                         patches=["{patchdir}/tcmalloc_2.7_no_active_falsesharing.patch"])

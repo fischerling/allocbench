@@ -1,0 +1,35 @@
+diff --git a/src/log.h b/src/log.h
+index 3edc36d..e1d181c 100644
+--- a/src/log.h
++++ b/src/log.h
+@@ -46,13 +46,13 @@ inline void LogPrintf(
+ 
+   snprintf(line_buffer, sizeof(line_buffer), "%d", line);
+   // Start with "__FILENAME__:__LINE__ ".
+-  strncat(buffer, file, strlen(file));
++  strncat(buffer, file, rest);
+   rest -= strlen(file);
+-  strncat(buffer, ":", 1);
++  strncat(buffer, ":", rest);
+   rest -= 1;
+-  strncat(buffer, line_buffer, strlen(line_buffer));
++  strncat(buffer, line_buffer, rest);
+   rest -= strlen(line_buffer);
+-  strncat(buffer, " ", 1);
++  strncat(buffer, " ", rest);
+   rest -= 1;
+ 
+   // Sanity check.
+@@ -69,10 +69,10 @@ inline void LogPrintf(
+     // For copying the suffix we need actual rest value again.
+     strncpy(rest_start + (rest - strlen(truncate_suffix)),
+             truncate_suffix,
+-            strlen(truncate_suffix));
++            rest);
+   }
+ 
+-  strncat(buffer, "\n", 1);
++  strncat(buffer, "\n", rest);
+ 
+   // Sanity check.
+   if (buffer[kLogLen-1] != 0) {

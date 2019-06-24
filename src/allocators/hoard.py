@@ -6,6 +6,7 @@ sources = src.allocator.Allocator_Sources("Hoard",
             retrieve_cmds=["git clone https://github.com/emeryberger/Hoard.git"],
             reset_cmds=["git stash"])
 
+
 class Hoard (src.allocator.Allocator):
     """Hoard definition for allocbench"""
     def __init__(self, name, **kwargs):
@@ -16,3 +17,6 @@ class Hoard (src.allocator.Allocator):
         kwargs["patches"] = ["{patchdir}/hoard_make.patch"]
 
         super().__init__(name, **kwargs)
+
+
+hoard = Hoard("Hoard")

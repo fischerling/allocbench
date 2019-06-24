@@ -18,13 +18,13 @@ parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-ds, --dont-save", action='store_true', dest="dont_save",
                     help="don't save benchmark results in RESULTDIR")
 parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
-parser.add_argument("-a", "--allocators", help="load allocator definitions from file", type=str)
 parser.add_argument("--analyse", help="analyse benchmark behaviour using malt", action="store_true")
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='count')
 parser.add_argument("-vdebug", "--verbose-debug", help="debug output",
                     action='store_true', dest="verbose_debug")
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
+parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
 parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
 parser.add_argument("--license", help="print license info and exit", action='store_true')
@@ -80,27 +80,44 @@ def main():
 
     subprocess.run(make_cmd)
 
-    # collect facts
+    # collect facts about benchmark environment
     src.facter.collect_facts()
 
-    # Default allocator definition file
-    allocators_file = os.path.join("build", "allocators", "allocators.py")
+    # allocators to benchmark
+    allocators = {}
+    # Default allocators definition file
+    default_allocators_file = "build/allocators/allocators.py"
 
-    if args.allocators or os.path.isfile(allocators_file):
-        allocators_file = args.allocators or allocators_file
-        src.globalvars.allocators_file = allocators_file
+    if args.allocators is None and os.path.isfile(default_allocators_file):
+        allocators.append(default_allocators_file)
 
-        with open(allocators_file, "r") as f:
-            print_status("Sourcing allocators definitions at", allocators_file,
-                         "...")
-            g = {}
-            exec(f.read(), g)
-        src.globalvars.allocators = g["allocators"]
+    elif args.allocators is not None:
+        for name in args.allocators:
+            # file exists -> interpret as python file with a global field allocators
+            if os.path.isfile(name):
+                with open(name, "r") as f:
+                    print_status("Sourcing allocators definitions at", name,
+                                 "...")
+                    g = {}
+                    exec(f.read(), g)
+                allocators.update(g["allocators"])
+            # file is one of our allocator definitions import it
+            elif os.path.isfile("src/allocators/" + name + ".py"):
+                module = importlib.import_module('src.allocators.' + name)
+                # name is collection
+                if hasattr(module, "allocators"):
+                    for alloc in module.allocators:
+                        allocators[alloc.name] = alloc.build()
+                # name is single allocator
+                elif issubclass(getattr(module, name).__class__, src.allocator.Allocator):
+                    allocators[name] = getattr(module, name).build()
     else:
         print_status("Using system-wide installed allocators ...")
         # Normal import fails
         importlib.import_module('src.allocators.installed_allocators')
+        allocators = src.allocators.installed_allocators.allocators
 
+    src.globalvars.allocators = allocators
     print_info("Allocators:", *src.globalvars.allocators.keys())
 
     # Load facts
