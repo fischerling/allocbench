@@ -6,6 +6,7 @@ from src.allocators.tcmalloc import tcmalloc, tcmalloc_nofs
 from src.allocators.jemalloc import jemalloc
 from src.allocators.hoard import hoard
 from src.allocators.supermalloc import supermalloc
+from src.allocators.llalloc import llalloc
 
 
 mesh = Alloc("Mesh", sources=Alloc_Src("Mesh",
@@ -18,4 +19,4 @@ mesh = Alloc("Mesh", sources=Alloc_Src("Mesh",
                                         "mkdir {dir}"])
 
 allocators = [*src.allocators.glibcs.allocators, tcmalloc, tcmalloc_nofs,
-              jemalloc, hoard, mesh, supermalloc]
+              jemalloc, hoard, mesh, supermalloc, llalloc]
