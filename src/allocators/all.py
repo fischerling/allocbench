@@ -9,7 +9,8 @@ from src.allocators.mesh import mesh
 from src.allocators.scalloc import scalloc
 from src.allocators.supermalloc import supermalloc
 from src.allocators.llalloc import llalloc
+from src.allocators.tbbmalloc import tbbmalloc
 
 
 allocators = [*src.allocators.glibcs.allocators, tcmalloc, tcmalloc_nofs,
-              jemalloc, hoard, mesh, supermalloc, scalloc, llalloc]
+              jemalloc, hoard, mesh, supermalloc, scalloc, llalloc, tbbmalloc]
