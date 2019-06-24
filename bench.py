@@ -117,8 +117,19 @@ def main():
         importlib.import_module('src.allocators.installed_allocators')
         allocators = src.allocators.installed_allocators.allocators
 
+    # set colors
+    explicit_colors = [v["color"] for k, v in allocators.items() if v["color"] is not None]
+    print_debug("Explicit colors:", explicit_colors)
+    avail_colors = [color for color in ["C" + str(i) for i in range(0,16)] if color not in explicit_colors]
+    print_debug("available colors:", avail_colors)
+
+    for k, v in allocators.items():
+        if v["color"] is None:
+            v["color"] = avail_colors.pop()
+
     src.globalvars.allocators = allocators
     print_info("Allocators:", *src.globalvars.allocators.keys())
+    print_debug("Allocators:", *src.globalvars.allocators.items())
 
     # Load facts
     if args.load:
