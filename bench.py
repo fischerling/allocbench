@@ -24,6 +24,7 @@ parser.add_argument("-v", "--verbose", help="more output", action='count')
 parser.add_argument("-vdebug", "--verbose-debug", help="debug output",
                     action='store_true', dest="verbose_debug")
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
+parser.add_argument("-xb", "--exclude-benchmarks", help="explicitly excluded benchmarks", nargs='+')
 parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+')
 parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
 parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
@@ -168,6 +169,9 @@ def main():
     cwd = os.getcwd()
     for bench in src.globalvars.benchmarks:
         if args.benchmarks and bench not in args.benchmarks:
+            continue
+        
+        if args.exclude_benchmarks and bench in args.exclude_benchmarks:
             continue
 
         if args.analyse or not args.nosum:
