@@ -12,33 +12,38 @@ git clone https://muhq.space/software/allocbench.git
 * make, find, gcc (build dependencies)
 * perf (`perf stat -d` is the default command to measure benchmark results)
 * util-linux (`whereis` is used to find system installed allocators)
-* (git to clone allocators in `allocators/{no_falsesharing, BA_allocators}.py`)
+* (git to clone allocators in `src/allocators/*.py`)
 
 
 ## Usage
 
-	usage: bench.py [-h] [-ds, --dont-save] [-l LOAD] [-a ALLOCATORS] [-r RUNS]
-	                [-v] [-vdebug] [-b BENCHMARKS [BENCHMARKS ...]] [-ns]
-	                [-rd RESULTDIR] [--license]
+usage: bench.py [-h] [-ds, --dont-save] [-l LOAD] [--analyse] [-r RUNS] [-v]
+                [-vdebug] [-b BENCHMARKS [BENCHMARKS ...]]
+                [-xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]]
+                [-a ALLOCATORS [ALLOCATORS ...]] [-ns] [-rd RESULTDIR]
+                [--license]
 
-	benchmark memory allocators
+benchmark memory allocators
 
-	optional arguments:
-	  -h, --help            show this help message and exit
-	  -ds, --dont-save      don't save benchmark results in RESULTDIR
-	  -l LOAD, --load LOAD  load benchmark results from directory
-	  -a ALLOCATORS, --allocators ALLOCATORS
-	                        load allocator definitions from file
-	  -r RUNS, --runs RUNS  how often the benchmarks run
-	  -v, --verbose         more output
-	  -vdebug, --verbose-debug
-	                        debug output
-	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
-	                        benchmarks to run
-	  -ns, --nosum          don't produce plots
-	  -rd RESULTDIR, --resultdir RESULTDIR
-	                        directory where all results go
-	  --license             print license info and exit
+optional arguments:
+  -h, --help            show this help message and exit
+  -ds, --dont-save      don't save benchmark results in RESULTDIR
+  -l LOAD, --load LOAD  load benchmark results from directory
+  --analyse             analyse benchmark behaviour using malt
+  -r RUNS, --runs RUNS  how often the benchmarks run
+  -v, --verbose         more output
+  -vdebug, --verbose-debug
+                        debug output
+  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
+                        benchmarks to run
+  -xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...], --exclude-benchmarks EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]
+                        explicitly excluded benchmarks
+  -a ALLOCATORS [ALLOCATORS ...], --allocators ALLOCATORS [ALLOCATORS ...]
+                        allocators to test
+  -ns, --nosum          don't produce plots
+  -rd RESULTDIR, --resultdir RESULTDIR
+                        directory where all results go
+  --license             print license info and exit
 
 ### Examples
 
@@ -47,10 +52,10 @@ git clone https://muhq.space/software/allocbench.git
 runs only the loop benchmark for some installed allocators and will put its
 results in `$PWD/results/$HOSTNAME/<time>/loop`
 
-	./bench.py -a allocators/BA_allocators.py
+	./bench.py -a BA_allocators
 
-builds all allocators used in my [BA thesis](https://muhq.space/ba.html) and runs all
-default benchmarks
+builds all allocators used in Florian Fischer's [BA thesis](https://muhq.space/ba.html)
+and runs all benchmarks
 
 	./bench.py -r 0 -l <path/to/saved/results>
 
