@@ -7,8 +7,7 @@ export CXX = g++
 
 export WARNFLAGS = -Wall -Wextra
 export COMMONFLAGS = -fno-builtin -fPIC -DPIC -pthread
-# export OPTFLAGS = -O3 -DNDEBUG
-export OPTFLAGS = -O0 -g
+export OPTFLAGS = -O3 -DNDEBUG
 
 export CFLAGS = -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 export CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
@@ -20,7 +19,7 @@ export LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 all: $(OBJDIR)/ccinfo  $(MAKEFILES)
 
 $(MAKEFILES):
-	$(MAKE) -C $@ OBJDIR=$(OBJDIR)/$(shell echo $@ | sed s/src//)
+	$(MAKE) -C $@ OBJDIR=$(OBJDIR)$(shell echo $@ | sed s/src//)
 
 $(OBJDIR)/ccinfo: | $(OBJDIR)
 	$(CC) -v 2> $@
