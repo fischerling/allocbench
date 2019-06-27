@@ -64,6 +64,7 @@ sets = new_sets
 parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
 parser.add_argument("results", help="path to results", type=str)
 parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
+parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
 parser.add_argument("-t", "--threads", help="Summarize using multiple threads", action="store_true")
 
 def main():
@@ -75,13 +76,15 @@ def main():
     for b in benchmarks:
         if args.benchmarks and not b in args.benchmarks:
             continue
+        if args.exclude_benchmarks and b in args.exclude_benchmarks:
+            continue
+
         bench = eval("importlib.import_module('src.benchmarks.{0}').{0}".format(b))
         try:
             bench.load()
         except FileNotFoundError as e:
             print("No data available")
             continue
-
         
         if args.threads:
             active_threads.append(_thread.start_new_thread(bench_sum, (bench, sets)))
