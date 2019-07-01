@@ -48,7 +48,7 @@ sets = {"glibcs": ["glibc", "glibc-noThreadCache", "glibc-noFalsesharing",
         "nofs": ["glibc", "glibc-noFalsesharing", "glibc-noFalsesharingClever",
                  "TCMalloc", "TCMalloc-NoFalsesharing"],
         "ba" : ["glibc", "TCMalloc", "jemalloc", "Hoard"],
-        "industry" : ["glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc"],
+        "industry" : ["glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc", "mimalloc"],
         "science" : ["scalloc", "SuperMalloc", "Mesh", "Hoard"]}
 
 # colorize allocs
