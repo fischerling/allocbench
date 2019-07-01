@@ -19,4 +19,4 @@ class Hoard (src.allocator.Allocator):
         super().__init__(name, **kwargs)
 
 
-hoard = Hoard("Hoard")
+hoard = Hoard("Hoard", color="xkcd:brown")

@@ -20,7 +20,8 @@ class TCMalloc (src.allocator.Allocator):
         super().__init__(name, **kwargs)
 
 
-tcmalloc = TCMalloc("TCMalloc")
+tcmalloc = TCMalloc("TCMalloc", color="xkcd:blue")
 
 tcmalloc_nofs = TCMalloc("TCMalloc-NoFalsesharing",
-                         patches=["{patchdir}/tcmalloc_2.7_no_active_falsesharing.patch"])
+                         patches=["{patchdir}/tcmalloc_2.7_no_active_falsesharing.patch"],
+                         color="xkcd:navy")

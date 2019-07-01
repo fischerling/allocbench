@@ -21,5 +21,5 @@ class Lockless_Allocator (Allocator):
         super().__init__(name, **kwargs)
 
 
-llalloc = Lockless_Allocator("llalloc")
+llalloc = Lockless_Allocator("llalloc", color="purple")
 

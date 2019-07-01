@@ -21,4 +21,4 @@ class TBBMalloc (src.allocator.Allocator):
         super().__init__(name, **kwargs)
 
 
-tbbmalloc = TBBMalloc("tbbmalloc")
+tbbmalloc = TBBMalloc("tbbmalloc" color="xkcd:green")

@@ -27,4 +27,4 @@ class Scalloc (Allocator):
         super().__init__(name, **kwargs)
 
 
-scalloc = Scalloc("scalloc")
+scalloc = Scalloc("scalloc", color="xkcd:magenta")

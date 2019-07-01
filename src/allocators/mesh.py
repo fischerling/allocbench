@@ -19,4 +19,4 @@ class Mesh (src.allocator.Allocator):
         super().__init__(name, **kwargs)
 
 
-mesh = Mesh("Mesh")
+mesh = Mesh("Mesh", color="xkcd:mint")

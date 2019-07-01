@@ -19,4 +19,4 @@ class SuperMalloc (src.allocator.Allocator):
         super().__init__(name, **kwargs)
 
 
-supermalloc = SuperMalloc("SuperMalloc")
+supermalloc = SuperMalloc("SuperMalloc", color="xkcd:lime")

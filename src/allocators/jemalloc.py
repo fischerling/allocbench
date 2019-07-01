@@ -21,4 +21,4 @@ class Jemalloc (src.allocator.Allocator):
         super().__init__(name, **kwargs)
 
 
-jemalloc = Jemalloc("jemalloc")
+jemalloc = Jemalloc("jemalloc", color="xkcd:yellow")

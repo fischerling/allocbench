@@ -31,12 +31,16 @@ class Glibc (Allocator):
         super().__init__(name, **kwargs)
 
 
-glibc = Glibc("glibc")
+glibc = Glibc("glibc", color="xkcd:red")
 
-glibc_notc = Glibc("glibc-noThreadCache", configure_args="--disable-experimental-malloc")
+glibc_notc = Glibc("glibc-noThreadCache",
+                   configure_args="--disable-experimental-malloc",
+                   color="xkcd:maroon")
 
 glibc_nofs = Glibc("glibc-noFalsesharing",
-                   patches=["{patchdir}/glibc_2.28_no_passive_falsesharing.patch"])
+                   patches=["{patchdir}/glibc_2.28_no_passive_falsesharing.patch"],
+                   color="xkcd:pink")
 
 glibc_nofs_fancy = Glibc("glibc-noFalsesharingClever",
-                         patches=["{patchdir}/glibc_2.28_no_passive_falsesharing_fancy.patch"])
+                         patches=["{patchdir}/glibc_2.28_no_passive_falsesharing_fancy.patch"],
+                         color="xkcd:orange")
