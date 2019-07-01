@@ -172,6 +172,8 @@ typedef struct thr_data {
   int    cThreads ;
   unsigned long    cBytesAlloced ;
 
+  pthread_barrier_t *barrier;
+
   volatile int finished ;
   struct lran2_st rgen ;
 
@@ -436,6 +438,9 @@ void runthreads(long sleep_cnt, int min_threads, int max_threads, int chperthrea
 
       nperthread = chperthread ;
       stopflag   = FALSE ;
+
+      pthread_barrier_t barrier;
+      pthread_barrier_init(&barrier, NULL, num_threads + 1);
 		
       for(i=0; i< num_threads; i++){
 	de_area[i].threadno    = i+1 ;
@@ -450,6 +455,7 @@ void runthreads(long sleep_cnt, int min_threads, int max_threads, int chperthrea
 	de_area[i].cAllocs     = 0 ;
 	de_area[i].cFrees      = 0 ;
 	de_area[i].cThreads    = 0 ;
+	de_area[i].barrier     = &barrier ;
 	de_area[i].finished    = FALSE ;
 	lran2_init(&de_area[i].rgen, de_area[i].seed) ;
 
@@ -460,6 +466,8 @@ void runthreads(long sleep_cnt, int min_threads, int max_threads, int chperthrea
 #endif
 
 	}
+
+      pthread_barrier_wait(&barrier);
 
       QueryPerformanceCounter( &start_cnt) ;
 
@@ -552,6 +560,8 @@ static void * exercise_heap( void *pinput)
   pdea->finished = FALSE ;
   pdea->cThreads++ ;
   range = pdea->max_size - pdea->min_size ;
+
+  pthread_barrier_wait(pdea->barrier);
 
   /* allocate NumBlocks chunks of random size */
   for( cblks=0; cblks<pdea->NumBlocks; cblks++){
