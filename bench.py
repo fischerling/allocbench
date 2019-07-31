@@ -66,19 +66,16 @@ def main():
     elif args.verbose:
         src.globalvars.verbosity = args.verbose
 
-    verbosity = src.globalvars.verbosity
-
     print_info2("Arguments:", args)
 
     # Prepare allocbench
     print_status("Building allocbench ...")
     make_cmd = ["make"]
-    if verbosity < 1:
+    if src.globalvars.verbosity < 1:
         make_cmd.append("-s")
     else:
         # Flush stdout so the color reset from print_status works
         print("", end="", flush=True)
-
     subprocess.run(make_cmd)
 
     # collect facts about benchmark environment
@@ -90,18 +87,24 @@ def main():
     default_allocators_file = "build/allocators/allocators.py"
 
     if args.allocators is None and os.path.isfile(default_allocators_file):
-        allocators.append(default_allocators_file)
+        # TODO: fix default allocator file
+        # allocators.append(default_allocators_file)
+        pass
 
     elif args.allocators is not None:
         for name in args.allocators:
-            # file exists -> interpret as python file with a global field allocators
+            # file exists -> interpret as python file with a global variable allocators
             if os.path.isfile(name):
                 with open(name, "r") as f:
-                    print_status("Sourcing allocators definitions at", name,
-                                 "...")
+                    print_status("Sourcing allocators definitions at", name, "...")
                     g = {}
                     exec(f.read(), g)
-                allocators.update(g["allocators"])
+
+                if "allocators" in g:
+                    allocators.update(g["allocators"])
+                else:
+                    print_error("No global dictionary 'allocators' in", name)
+
             # file is one of our allocator definitions import it
             elif os.path.isfile("src/allocators/" + name + ".py"):
                 module = importlib.import_module('src.allocators.' + name)
@@ -112,9 +115,10 @@ def main():
                 # name is single allocator
                 elif issubclass(getattr(module, name).__class__, src.allocator.Allocator):
                     allocators[name] = getattr(module, name).build()
+            else:
+                print_error(name, "is neither a python file or a known allocator definition.")
     else:
         print_status("Using system-wide installed allocators ...")
-        # Normal import fails
         importlib.import_module('src.allocators.installed_allocators')
         allocators = src.allocators.installed_allocators.allocators
 
@@ -132,7 +136,7 @@ def main():
     print_info("Allocators:", *src.globalvars.allocators.keys())
     print_debug("Allocators:", *src.globalvars.allocators.items())
 
-    # Load facts
+    # Load old results
     if args.load:
         with open(os.path.join(args.load, "facts.save"), "rb") as f:
             old_facts = pickle.load(f)
@@ -142,7 +146,7 @@ def main():
             print_error("Aborting.")
             exit(1)
         # We are just summarizing old results -> use their facts
-        elif args.runs == 0:
+        else:
             src.globalvars.facts = old_facts
     else:
         starttime = datetime.datetime.now().isoformat()
@@ -158,14 +162,13 @@ def main():
         else:
             resdir = os.path.join("results", src.globalvars.facts["hostname"],
                                   src.globalvars.facts["starttime"])
-        # make resdir globally available
+        # Make resdir globally available
         src.globalvars.resdir = resdir
 
         print_info2("Creating result dir:", resdir)
         os.makedirs(resdir, exist_ok=True)
 
-    # TODO load all results at once
-
+    # Run actual benchmarks
     cwd = os.getcwd()
     for bench in src.globalvars.benchmarks:
         if args.benchmarks and bench not in args.benchmarks:
@@ -174,6 +177,7 @@ def main():
         if args.exclude_benchmarks and bench in args.exclude_benchmarks:
             continue
 
+        # Create result dir for this benchmark
         if args.analyse or not args.nosum:
             bench_res_dir = os.path.join(resdir, bench)
             print_info2("Creating benchmark result dir:", bench_res_dir)
@@ -207,10 +211,12 @@ def main():
                         print_error(traceback.format_exc())
                         print_error("Skipping analysis of", bench, "!")
 
+                    # Remove malt from results
                     if "malt" in bench.results:
                         del(bench.results["malt"])
                     if "stats" in bench.results and "malt" in bench.results["stats"]:
                         del(bench.results["stats"]["malt"])
+
                     # restore allocs
                     bench.allocators = old_allocs
 
@@ -225,9 +231,11 @@ def main():
                 print_info2("Changing cwd to:", resdir)
                 os.chdir(resdir)
 
+                # Save results in resultdir
                 if not args.dont_save:
                     bench.save()
 
+                # Summarize benchmark in benchmark specific resultdir
                 if not args.nosum:
                     os.chdir(bench.name)
                     print_status("Summarizing", bench.name, "...")
