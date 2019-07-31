@@ -257,11 +257,11 @@ class Benchmark_DJ_Trace(Benchmark):
             plt.savefig(".".join([self.name, perm.workload, "rss", "png"]))
             plt.clf()
 
-        self.export_to_csv("Max_RSS")
-        self.export_to_csv("cputime")
+        self.export_stats_to_csv("Max_RSS")
+        self.export_stats_to_csv("cputime")
 
-        self.export_to_dataref("Max_RSS")
-        self.export_to_dataref("cputime")
+        self.export_stats_to_dataref("Max_RSS")
+        self.export_stats_to_dataref("cputime")
 
         # Tables
         for perm in self.iterate_args(args=args):

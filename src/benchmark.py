@@ -20,6 +20,7 @@ nan = np.NaN
 
 
 class Benchmark (object):
+    """Default implementation of the most methods allocbench expects from a benchmark"""
 
     perf_allowed = None
 
@@ -143,20 +144,20 @@ class Benchmark (object):
             else:
                 f = path
 
-        print_info("Loading results from:", self.name + ".save")
+        print_info("Loading results from:", f)
         with open(f, "rb") as f:
             self.results = pickle.load(f)
         # Build new named tuples
         for allocator in self.results["allocators"]:
             d = {}
-            for dic, measures in self.results[allocator]:
-                d[self.Perm(**dic)] = measures
+            for perm, measures in self.results[allocator]:
+                d[self.Perm(**perm)] = measures
             self.results[allocator] = d
 
             d = {}
             if "stats" in self.results:
-                for dic, value in self.results["stats"][allocator]:
-                    d[self.Perm(**dic)] = value
+                for perm, value in self.results["stats"][allocator]:
+                    d[self.Perm(**perm)] = value
                 self.results["stats"][allocator] = d
 
         # add missing statistics
@@ -174,7 +175,7 @@ class Benchmark (object):
                 raise Exception("Requirement: {} not found".format(r))
 
     def iterate_args(self, args=None):
-        """Return a dict for each possible combination of args"""
+        """Iterator over each possible combination of args"""
         if not args:
             args = self.args
         arg_names = sorted(args.keys())
@@ -183,15 +184,22 @@ class Benchmark (object):
             yield Perm(*p)
 
     def iterate_args_fixed(self, fixed, args=None):
-        for p in self.iterate_args(args=args):
-            p_dict = p._asdict()
+        """Iterator over each possible combination of args containing all fixed values
+
+        self.args = {"a1": [1,2], "a2": ["foo", "bar"]}
+        self.iterate_args_fixed({"a1":1}) yields [(1, "foo"), (1, "bar")
+        self.iterate_args_fixed({"a2":"bar"}) yields [(1, "bar"), (2, "bar")
+        self.iterate_args_fixed({"a1":2, "a2":"foo"}) yields only [(2, "foo")]"""
+
+        for perm in self.iterate_args(args=args):
+            p_dict = perm._asdict()
             is_fixed = True
-            for k in fixed:
-                if p_dict[k] != fixed[k]:
+            for arg in fixed:
+                if p_dict[arg] != fixed[arg]:
                     is_fixed = False
                     break
             if is_fixed:
-                yield p
+                yield perm
 
     def start_servers(self, env=None, alloc_name="None", alloc={"cmd_prefix": ""}):
         """Start Servers
@@ -260,7 +268,7 @@ class Benchmark (object):
             if not Benchmark.perf_allowed:
                 raise Exception("You don't have the needed permissions to use perf")
 
-        # save one valid result to expand expand invalid results
+        # save one valid result to expand invalid results
         valid_result = {}
 
         n = len(list(self.iterate_args())) * len(self.allocators)
@@ -408,7 +416,7 @@ class Benchmark (object):
                 for dp in self.results[alloc][perm][0]:
                     try:
                         data = [float(m[dp]) for m in self.results[alloc][perm]]
-                    except ValueError as e:
+                    except (TypeError, ValueError) as e:
                         print_debug(e)
                         continue
                     stats["min"][dp] = np.min(data)
@@ -548,7 +556,21 @@ class Benchmark (object):
                             str(arg_value), filepostfix, file_ext])))
                 plt.clf()
 
-    def export_to_csv(self, datapoint, path=None):
+    def export_facts_to_file(self, comment_symbol, f):
+        """Write collected facts about used system and benchmark to file"""
+        print(comment_symbol, self.name, file=f)
+        print(file=f)
+        print(comment_symbol, "Common facts:", file=f)
+        for k, v in src.globalvars.facts.items():
+            print(comment_symbol, k + ":", v, file=f)
+        print(file=f)
+        print(comment_symbol, "Benchmark facts:", file=f)
+        for k, v in self.results["facts"].items():
+            print(comment_symbol, k + ":", v, file=f)
+        print(file=f)
+
+    def export_stats_to_csv(self, datapoint, path=None):
+        """Write descriptive statistics about datapoint to csv file"""
         allocators = self.results["allocators"]
         args = self.results["args"]
         stats = self.results["stats"]
@@ -597,9 +619,8 @@ class Benchmark (object):
                         line += str(x).ljust(widths[i])
                     print(line.replace("_", "-"), file=f)
 
-    def export_to_dataref(self, datapoint, path=None):
-        allocators = self.results["allocators"]
-        args = self.results["args"]
+    def export_stats_to_dataref(self, datapoint, path=None):
+        """Write descriptive statistics about datapoint to dataref file"""
         stats = self.results["stats"]
 
         if path is None:
@@ -611,8 +632,11 @@ class Benchmark (object):
         line = "\\drefset{{/{}/{}/{}/{}}}{{{}}}"
 
         with open(path, "w") as f:
-            for alloc in allocators:
-                for perm in self.iterate_args(args=args):
+            # Write facts to file
+            self.export_facts_to_file("%", f)
+
+            for alloc in self.results["allocators"]:
+                for perm in self.iterate_args(args=self.results["args"]):
                     for statistic, values in stats[alloc][perm].items():
                         cur_line = line.format(self.name, alloc,
                                          "/".join([str(p) for p in list(perm)]),

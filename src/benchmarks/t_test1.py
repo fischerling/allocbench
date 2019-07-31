@@ -47,7 +47,7 @@ class Benchmark_t_test1(Benchmark):
         self.write_best_doublearg_tex_table(yval,
                                             filepostfix="memusage.matrix")
 
-        self.export_to_csv("task-clock")
+        self.export_stats_to_csv("task-clock")
 
 
 t_test1 = Benchmark_t_test1()

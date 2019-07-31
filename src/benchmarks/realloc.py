@@ -18,8 +18,8 @@ class Benchmark_Realloc(Benchmark):
                                 ylabel='"task-clock in ms"',
                                 title='"realloc micro benchmark"')
 
-        self.export_to_csv("task-clock")
-        self.export_to_dataref("task-clock")
+        self.export_stats_to_csv("task-clock")
+        self.export_stats_to_dataref("task-clock")
 
 
 realloc = Benchmark_Realloc()
