@@ -152,12 +152,12 @@ class Allocator (object):
 
         print_info2("Create allocator dictionary")
         for attr in ["LD_PRELOAD", "cmd_prefix"]:
-            try:
-                value = getattr(self, attr)
-                setattr(self, attr, value.format(**{"dir": self.dir,
-                                                 "srcdir": self.sources.dir}))
-            except AttributeError:
-                setattr(self, attr, "")
+            value = getattr(self, attr, "") or ""
+            paths = {"dir": self.dir}
+            paths["srcdir"] = self.sources.dir if self.sources is not None else ""
+
+            value = value.format(**paths)
+            setattr(self, attr, value)
 
         res_dict = {"cmd_prefix": self.cmd_prefix,
                     "binary_suffix": self.binary_suffix or "",
