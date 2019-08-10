@@ -1,5 +1,6 @@
 import atexit
 from collections import namedtuple
+import copy
 import csv
 import itertools
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ nan = np.NaN
 
 
 class Benchmark (object):
-    """Default implementation of the most methods allocbench expects from a benchmark"""
+    """Default implementation of most methods allocbench expects from a benchmark"""
 
     perf_allowed = None
 
@@ -32,7 +33,7 @@ class Benchmark (object):
         "measure_cmd": "perf stat -x, -d",
         "cmd": "true",
         "server_cmds": [],
-        "allocators": src.globalvars.allocators,
+        "allocators": copy.deepcopy(src.globalvars.allocators),
     }
 
     @staticmethod
@@ -90,14 +91,21 @@ class Benchmark (object):
 
         self.Perm = namedtuple("Perm", self.args.keys())
 
+        default_results = {"args": self.args,
+                           "mean": {alloc: {} for alloc in self.allocators},
+                           "std": {alloc: {} for alloc in self.allocators},
+                           "allocators": self.allocators,
+                           "facts": {"libcs": {}}
+                          }
+        default_results.update({alloc: {} for alloc in self.allocators})
+
         if not hasattr(self, "results"):
-            self.results = {}
-        self.results["args"] = self.args
-        self.results["mean"] = {alloc: {} for alloc in self.allocators}
-        self.results["std"] = {alloc: {} for alloc in self.allocators}
-        self.results["allocators"] = self.allocators
-        self.results["facts"] = {"libcs": {}}
-        self.results.update({alloc: {} for alloc in self.allocators})
+            self.results = default_results
+        # Add default default entrys to self.results if their key is absent
+        else:
+            for key, default in default_results.items():
+                if key not in self.results:
+                    self.results[key] = default
 
         if not hasattr(self, "requirements"):
             self.requirements = []
@@ -111,7 +119,7 @@ class Benchmark (object):
 
     def save(self, path=None):
         f = path if path else self.name + ".save"
-        print_info("Saving results to:", self.name + ".save")
+        print_info("Saving results to:", f)
         # Pickle can't handle namedtuples so convert the dicts of namedtuples
         # into lists of dicts.
         save_data = {}
