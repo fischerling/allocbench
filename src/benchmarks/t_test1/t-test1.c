@@ -38,9 +38,9 @@
 #endif
 
 #include <stdio.h>
+#include <unistd.h>
 
 #ifdef __GCC__
-#include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/wait.h>
@@ -394,6 +394,9 @@ int main(int argc, char *argv[])
 		if (st[i].sp) free(st[i].sp);
 	}
 	free(st);
+	// Print malloc_stats to stdout
+	close(STDERR_FILENO);
+	dup2(STDOUT_FILENO, STDERR_FILENO);
 	malloc_stats();
 	printf("Done.\n");
 	return 0;
