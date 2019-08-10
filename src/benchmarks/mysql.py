@@ -1,4 +1,3 @@
-import copy
 import multiprocessing
 import numpy as np
 import os
@@ -30,11 +29,6 @@ class Benchmark_MYSQL(Benchmark):
     def __init__(self):
         self.name = "mysql"
         self.descrition = """See sysbench documentation."""
-
-        # mysqld fails with hoard somehow
-        self.allocators = copy.copy(allocators)
-        if "Hoard" in self.allocators:
-            del(self.allocators["Hoard"])
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
         self.cmd = cmd
