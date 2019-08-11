@@ -30,7 +30,11 @@ def glibc_version_string(bin=None):
     # manpage says, "If filename is NULL, then the returned handle is for the
     # main program". This way we can let the linker do the work to figure out
     # which libc our process is actually using.
-    process_namespace = ctypes.CDLL(bin)
+    try:
+        process_namespace = ctypes.CDLL(bin)
+    except OSError:
+        return None
+
     try:
         gnu_get_libc_version = process_namespace.gnu_get_libc_version
     except AttributeError:
