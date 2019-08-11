@@ -38,9 +38,9 @@ glibc_notc = Glibc("glibc-noThreadCache",
                    color="xkcd:maroon")
 
 glibc_nofs = Glibc("glibc-noFalsesharing",
-                   patches=["{patchdir}/glibc_2.28_no_passive_falsesharing.patch"],
+                   patches=["{patchdir}/glibc_2.29_no_passive_falsesharing.patch"],
                    color="xkcd:pink")
 
 glibc_nofs_fancy = Glibc("glibc-noFalsesharingClever",
-                         patches=["{patchdir}/glibc_2.28_no_passive_falsesharing_fancy.patch"],
+                         patches=["{patchdir}/glibc_2.29_no_passive_falsesharing_fancy.patch"],
                          color="xkcd:orange")

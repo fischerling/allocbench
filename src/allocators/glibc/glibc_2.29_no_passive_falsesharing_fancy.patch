@@ -1,0 +1,33 @@
+diff --git a/malloc/malloc.c b/malloc/malloc.c
+index 0abd653be2..71b2d433ba 100644
+--- a/malloc/malloc.c
++++ b/malloc/malloc.c
+@@ -4194,6 +4194,12 @@ _int_free (mstate av, mchunkptr p, int have_lock)
+ 
+ #if USE_TCACHE
+   {
++    /* Check if chunk is from our own arena or false sharing is not possible
++       because the chunk is cache line aligned and it's size is a multiple
++       of a cacheline  */
++    if (av == thread_arena
++        || (((size_t)p & 63) == 0 && ((size + 2*SIZE_SZ) % 64) == 0))
++      {
+     size_t tc_idx = csize2tidx (size);
+     if (tcache != NULL && tc_idx < mp_.tcache_bins)
+       {
+@@ -4223,6 +4229,7 @@ _int_free (mstate av, mchunkptr p, int have_lock)
+ 	    return;
+ 	  }
+       }
++      }
+   }
+ #endif
+ 
+@@ -4997,6 +5004,7 @@ __malloc_stats (void)
+       memset (&mi, 0, sizeof (mi));
+       __libc_lock_lock (ar_ptr->mutex);
+       int_mallinfo (ar_ptr, &mi);
++      fprintf (stderr, "fancy false sharing patch by muhq");
+       fprintf (stderr, "Arena %d:\n", i);
+       fprintf (stderr, "system bytes     = %10u\n", (unsigned int) mi.arena);
+       fprintf (stderr, "in use bytes     = %10u\n", (unsigned int) mi.uordblks);

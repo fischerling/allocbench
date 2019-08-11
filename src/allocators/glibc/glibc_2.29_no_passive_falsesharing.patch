@@ -1,0 +1,30 @@
+diff --git a/malloc/malloc.c b/malloc/malloc.c
+index 0abd653be2..eaefd3bd7c 100644
+--- a/malloc/malloc.c
++++ b/malloc/malloc.c
+@@ -4194,6 +4194,9 @@ _int_free (mstate av, mchunkptr p, int have_lock)
+ 
+ #if USE_TCACHE
+   {
++    /* Check if chunk is from our own arena.  */
++    if (av == thread_arena)
++      {
+     size_t tc_idx = csize2tidx (size);
+     if (tcache != NULL && tc_idx < mp_.tcache_bins)
+       {
+@@ -4223,6 +4226,7 @@ _int_free (mstate av, mchunkptr p, int have_lock)
+ 	    return;
+ 	  }
+       }
++      }
+   }
+ #endif
+ 
+@@ -4997,6 +5001,7 @@ __malloc_stats (void)
+       memset (&mi, 0, sizeof (mi));
+       __libc_lock_lock (ar_ptr->mutex);
+       int_mallinfo (ar_ptr, &mi);
++      fprintf (stderr, "false sharing path by muhq\n");
+       fprintf (stderr, "Arena %d:\n", i);
+       fprintf (stderr, "system bytes     = %10u\n", (unsigned int) mi.arena);
+       fprintf (stderr, "in use bytes     = %10u\n", (unsigned int) mi.uordblks);
