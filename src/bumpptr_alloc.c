@@ -6,7 +6,11 @@
 #include <string.h> /* memset */
 #include <sys/mman.h> /* memset */
 
+#define MIN_ALIGNMENT 16
+
+#ifndef MEMSIZE
 #define MEMSIZE 1024*4*1024*1024l
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +29,12 @@ void* malloc(size_t size) {
 			return NULL;
 		}
 		ptr = (uintptr_t)mem_start;
+	}
+
+	// align ptr;
+	if (ptr % MIN_ALIGNMENT != 0) {
+		size_t mask = MIN_ALIGNMENT -1;
+		ptr = (ptr + mask) & ~mask;
 	}
 
 	void* ret = (void*)ptr;
@@ -49,8 +59,9 @@ void* realloc(void* ptr, size_t size) {
 }
 
 void* memalign(size_t alignment, size_t size) {
-	// bump ptr to alignment and malloc
-	ptr = (ptr + (alignment - 1)) & -alignment;
+	// align ptr to alignment and malloc
+	size_t mask = alignment - 1;
+	ptr = (ptr + mask) & ~mask;
 	return malloc(size);
 }
 
