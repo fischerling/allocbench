@@ -1,5 +1,5 @@
-from src.allocator import bumpptr
 from src.benchmark import Benchmark
+from src.allocators.bumpptr import bumpptr
 
 
 class Benchmark_Loop(Benchmark):
