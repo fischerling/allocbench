@@ -1,4 +1,5 @@
 from src.allocator import Allocator, Allocator_Sources, library_path
+from src.util import print_error
 
 
 version = "v1.0.0"
@@ -25,6 +26,13 @@ class Scalloc (Allocator):
         kwargs["patches"] = ["{patchdir}/scalloc_fix_log.patch"]
 
         super().__init__(name, **kwargs)
+
+    def build(self):
+        with open("/proc/sys/vm/overcommit_memory", "r") as f:
+            if f.read()[0] != "1":
+                print_error("Scalloc needs permission to overcommit_memory")
+                raise AssertionError("vm.overcommit_memory not set")
+        return super().build()
 
 
 scalloc = Scalloc("scalloc", color="xkcd:magenta")
