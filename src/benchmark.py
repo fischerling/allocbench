@@ -52,8 +52,8 @@ class Benchmark (object):
             print_error("Killing subprocess ", popen.args)
             popen.kill()
             popen.wait()
-        print_debug("Server Out:", popen.stdout)
-        print_debug("Server Err:", popen.stderr)
+        print_debug("Server Out:", popen.stdout.read())
+        print_debug("Server Err:", popen.stderr.read())
 
     @staticmethod
     def scale_threads_for_cpus(factor, steps=None):
@@ -311,24 +311,23 @@ class Benchmark (object):
                     substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
                     substitutions.update(alloc)
 
-                    actual_cmd = self.cmd.format(**substitutions)
-                    actual_env = None
+                    cmd_argv = self.cmd.format(**substitutions).split()
+                    argv = []
 
                     # Prepend cmd if we are not measuring servers
                     if self.server_cmds == []:
-                        actual_cmd = src.util.prefix_cmd_with_abspath(actual_cmd)
-                        actual_cmd = "{} {} {}".format(self.measure_cmd,
-                                                       alloc["cmd_prefix"],
-                                                       actual_cmd)
-                        # substitute again
-                        actual_cmd = actual_cmd.format(**substitutions)
+                        prefix_argv = alloc["cmd_prefix"].format(**substitutions).split()
+                        measure_argv = self.measure_cmd.format(**substitutions)
+                        measure_argv = src.util.prefix_cmd_with_abspath(measure_argv).split()
 
-                        actual_env = env
+                        argv.extend(prefix_argv)
+                        argv.extend(measure_argv)
+                        argv.extend(["build/run_cmd", env["LD_PRELOAD"]])
 
-                    print_debug("\nCmd:", actual_cmd)
-                    res = subprocess.run(actual_cmd.split(),
-                                         env=actual_env,
-                                         stderr=subprocess.PIPE,
+                    argv.extend(cmd_argv)
+
+                    print_debug("\nCmd:", argv)
+                    res = subprocess.run(argv, stderr=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
                                          universal_newlines=True)
 
@@ -339,7 +338,7 @@ class Benchmark (object):
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
                         if res.returncode != 0:
-                            print_error("{} failed with exit code {} for {}".format(actual_cmd, res.returncode, alloc_name))
+                            print_error("{} failed with exit code {} for {}".format(argv, res.returncode, alloc_name))
                         else:
                             print_error("Preloading of {} failed for {}".format(alloc["LD_PRELOAD"], alloc_name))
 
