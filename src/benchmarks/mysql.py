@@ -21,7 +21,7 @@ cmd = ("sysbench oltp_read_only --threads={nthreads} --time=10 --tables=5 "
        "--db-driver=mysql --mysql-user=root --mysql-socket="
        + cwd + "/mysql_test/socket run")
 
-server_cmd = ("mysqld -h {0}/mysql_test --socket={0}/mysql_test/socket "
+server_cmd = ("mysqld --no-defaults -h {0}/mysql_test --socket={0}/mysql_test/socket --port=123456 "
               "--max-connections={1} --secure-file-priv=").format(cwd, multiprocessing.cpu_count())
 
 
@@ -48,8 +48,9 @@ class Benchmark_MYSQL(Benchmark):
             os.makedirs("mysql_test")
 
             # Init database
-            if b"MariaDB" in subprocess.run(["mysqld", "--version"],
-                                            stdout=PIPE).stdout:
+            self.results["facts"]["mysqld"] = subprocess.run(["mysqld", "--version"],
+                                                            stdout=PIPE).stdout
+            if b"MariaDB" in self.results["facts"]["mysqld"]:
                 init_db_cmd = ["mysql_install_db", "--basedir=/usr",
                                "--datadir="+cwd+"/mysql_test"]
                 print_info2("MariaDB detected")
@@ -61,7 +62,9 @@ class Benchmark_MYSQL(Benchmark):
             p = subprocess.run(init_db_cmd, stdout=PIPE, stderr=PIPE)
 
             if not p.returncode == 0:
-                print_debug(p.stderr, file=sys.stderr)
+                print_debug(init_db_cmd)
+                print_debug("Stdout:", p.stdout, file=sys.stdout)
+                print_debug("Stderr:", p.stderr, file=sys.stderr)
                 raise Exception("Creating test DB failed with:", p.returncode)
 
             self.start_servers()
@@ -71,9 +74,8 @@ class Benchmark_MYSQL(Benchmark):
                                input=b"CREATE DATABASE sbtest;\n",
                                stdout=PIPE, stderr=PIPE)
 
-            if not p.returncode == 0:
+            if p.returncode != 0:
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
-                self.terminate_server()
                 raise Exception("Creating test tables failed with:", p.returncode)
 
             print_status("Prepare test tables ...")
@@ -82,7 +84,6 @@ class Benchmark_MYSQL(Benchmark):
             if p.returncode != 0:
                 print_debug("Stdout:", p.stdout, file=sys.stderr)
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
-                self.terminate_server()
                 raise Exception("Preparing test tables failed with:", p.returncode)
 
             self.shutdown_servers()
