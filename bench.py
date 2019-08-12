@@ -173,7 +173,7 @@ def main():
     for bench in src.globalvars.benchmarks:
         if args.benchmarks and bench not in args.benchmarks:
             continue
-        
+
         if args.exclude_benchmarks and bench in args.exclude_benchmarks:
             continue
 
