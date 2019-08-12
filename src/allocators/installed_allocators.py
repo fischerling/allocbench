@@ -7,6 +7,7 @@ maybe_allocators = ["tcmalloc", "jemalloc", "hoard"]
 allocators = {"libc": {"cmd_prefix":    "",
                        "binary_suffix": "",
                        "LD_PRELOAD":    "",
+                       "LD_LIBRARY_PATH":    "",
                        "color":         "C1"}}
 
 for i, t in enumerate(maybe_allocators):
@@ -16,9 +17,10 @@ for i, t in enumerate(maybe_allocators):
                               universal_newlines=True).stdout.strip()
 
         if path != "":
-            allocators[t] = {"cmd_prefix":    "",
-                             "binary_suffix": "",
-                             "LD_PRELOAD":    path,
-                             "color":         "C"+str(i+2)}
+            allocators[t] = {"cmd_prefix":      "",
+                             "binary_suffix":   "",
+                             "LD_PRELOAD":      path,
+                             "LD_LIBRARY_PATH": "",
+                             "color":           "C"+str(i+2)}
     except:
         pass
