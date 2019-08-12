@@ -326,10 +326,11 @@ class Benchmark (object):
                         measure_argv = src.util.prefix_cmd_with_abspath(measure_argv).split()
 
                         argv.extend(measure_argv)
-                        argv.extend(prefix_argv)
                         argv.extend(["build/exec", "-p", env["LD_PRELOAD"]])
                         if alloc["LD_LIBRARY_PATH"] != "":
                             argv.extend(["-l", env["LD_LIBRARY_PATH"]])
+
+                        argv.extend(prefix_argv)
 
                     argv.extend(cmd_argv)
 
