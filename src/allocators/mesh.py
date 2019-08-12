@@ -4,6 +4,10 @@ sources = src.allocator.Allocator_Sources("Mesh",
             retrieve_cmds=["git clone https://github.com/plasma-umass/Mesh"],
             reset_cmds=["git stash"])
 
+# sources = src.allocator.GitAllocatorSources("Mesh",
+#             "https://github.com/plasma-umass/Mesh",
+#             "adsf0982345")
+
 
 class Mesh (src.allocator.Allocator):
     """Mesh definition for allocbench"""
