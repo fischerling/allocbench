@@ -31,6 +31,9 @@ def prefix_cmd_with_abspath(cmd):
 
     Usefull if cmd should be executed by the loader of a custom glibc."""
 
+    if os.path.isabs(cmd):
+        return cmd
+
     binary_end = cmd.find(" ")
     binary_end = None if binary_end == -1 else binary_end
 
