@@ -89,7 +89,8 @@ class Allocator_Sources (object):
 
 class Allocator (object):
     allowed_attributes = ["binary_suffix", "version", "sources", "build_cmds",
-                          "LD_PRELOAD", "cmd_prefix", "color", "patches"]
+                          "LD_PRELOAD", "cmd_prefix", "color", "patches",
+                          "LD_LIBRARY_PATH"]
 
     def __init__(self, name, **kwargs):
         self.name = name
@@ -151,7 +152,7 @@ class Allocator (object):
                     f.write(str(datetime.now().timestamp()))
 
         print_info2("Create allocator dictionary")
-        for attr in ["LD_PRELOAD", "cmd_prefix"]:
+        for attr in ["LD_PRELOAD", "LD_LIBRARY_PATH", "cmd_prefix"]:
             value = getattr(self, attr, "") or ""
             paths = {"dir": self.dir}
             paths["srcdir"] = self.sources.dir if self.sources is not None else ""
@@ -162,6 +163,7 @@ class Allocator (object):
         res_dict = {"cmd_prefix": self.cmd_prefix,
                     "binary_suffix": self.binary_suffix or "",
                     "LD_PRELOAD": self.LD_PRELOAD,
+                    "LD_LIBRARY_PATH": self.LD_LIBRARY_PATH,
                     "color": self.color}
         print_debug("Resulting dictionary:", res_dict)
         return res_dict

@@ -15,7 +15,7 @@ MEMSIZE=$(shell echo $(MEMSIZE_KB)"* 1024" | bc)
 
 .PHONY: all clean
 
-all: $(OBJDIR)/print_status_on_exit.so $(OBJDIR)/allocators/bumpptr_alloc.so $(OBJDIR)/run_cmd
+all: $(OBJDIR)/print_status_on_exit.so $(OBJDIR)/allocators/bumpptr_alloc.so $(OBJDIR)/exec
 
 $(OBJDIR)/allocators/bumpptr_alloc.so: bumpptr_alloc.c Makefile | $(OBJDIR)/allocators
 	@echo "Compiling $@...";
@@ -26,7 +26,7 @@ $(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c Makefile | $(OBJDIR)
 	@echo "Compiling $@...";
 	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $<
 
-$(OBJDIR)/run_cmd: run_cmd.c Makefile | $(OBJDIR)
+$(OBJDIR)/exec: exec.c Makefile | $(OBJDIR)
 	@echo "Compiling $@...";
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
 

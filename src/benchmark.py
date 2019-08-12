@@ -293,6 +293,10 @@ class Benchmark (object):
                 env["LD_PRELOAD"] += " " + "build/print_status_on_exit.so"
                 env["LD_PRELOAD"] += " " + alloc["LD_PRELOAD"]
 
+                if "LD_LIBRARY_PATH" in alloc:
+                    env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "")
+                    env["LD_LIBRARY_PATH"] += ":" + alloc["LD_LIBRARY_PATH"]
+
                 self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
 
                 # Preallocator hook
@@ -322,7 +326,9 @@ class Benchmark (object):
 
                         argv.extend(prefix_argv)
                         argv.extend(measure_argv)
-                        argv.extend(["build/run_cmd", env["LD_PRELOAD"]])
+                        argv.extend(["build/exec", "-p", env["LD_PRELOAD"]])
+                        if alloc["LD_LIBRARY_PATH"] != "":
+                            argv.extend(["-l", env["LD_LIBRARY_PATH"]])
 
                     argv.extend(cmd_argv)
 
