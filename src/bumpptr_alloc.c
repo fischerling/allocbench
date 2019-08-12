@@ -156,6 +156,11 @@ void* aligned_alloc(size_t alignment, size_t size)
 	return memalign(alignment, size);
 }
 
+int malloc_stats() {
+	fprintf(stderr, "Bump pointer allocator by muhq\n");
+	fprintf(stderr, "Memsize: %zu, start address: %p, bump pointer %p\n", MEMSIZE, mem_start, ptr);
+}
+
 #ifdef __cplusplus
 }
 #endif
