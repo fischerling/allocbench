@@ -7,6 +7,7 @@ import importlib
 import os
 import pickle
 import subprocess
+import sys
 import traceback
 
 import src.facter
@@ -46,14 +47,24 @@ def epilog():
                 pickle.dump(src.globalvars.facts, f)
 
 
-def checkDependenciesAndPreconditions():
-    # TODO: matplotlib
-    # TODO: python 3.6
+def check_dependencies():
+    """Check if known requirements of allocbench are met"""
+    # used python 3.6 features: f-strings
+    if sys.version_info[0] < 3 or sys.version_info[1] < 6:
+        logger.critical("At least python version 3.6 is required.")
+        exit(1)
+
+    # matplotlib is needed by Benchmark.plot_*
+    try:
+        import matplotlib
+    except ModuleNotFoundError:
+        logger.critical("matplotlib not found.")
+        exit(1)
     # TODO mariadb
-    pass
+
 
 def main():
-    checkDependenciesAndPreconditions()
+    check_dependencies()
 
     args = parser.parse_args()
     if args.license:
