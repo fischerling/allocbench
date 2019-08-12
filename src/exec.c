@@ -5,8 +5,8 @@
 #include <unistd.h>
 
 int main(int argc, char* argv[]) {
-	if (argc < 3) {
-		printf("Usage: %s [-p LD_PRELOAD] [-l LD_LIBRARY_PATH] <cmd> [cmd args]\n");
+	if (argc < 2) {
+		printf("Usage: %s [-p LD_PRELOAD] [-l LD_LIBRARY_PATH] <cmd> [cmd args]\n", argv[0]);
 		printf("\tset LD_PRELOAD to ld_preload and call execvp <cmd> [cmd args]\n");
 		return 1;
 	}
@@ -29,4 +29,8 @@ int main(int argc, char* argv[]) {
 
 	// Run cmd.
 	execvp(argv[i], &argv[i]);
+
+	fprintf(stderr, "executing %s failed\n", argv[i]);
+
+	return 1;
 }
