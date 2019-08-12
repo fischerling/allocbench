@@ -46,7 +46,15 @@ def epilog():
                 pickle.dump(src.globalvars.facts, f)
 
 
+def checkDependenciesAndPreconditions():
+    # TODO: matplotlib
+    # TODO: python 3.6
+    # TODO mariadb
+    pass
+
 def main():
+    checkDependenciesAndPreconditions()
+
     args = parser.parse_args()
     if args.license:
         print("Copyright (C) 2018-2019 Florian Fischer")
