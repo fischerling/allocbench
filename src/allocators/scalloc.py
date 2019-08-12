@@ -30,8 +30,11 @@ class Scalloc (Allocator):
     def build(self):
         with open("/proc/sys/vm/overcommit_memory", "r") as f:
             if f.read()[0] != "1":
-                print_error("Scalloc needs permission to overcommit_memory")
-                raise AssertionError("vm.overcommit_memory not set")
+                raise AssertionError("""\
+vm.overcommit_memory not set
+Scalloc needs permission to overcommit_memory.
+sysctl vm.overcommit_memory=1
+""")
         return super().build()
 
 
