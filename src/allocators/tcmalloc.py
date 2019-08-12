@@ -5,7 +5,7 @@ version = 2.7
 tcmalloc_src = src.allocator.Allocator_Sources("tcmalloc",
                          ["git clone https://github.com/gperftools/gperftools.git tcmalloc"],
                          ["git checkout gperftools-{}".format(version), "./autogen.sh"],
-                         ["git stash"])
+                         ["git reset --hard"])
 
 
 class TCMalloc (src.allocator.Allocator):

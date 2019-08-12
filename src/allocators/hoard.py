@@ -4,7 +4,7 @@ import src.allocator
 version = 2.7
 sources = src.allocator.Allocator_Sources("Hoard",
             retrieve_cmds=["git clone https://github.com/emeryberger/Hoard.git"],
-            reset_cmds=["git stash"])
+            reset_cmds=["git reset --hard"])
 
 
 class Hoard (src.allocator.Allocator):

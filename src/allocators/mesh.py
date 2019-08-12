@@ -2,7 +2,7 @@ import src.allocator
 
 sources = src.allocator.Allocator_Sources("Mesh",
             retrieve_cmds=["git clone https://github.com/plasma-umass/Mesh"],
-            reset_cmds=["git stash"])
+            reset_cmds=["git reset --hard"])
 
 # sources = src.allocator.GitAllocatorSources("Mesh",
 #             "https://github.com/plasma-umass/Mesh",

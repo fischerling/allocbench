@@ -5,7 +5,7 @@ version = "2019_U8"
 source = src.allocator.Allocator_Sources("tbb",
                          ["git clone https://github.com/intel/tbb.git"],
                          ["git checkout {}".format(version)],
-                         ["git stash"])
+                         ["git reset --hard"])
 
 
 class TBBMalloc (src.allocator.Allocator):

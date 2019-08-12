@@ -9,7 +9,7 @@ scalloc_src = Allocator_Sources("scalloc",
                       prepare_cmds=["git checkout {}".format(version),
                                     "cd {srcdir}; tools/make_deps.sh",
                                     "cd {srcdir}; build/gyp/gyp --depth=. scalloc.gyp"],
-                      reset_cmds=["git stash"])
+                      reset_cmds=["git reset --hard"]
 
 
 class Scalloc (Allocator):

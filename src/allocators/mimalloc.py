@@ -5,7 +5,7 @@ version = "master"
 mimalloc_src = src.allocator.Allocator_Sources("mimalloc",
                          ["git clone https://github.com/microsoft/mimalloc"],
                          ["git checkout ".format(version)],
-                         ["git stash"])
+                         ["git reset --hard"])
 
 
 class Mimalloc (src.allocator.Allocator):

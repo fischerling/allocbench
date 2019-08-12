@@ -5,8 +5,8 @@ version = 2.29
 
 glibc_src = Allocator_Sources("glibc",
                       retrieve_cmds=["git clone git://sourceware.org/git/glibc.git"],
-                      reset_cmds=["git stash"])
                       prepare_cmds=[f"git checkout glibc-{version}"],
+                      reset_cmds=["git reset --hard"])
 
 
 class Glibc (Allocator):
