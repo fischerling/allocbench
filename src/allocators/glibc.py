@@ -25,10 +25,10 @@ class Glibc (Allocator):
                                 "cd glibc-build; make",
                                 "cd glibc-build; make install"]
 
-        # kwargs["cmd_prefix"] = ("{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:"
-                                # + library_path)
+        kwargs["cmd_prefix"] = ("{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:"
+                                + library_path)
 
-        kwargs["LD_LIBRARY_PATH"] = "{dir}/lib:" + library_path
+        # kwargs["LD_LIBRARY_PATH"] = "{dir}/lib:" + library_path
 
         super().__init__(name, **kwargs)
 
