@@ -192,7 +192,7 @@ def main():
             os.makedirs(bench_res_dir, exist_ok=True)
 
         try:
-            bench = eval("importlib.import_module('src.benchmarks.{0}').{0}".format(bench))
+            bench = eval(f"importlib.import_module('src.benchmarks.{bench}').{bench}")
 
             if args.load:
                 bench.load(path=args.load)
