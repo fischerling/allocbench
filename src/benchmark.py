@@ -315,7 +315,8 @@ class Benchmark (object):
                     substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
                     substitutions.update(alloc)
 
-                    cmd_argv = self.cmd.format(**substitutions).split()
+                    cmd_argv = self.cmd.format(**substitutions)
+                    cmd_argv = src.util.prefix_cmd_with_abspath(cmd_argv).split()
                     argv = []
 
                     # Prepend cmd if we are not measuring servers
