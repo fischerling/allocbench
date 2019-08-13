@@ -12,6 +12,8 @@
 #define MEMSIZE 1024*4*1024*1024l
 #endif
 
+#define unlikely(x)     __builtin_expect((x),0)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,7 +24,7 @@ __thread void* mem_end = NULL;
 __thread uintptr_t ptr = 0;
 
 void* malloc(size_t size) {
-	if(mem_start == NULL) {
+	if (unlikely(mem_start == NULL)) {
 		mem_start = mmap(NULL, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
 		if(mem_start == MAP_FAILED) {
 			perror("mmap");
@@ -159,6 +161,7 @@ void* aligned_alloc(size_t alignment, size_t size)
 int malloc_stats() {
 	fprintf(stderr, "Bump pointer allocator by muhq\n");
 	fprintf(stderr, "Memsize: %zu, start address: %p, bump pointer %p\n", MEMSIZE, mem_start, ptr);
+	return 0;
 }
 
 #ifdef __cplusplus
