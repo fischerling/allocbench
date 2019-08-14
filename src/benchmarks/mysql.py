@@ -11,18 +11,19 @@ from src.globalvars import allocators
 from src.benchmark import Benchmark
 from src.util import print_status, print_debug, print_info2
 
-cwd = os.getcwd()
+TESTDIR = os.path.join(os.getcwd(), "mysql_test")
+MYSQL_USER = "root"
+RUN_TIME = 10
+TABLES = 5
 
-prepare_cmd = ("sysbench oltp_read_only --db-driver=mysql --mysql-user=root "
-               "--mysql-socket=" + cwd + "/mysql_test/socket --tables=5 "
-               "--table-size=1000000 prepare").split()
+PREPARE_CMD = (f"sysbench oltp_read_only --db-driver=mysql --mysql-user={MYSQL_USER} "
+               f"--mysql-socket={TESTDIR}/socket --tables={TABLES} --table-size=1000000 prepare")
 
-cmd = ("sysbench oltp_read_only --threads={nthreads} --time=10 --tables=5 "
-       "--db-driver=mysql --mysql-user=root --mysql-socket="
-       + cwd + "/mysql_test/socket run")
+CMD = (f"sysbench oltp_read_only --threads={{nthreads}} --time={RUN_TIME} --tables={TABLES} "
+       f"--db-driver=mysql --mysql-user={MYSQL_USER} --mysql-socket={TESTDIR}/socket run")
 
-server_cmd = ("mysqld --no-defaults -h {0}/mysql_test --socket={0}/mysql_test/socket --port=123456 "
-              "--max-connections={1} --secure-file-priv=").format(cwd, multiprocessing.cpu_count())
+SERVER_CMD = (f"mysqld --no-defaults -h {TESTDIR} --socket={TESTDIR}/socket --port=123456 "
+              f"--max-connections={multiprocessing.cpu_count()} --secure-file-priv=")
 
 
 class Benchmark_MYSQL(Benchmark):
@@ -31,13 +32,18 @@ class Benchmark_MYSQL(Benchmark):
         self.descrition = """See sysbench documentation."""
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
-        self.cmd = cmd
-        self.server_cmds = [server_cmd]
+        self.cmd = CMD
+        self.server_cmds = [SERVER_CMD]
         self.measure_cmd = ""
 
         self.requirements = ["mysqld", "sysbench"]
 
         super().__init__()
+
+        self.results["facts"]["runtime [s]"] = RUN_TIME
+        self.results["facts"]["sysbench"] = subprocess.run(["sysbench", "--version"],
+                                                           stdout=PIPE,
+                                                           universal_newlines=True).stdout[:-1]
 
     def prepare(self):
         super().prepare()
@@ -49,13 +55,14 @@ class Benchmark_MYSQL(Benchmark):
 
             # Init database
             self.results["facts"]["mysqld"] = subprocess.run(["mysqld", "--version"],
-                                                            stdout=PIPE).stdout
-            if b"MariaDB" in self.results["facts"]["mysqld"]:
+                                                            stdout=PIPE,
+                                                            universal_newlines=True).stdout[:-1]
+            if "MariaDB" in self.results["facts"]["mysqld"]:
                 init_db_cmd = ["mysql_install_db", "--basedir=/usr",
-                               "--datadir="+cwd+"/mysql_test"]
+                               f"--datadir={TESTDIR}"]
                 print_info2("MariaDB detected")
             else:
-                init_db_cmd = ["mysqld", "-h", cwd+"/mysql_test",
+                init_db_cmd = ["mysqld", "-h", f"{TESTDIR}",
                                "--initialize-insecure"]
                 print_info2("Oracle MySQL detected")
 
@@ -70,9 +77,9 @@ class Benchmark_MYSQL(Benchmark):
             self.start_servers()
 
             # Create sbtest TABLE
-            p = subprocess.run(("mysql -u root -S " + cwd + "/mysql_test/socket").split(" "),
-                               input=b"CREATE DATABASE sbtest;\n",
-                               stdout=PIPE, stderr=PIPE)
+            p = subprocess.run((f"mysql -u {MYSQL_USER} -S {TESTDIR}/socket").split(),
+                                input=b"CREATE DATABASE sbtest;\n",
+                                stdout=PIPE, stderr=PIPE)
 
             if p.returncode != 0:
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
@@ -80,7 +87,7 @@ class Benchmark_MYSQL(Benchmark):
 
             print_status("Prepare test tables ...")
             ret = True
-            p = subprocess.run(prepare_cmd, stdout=PIPE, stderr=PIPE)
+            p = subprocess.run(PREPARE_CMD.split(), stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
                 print_debug("Stdout:", p.stdout, file=sys.stderr)
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
