@@ -13,28 +13,29 @@ LDFLAGS ?= -pthread -static-libgcc
 MEMSIZE_KB=$(shell free -t | tail -1 | tr -s ' ' | cut -d ' ' -f 2)
 MEMSIZE=$(shell echo $(MEMSIZE_KB)"* 1024" | bc)
 
+TOOLS = print_status_on_exit.so exec
+ALLOCS = chattymalloc.so bumpptr_alloc.so
+TARGETS = $(addprefix $(OBJDIR)/allocators/,$(ALLOCS)) $(addprefix $(OBJDIR)/,$(TOOLS))
+
 .PHONY: all clean
 
-all: $(OBJDIR)/print_status_on_exit.so $(OBJDIR)/allocators/bumpptr_alloc.so $(OBJDIR)/exec
+all: $(TARGETS)
 
-$(OBJDIR)/allocators/bumpptr_alloc.so: bumpptr_alloc.c Makefile | $(OBJDIR)/allocators
-	@echo "Compiling $@...";
+$(OBJDIR)/allocators/bumpptr_alloc.so: bumpptr_alloc.c Makefile
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared -DMEMSIZE=$(MEMSIZE) $(CFLAGS) -o $@ $<
-	# $(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $<
 
-$(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c Makefile | $(OBJDIR)
-	@echo "Compiling $@...";
+$(OBJDIR)/allocators/chattymalloc.so: chattymalloc.c Makefile
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
+	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $< -ldl
+
+$(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c Makefile
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $<
 
-$(OBJDIR)/exec: exec.c Makefile | $(OBJDIR)
-	@echo "Compiling $@...";
+$(OBJDIR)/exec: exec.c Makefile
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
-
-$(OBJDIR)/allocators:
-	mkdir -p $@
-
-$(OBJDIR):
-	mkdir $@
 
 clean:
 	rm -rf $(OBJDIR)

@@ -12,3 +12,4 @@ lld-speed-test*
 *.hist
 status
 tags
+**/chattymalloc.txt

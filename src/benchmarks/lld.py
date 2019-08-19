@@ -68,7 +68,6 @@ class BenchmarkLld(Benchmark):
         args = self.results["args"]
         allocators = self.results["allocators"]
 
-
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
                 
@@ -80,8 +79,6 @@ class BenchmarkLld(Benchmark):
             plt.title("Gesamte Laufzeit")
             plt.savefig(".".join([self.name, perm.test, "runtime", "png"]))
             plt.clf()
-
-
 
         # TODO: get memusage
         # Memusage
@@ -95,5 +92,6 @@ class BenchmarkLld(Benchmark):
 
         # self.export_stats_to_dataref("VmHWM")
         self.export_stats_to_dataref("task-clock")
+
 
 lld = BenchmarkLld()
