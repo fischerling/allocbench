@@ -173,7 +173,7 @@ class Benchmark (object):
             self.calc_desc_statistics()
 
     def prepare(self):
-        os.environ["PATH"] += os.pathsep + "build/benchmarks/" + self.name
+        os.environ["PATH"] += f"{os.pathsep}{src.globalvars.builddir}/benchmarks/{self.name}"
 
         for r in self.requirements:
             exe = src.util.find_cmd(r)
@@ -243,6 +243,8 @@ class Benchmark (object):
 
             ret = server.poll()
             if ret is not None:
+                print_debug("Stdout:", server.stdout)
+                print_debug("Stderr:", server.stderr)
                 raise Exception("Starting Server failed with exit code " + str(ret))
             # Register termination of the server
             atexit.register(Benchmark.terminate_subprocess, popen=server)
@@ -290,7 +292,7 @@ class Benchmark (object):
 
                 env = dict(os.environ)
                 env["LD_PRELOAD"] = env.get("LD_PRELOAD", "")
-                env["LD_PRELOAD"] += " " + "build/print_status_on_exit.so"
+                env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/print_status_on_exit.so"
                 env["LD_PRELOAD"] += " " + alloc["LD_PRELOAD"]
 
                 if "LD_LIBRARY_PATH" in alloc:
@@ -336,6 +338,12 @@ class Benchmark (object):
 
                     argv.extend(cmd_argv)
 
+                    cwd = os.getcwd()
+                    if hasattr(self, "run_dir"):
+                        run_dir = self.run_dir.format(**substitutions)
+                        os.chdir(run_dir)
+                        print_debug("\nChange cwd to:", run_dir)
+
                     print_debug("\nCmd:", argv)
                     res = subprocess.run(argv, stderr=subprocess.PIPE,
                                          stdout=subprocess.PIPE,
@@ -355,15 +363,16 @@ class Benchmark (object):
                     # parse and store results
                     else:
                         if self.server_cmds == []:
-                            # Read VmHWM from status file. If our benchmark
-                            # didn't fork the first occurance of VmHWM is from
-                            # our benchmark
-                            with open("status", "r") as f:
-                                for l in f.readlines():
-                                    if l.startswith("VmHWM:"):
-                                        result["VmHWM"] = l.split()[1]
-                                        break
-                            os.remove("status")
+                            if os.path.isfile("status"):
+                                # Read VmHWM from status file. If our benchmark
+                                # didn't fork the first occurance of VmHWM is from
+                                # our benchmark
+                                with open("status", "r") as f:
+                                    for l in f.readlines():
+                                        if l.startswith("VmHWM:"):
+                                            result["VmHWM"] = l.split()[1]
+                                            break
+                                os.remove("status")
                         # TODO: get VmHWM from servers
                         else:
                             result["server_status"] = []
@@ -396,6 +405,9 @@ class Benchmark (object):
                         self.results[alloc_name][perm] = []
                     self.results[alloc_name][perm].append(result)
 
+                    if os.getcwd() != cwd:
+                        os.chdir(cwd)
+
                 self.shutdown_servers()
 
                 if hasattr(self, "postallocator_hook"):
@@ -405,7 +417,8 @@ class Benchmark (object):
             print()
 
         # reset PATH
-        os.environ["PATH"] = os.environ["PATH"].replace(":build/" + self.name, "")
+        os.environ["PATH"] = os.environ["PATH"].replace(f"{os.pathsep}{src.globalvars.builddir}/benchmarks/{self.name}", "")
+
 
         # expand invalid results
         if valid_result != {}:
