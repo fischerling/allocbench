@@ -17,7 +17,7 @@ class Benchmark_Larson(Benchmark):
         self.cmd = "larson{binary_suffix} 1 8 {maxsize} 1000 50000 1 {threads}"
 
         self.args = {
-                        "maxsize": [8, 32, 64, 128, 256, 512, 1024],
+                        "maxsize": [64, 512, 1024],
                         "threads": Benchmark.scale_threads_for_cpus(2)
                     }
 
