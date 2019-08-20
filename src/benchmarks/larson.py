@@ -14,6 +14,8 @@ class Benchmark_Larson(Benchmark):
                              transfers some objects (randomly selected) to
                              other threads to be freed."""
 
+        # Parameters taken from the paper "Memory Allocation for Long-Running Server
+        # Applications" from Larson and Krishnan
         self.cmd = "larson{binary_suffix} 1 8 {maxsize} 1000 50000 1 {threads}"
 
         self.args = {
