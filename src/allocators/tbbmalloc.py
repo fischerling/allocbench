@@ -16,7 +16,7 @@ class TBBMalloc (src.allocator.Allocator):
         kwargs["LD_PRELOAD"] = "{dir}/libtbbmalloc.so"
         kwargs["build_cmds"] = ["cd {srcdir}; make tbbmalloc -j4",
                                 "mkdir -p {dir}",
-                                'ln -f -s $(find {srcdir} -executable -name "*libtbbmalloc_proxy.so*") {dir}/libtbbmalloc.so']
+                                'ln -f -s $(find {srcdir} -executable -name "*libtbbmalloc_proxy.so*") {dir}/libtbbmalloc.so | head -1']
 
         super().__init__(name, **kwargs)
 
