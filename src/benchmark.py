@@ -322,11 +322,13 @@ class Benchmark (object):
                     # Prepend cmd if we are not measuring servers
                     if self.server_cmds == []:
                         prefix_argv = alloc["cmd_prefix"].format(**substitutions).split()
-                        measure_argv = self.measure_cmd.format(**substitutions)
-                        measure_argv = src.util.prefix_cmd_with_abspath(measure_argv).split()
+                        if self.measure_cmd != "":
+                            measure_argv = self.measure_cmd.format(**substitutions)
+                            measure_argv = src.util.prefix_cmd_with_abspath(measure_argv).split()
 
-                        argv.extend(measure_argv)
-                        argv.extend(["build/exec", "-p", env["LD_PRELOAD"]])
+                            argv.extend(measure_argv)
+
+                        argv.extend([f"{src.globalvars.builddir}/exec", "-p", env["LD_PRELOAD"]])
                         if alloc["LD_LIBRARY_PATH"] != "":
                             argv.extend(["-l", env["LD_LIBRARY_PATH"]])
 
