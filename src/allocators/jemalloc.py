@@ -14,7 +14,7 @@ class Jemalloc (src.allocator.Allocator):
 
         kwargs["sources"] = sources
         kwargs["LD_PRELOAD"] = "{srcdir}/lib/libjemalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; ./configure --prefix={dir} CFLAGS=-O2",
+        kwargs["build_cmds"] = ["cd {srcdir}; ./configure --prefix={dir}",
                                 "cd {srcdir}; make -j4",
                                 "mkdir -p {dir}"]
 

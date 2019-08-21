@@ -14,7 +14,7 @@ class TCMalloc (src.allocator.Allocator):
 
         kwargs["sources"] = tcmalloc_src
         kwargs["LD_PRELOAD"] = "{dir}/lib/libtcmalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; ./configure --prefix={dir} CXXFLAGS=-O2",
+        kwargs["build_cmds"] = ["cd {srcdir}; ./configure --prefix={dir}",
                                 "cd {srcdir}; make install -j4"]
 
         super().__init__(name, **kwargs)

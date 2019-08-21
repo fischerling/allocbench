@@ -13,7 +13,7 @@ class SuperMalloc (src.allocator.Allocator):
 
         kwargs["sources"] = sources
         kwargs["LD_PRELOAD"] = "{srcdir}/release/lib/libsupermalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}/release; make CFLAGS=-O2",
+        kwargs["build_cmds"] = ["cd {srcdir}/release; make",
                                 "mkdir -p {dir}"]
 
         super().__init__(name, **kwargs)
