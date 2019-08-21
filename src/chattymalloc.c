@@ -187,7 +187,7 @@ posix_memalign(void** memptr, size_t alignment, size_t size)
   }
 
   int ret = myfn_posix_memalign(memptr, alignment, size);
-  write_output("p_ma %p %zu %zu %d\n", memptr, alignment, size, ret);
+  write_output("p_ma %p %zu %zu %d\n", *memptr, alignment, size, ret);
   return ret;
 }
 
