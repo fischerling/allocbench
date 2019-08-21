@@ -14,9 +14,10 @@ class Mimalloc (src.allocator.Allocator):
 
         kwargs["sources"] = mimalloc_src
         kwargs["LD_PRELOAD"] = "{dir}/libmimalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; mkdir -p {dir}",
+        kwargs["build_cmds"] = ["mkdir -p {dir}",
                                 "cd {dir}; cmake {srcdir}",
                                 "cd {dir}; make"]
+        kwargs["requirements"] = ["cmake"]
 
         super().__init__(name, **kwargs)
 
