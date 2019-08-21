@@ -239,6 +239,5 @@ malloc_stats()
   }
 
   fprintf(stderr, "chattymalloc by muhq\n");
-  write_output("m_s\n");
   return myfn_malloc_stats();
 }
