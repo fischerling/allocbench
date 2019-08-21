@@ -18,10 +18,26 @@ By default this dictionary is build from locally installed allocators found by `
 You can overwrite the default allocators with the `-a | --allocators` option
 and a python script exporting a global dictionary with the name `allocators`.
 
+## Included Allocators
+
+* lockless allocator
+* supermalloc
+* glibc
+* mesh
+* scalloc
+* tbbmalloc
+* bumpptr
+* jemalloc
+* mimalloc
+* scalloc
+* hoard
+* snmalloc
+* tcmalloc
+
 ## Building Allocators
 
 To reproducible build allocators and patched version you can use the
-classes `Allocator{_Sources,_Patched}``` provided in ```src/allocator.py`.
+classes `Allocator` and `Allocator_Sources` provided in `src/allocator.py`.
 
 See [allocators/no_falsesharing.py](allocators/no_falsesharing.py) or
 [allocators/BA_allocators.py](allocators/BA_allocators.py) for examples.
