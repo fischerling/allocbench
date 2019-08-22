@@ -124,6 +124,10 @@ class Benchmark (object):
         save_data.update(self.results)
         save_data["stats"] = {}
         for allocator in self.results["allocators"]:
+            # Skip allocators without measurements
+            if self.results[allocator] == {}:
+                continue
+
             measures = []
             stats = []
             for ntuple in self.iterate_args(args=self.results["args"]):
@@ -151,6 +155,7 @@ class Benchmark (object):
                 f = path
 
         print_info("Loading results from:", f)
+        # TODO merge loaded result
         with open(f, "rb") as f:
             self.results = pickle.load(f)
         # Build new named tuples
@@ -166,7 +171,7 @@ class Benchmark (object):
                     d[self.Perm(**perm)] = value
                 self.results["stats"][allocator] = d
 
-        # add missing statistics
+        # add eventual missing statistics
         if "stats" not in self.results:
             self.calc_desc_statistics()
 
@@ -429,12 +434,15 @@ class Benchmark (object):
         self.calc_desc_statistics()
 
     def calc_desc_statistics(self):
-        if "stats" in self.results:
-            return
         allocs = self.results["allocators"]
         self.results["stats"] = {}
         for alloc in allocs:
+            # Skip allocators without measurements
+            if self.results[alloc] == {}:
+                continue
+
             self.results["stats"][alloc] = {}
+
             for perm in self.iterate_args(self.results["args"]):
                 stats = {s: {} for s in ["min", "max", "mean", "median", "std",
                                          "std_perc",
