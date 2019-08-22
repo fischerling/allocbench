@@ -1,5 +1,6 @@
 import re
 import matplotlib.pyplot as plt
+import numpy as np
 
 ptr = "(?:0x)?(?P<ptr>(?:\w+)|(?:\(nil\)))"
 size = "(?P<size>\d+)"
@@ -115,7 +116,7 @@ def parse(path="chattymalloc.txt", coll_size=True, req_size=None, nohist=False):
             if not valid_line:
                 print("\ninvalid line at", ln, ":", l)
 
-    return hist, calls, requested_size
+    return hist, calls, np.array(requested_size)
 
 
 def plot(path):
@@ -133,14 +134,14 @@ def plot(path):
 def plot_profile(total_sizes, trace_path, plot_path, sizes):
     x_vals = range(0, len(total_sizes))
 
-    plt.plot(x_vals, total_sizes, marker='',
+    plt.plot(x_vals, total_sizes / 1000, marker='',
              linestyle='-', label="Total requested")
 
     for s in sizes:
         _, _, total_size = parse(path=trace_path, nohist=True, req_size=s)
-        plt.plot(x_vals, total_size, label=s)
+        plt.plot(x_vals, total_size / 1000, label=s)
 
-    plt.legend()
+    plt.legend(loc="lower center")
     plt.xlabel("Allocations")
     plt.ylabel("mem in kb")
     plt.title("Memusage profile")
