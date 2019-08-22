@@ -53,7 +53,11 @@ write_output(const char* fmt, ...)
 static void __attribute__((constructor))
 init()
 {
-  out = open("chattymalloc.txt",
+  char* fname = getenv("CHATTYMALLOC_FILE");
+  if (fname == NULL)
+    fname = "chattymalloc.txt";
+
+  out = open(fname,
              O_WRONLY | O_TRUNC | O_CREAT,
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   if (out == -1) {
