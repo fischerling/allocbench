@@ -2,6 +2,8 @@
 - log facilities
 - dj_traces as archive from our servers, check checksum!
 
+- implement requirements for allocators
+
 - Use https://www4.cs.fau.de/~flow/allocbench/dj_workloads.tar.xz
 - verify (commit id, checksum) remote sources
 
