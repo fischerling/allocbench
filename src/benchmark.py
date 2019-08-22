@@ -223,6 +223,7 @@ class Benchmark (object):
                          "perm": alloc_name,
                          "builddir": src.globalvars.builddir}
 
+        substitutions.update(self.__dict__)
         substitutions.update(alloc)
 
         for server_cmd in self.server_cmds:
@@ -313,6 +314,7 @@ class Benchmark (object):
 
                     # Available substitutions in cmd
                     substitutions = {"run": run}
+                    substitutions.update(self.__dict__)
                     substitutions.update(perm._asdict())
                     substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
                     substitutions.update(alloc)
