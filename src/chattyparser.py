@@ -3,18 +3,43 @@ import matplotlib.pyplot as plt
 
 ptr = "(?:0x)?(?P<ptr>(?:\w+)|(?:\(nil\)))"
 size = "(?P<size>\d+)"
+alignment = "(?P<alignment>\d+)"
 
-malloc_re = re.compile("^m {} {}$".format(size, ptr))
-free_re = re.compile("^f {}$".format(ptr))
-calloc_re = re.compile("^c (?P<nmemb>\d+) {} {}$".format(size, ptr))
-realloc_re = re.compile("^r {} {} {}$".format(ptr, size, ptr.replace("ptr", "nptr")))
-memalign_re = re.compile("^ma (?P<alignment>\d+) {} {}$".format(size, ptr))
+malloc_re = re.compile(f"^m {size} {ptr}$")
+free_re = re.compile(f"^f {ptr}$")
+calloc_re = re.compile(f"^c (?P<nmemb>\d+) {size} {ptr}$")
+realloc_re = re.compile(f"^r {ptr} {size} {ptr.replace('ptr', 'nptr')}$")
+memalign_re = re.compile(f"^ma {alignment} {size} {ptr}$")
+posix_memalign_re = re.compile(f"^p_ma {ptr} {alignment} {size} (?P<ret>\d+)$")
+valloc_re = re.compile(f"^v {size} {ptr}$")
+pvalloc_re = re.compile(f"^pv {size} {ptr}$")
+aligned_alloc_re = re.compile(f"^a_m {alignment} {size} {ptr}$")
+
+trace_regex = {"malloc": malloc_re, "free": free_re, "calloc": calloc_re,
+               "realloc": realloc_re, "memalign": memalign_re,
+               "posix_memalign": posix_memalign_re, "valloc": valloc_re,
+               "pvalloc": pvalloc_re, "aligned_alloc": aligned_alloc_re}
 
 
 def record_allocation(hist, total_size, allocations, ptr, size, coll_size,
-                      req_size, nohist, optr=None, add=True):
-    size = int(size)
-    if add:
+                      req_size, nohist, optr=None, free=False):
+    """add allocation to histogram or total requested memory
+
+       hist - dict mapping allocation sizes to their occurrence
+       total_size - list of total requested memory till last recorded function call
+       allocations - dict of life allocations mapping their pointer to their size
+       ptr - pointer returned from function to record
+       size - size passed to function to record
+       coll_size - should the total memory be tracked
+       req_size - track only allocations of requested size
+       nohist - don't create a histogram
+       optr - pointer passed to funtion to record
+       free - is recorded function free(ptr)"""
+
+    if not free:
+        size = int(size)
+
+        # realloc returns new pointer
         if optr and optr in allocations:
             size -= allocations[optr]
             del(allocations[optr])
@@ -33,6 +58,7 @@ def record_allocation(hist, total_size, allocations, ptr, size, coll_size,
             elif req_size:
                 total_size.append(total_size[-1])
 
+    # free of a valid pointer
     elif ptr != "(nil)" and ptr in allocations:
         size = allocations[ptr]
         if coll_size:
@@ -42,96 +68,84 @@ def record_allocation(hist, total_size, allocations, ptr, size, coll_size,
                 total_size.append(total_size[-1])
 
         del(allocations[ptr])
+    # free of invalid pointer
     elif coll_size:
         total_size.append(total_size[-1])
 
 
-def parse(path="chattymalloc.data", coll_size=True, req_size=None, nohist=False):
-    tmalloc, tcalloc, trealloc, tfree, tmemalign = 0, 0, 0, 0, 0
+def parse(path="chattymalloc.txt", coll_size=True, req_size=None, nohist=False):
+    # count function calls
+    calls = {"malloc": 0, "free": 0, "calloc": 0, "realloc": 0, "memalign": 0,
+             "posix_memalign": 0, "valloc": 0, "pvalloc": 0, "aligned_alloc": 0}
+    # Dictionary to track all live allocations
     allocations = {}
+    # List of total live memory per operation
     requested_size = [0]
+    # Dictionary mapping allocation sizes to the count of their appearance
     hist = {}
     ln = 0
+
+    def record(ptr, size, optr=None, free=False):
+        """Wrapper around record_allocation using local variables from parse"""
+        record_allocation(hist, requested_size, allocations, ptr, size,
+                          coll_size, req_size, nohist, optr, free)
 
     with open(path, "r") as f:
         for i, l in enumerate(f.readlines()):
             ln += 1
-            res = malloc_re.match(l)
-            if res is not None:
-                res = res.groupdict()
-                record_allocation(hist, requested_size, allocations, res["ptr"],
-                                  res["size"], coll_size, req_size, nohist)
-                tmalloc += 1
-                continue
+            valid_line = False
+            for func, func_regex in trace_regex.items():
+                res = func_regex.match(l)
+                if res is not None:
+                    calls[func] += 1
+                    res = res.groupdict()
 
-            res = free_re.match(l)
-            if res is not None:
-                res = res.groupdict()
-                record_allocation(hist, requested_size, allocations, res["ptr"],
-                                  0, coll_size, req_size, nohist, add=False)
-                tfree += 1
-                continue
+                    if func == "free":
+                        record(res["ptr"], 0, free=True)
+                    elif func == "calloc":
+                        record(res["ptr"], int(res["nmemb"]) * int(res["size"]))
+                    elif func == "realloc":
+                        record(res["nptr"], res["size"], optr=res["ptr"])
+                    else:
+                        record(res["ptr"], res["size"])
 
-            res = calloc_re.match(l)
-            if res is not None:
-                res = res.groupdict()
-                size = int(res["nmemb"]) * int(res["size"])
-                record_allocation(hist, requested_size, allocations, res["ptr"],
-                                  size, coll_size, req_size, nohist)
-                tcalloc += 1
-                continue
+                    valid_line = True
+                    break
 
-            res = realloc_re.match(l)
-            if res is not None:
-                res = res.groupdict()
-                record_allocation(hist, requested_size, allocations, res["nptr"],
-                                  res["size"], coll_size, req_size, nohist,
-                                  optr=res["ptr"])
-                trealloc += 1
-                continue
+            if not valid_line:
+                print("\ninvalid line at", ln, ":", l)
 
-            res = memalign_re.match(l)
-            if res is not None:
-                res = res.groupdict()
-                record_allocation(hist, requested_size, allocations, res["ptr"],
-                                  res["size"], coll_size, req_size, nohist)
-                tmemalign += 1
-                continue
-
-            print("\ninvalid line at", ln, ":", l)
-    calls = {"malloc": tmalloc, "free": tfree, "calloc": tcalloc,
-             "realloc": trealloc, "memalign": tmemalign}
     return hist, calls, requested_size
 
 
 def plot(path):
-    hist, calls, _ = parse(req_size=None)
+    hist, calls, total_sizes = parse(path=path, req_size=None)
+
     plot_hist_ascii(path+".hist", hist, calls)
+
     top5 = [t[1] for t in sorted([(n, s) for s, n in hist.items()])[-5:]]
+    del hist
+    del calls
 
-    del(hist)
-    del(calls)
-    plot_profile(path+".profile.png", top5)
+    plot_profile(total_sizes, path, path + ".profile.png", top5)
 
 
-def plot_profile(path, top5):
-    _, calls, total_size = parse(nohist=True)
-    x_vals = range(0, sum(calls.values()) + 1)
+def plot_profile(total_sizes, trace_path, plot_path, sizes):
+    x_vals = range(0, len(total_sizes))
 
-    plt.plot(x_vals, total_size, marker='',
+    plt.plot(x_vals, total_sizes, marker='',
              linestyle='-', label="Total requested")
 
-    for s in top5:
-        _, calls, total_size = parse(nohist=True, req_size=s)
+    for s in sizes:
+        _, _, total_size = parse(path=trace_path, nohist=True, req_size=s)
         plt.plot(x_vals, total_size, label=s)
 
     plt.legend()
     plt.xlabel("Allocations")
     plt.ylabel("mem in kb")
     plt.title("Memusage profile")
-    plt.savefig(path)
+    plt.savefig(plot_path)
     plt.clf()
-
 
 def plot_hist_ascii(path, hist, calls):
     bins = {}
@@ -139,18 +153,18 @@ def plot_hist_ascii(path, hist, calls):
         bin = int(size / 16)
         bins[bin] = bins.get(bin, 0) + hist[size]
 
+
     total = sum(calls.values()) - calls["free"]
     with open(path, "w") as f:
         print("Total function calls:", total, file=f)
-        print("malloc:", calls["malloc"], file=f)
-        print("calloc:", calls["calloc"], file=f)
-        print("realloc:", calls["realloc"], file=f)
-        print("free:", calls["free"], file=f)
-        print("memalign:", calls["memalign"], file=f)
+        for func in trace_regex:
+            print(func, calls[func], file=f)
+
         print(file=f)
 
-        print("< 1024", sum([n for s, n in hist.items() if s < 1024]), file=f)
-        print("< 4096", sum([n for s, n in hist.items() if s < 4096]), file=f)
+        print("allocations <= 64", sum([n for s, n in hist.items() if s <= 64]), file=f)
+        print("allocations <= 1024", sum([n for s, n in hist.items() if s <= 1024]), file=f)
+        print("allocations <= 4096", sum([n for s, n in hist.items() if s <= 4096]), file=f)
         print(file=f)
 
         print("Histogram of sizes:", file=f)
