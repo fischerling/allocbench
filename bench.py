@@ -196,18 +196,18 @@ def main():
         if args.exclude_benchmarks and bench in args.exclude_benchmarks:
             continue
 
-        # Create result dir for this benchmark
-        if args.analyse or not args.nosum:
-            bench_res_dir = os.path.join(resdir, bench)
-            print_info2("Creating benchmark result dir:", bench_res_dir)
-            os.makedirs(bench_res_dir, exist_ok=True)
-
         try:
             bench_module = importlib.import_module(f"src.benchmarks.{bench}")
             if not hasattr(bench_module, bench):
                 continue
 
             bench = getattr(bench_module, bench)
+
+            # Create benchmark result directory
+            bench.result_dir = os.path.abspath(os.path.join(resdir, bench.name))
+            if args.analyse or not args.nosum:
+                print_info2("Creating benchmark result dir:", bench.result_dir)
+                os.makedirs(bench.result_dir, exist_ok=True)
 
             if args.load:
                 bench.load(path=args.load)
@@ -217,34 +217,32 @@ def main():
                 bench.prepare()
 
             if args.analyse:
+                print_status("Analysing {} ...".format(bench))
                 if find_cmd("malt") is not None:
-                    print_status("Analysing {} ...".format(bench))
-
-                    malt_cmd = "malt -o output:name={}/malt.{}.%3"
-                    malt_cmd = malt_cmd.format(bench_res_dir, "{perm}")
-
-                    old_allocs = bench.allocators
-                    # use malt as allocator
-                    bench.allocators = {"malt": {"cmd_prefix":    malt_cmd,
-                                                 "binary_suffix": "",
-                                                 "LD_PRELOAD":    ""}}
-                    try:
-                        bench.run(runs=1)
-                    except Exception:
-                        print_error(traceback.format_exc())
-                        print_error("Skipping analysis of", bench, "!")
-
-                    # Remove malt from results
-                    if "malt" in bench.results:
-                        del(bench.results["malt"])
-                    if "stats" in bench.results and "malt" in bench.results["stats"]:
-                        del(bench.results["stats"]["malt"])
-
-                    # restore allocs
-                    bench.allocators = old_allocs
-
+                    analyse_alloc = "malt"
                 else:
-                    print_error("malt not found. Skipping analyse.")
+                    print_warning("malt not found. Using chattymalloc.")
+                    analyse_alloc = "chattymalloc"
+
+                old_allocs = bench.allocators
+                analyse_alloc_module = importlib.import_module(f"src.allocators.{analyse_alloc}")
+                bench.allocators = {analyse_alloc: getattr(analyse_alloc_module, analyse_alloc).build()}
+
+                try:
+                    bench.run(runs=1)
+                except Exception:
+                    print_error(traceback.format_exc())
+                    print_error("Skipping analysis of", bench, "!")
+
+                # Remove results for analyse_alloc
+                if analyse_alloc in bench.results:
+                    del(bench.results[analyse_alloc])
+                if "stats" in bench.results and analyse_alloc in bench.results["stats"]:
+                    del(bench.results["stats"][analyse_alloc])
+
+                # restore allocs
+                bench.allocators = old_allocs
+                print(bench.results)
 
             if args.runs > 0:
                 print_status("Running", bench.name, "...")
@@ -259,7 +257,8 @@ def main():
                     bench.save()
 
                 # Summarize benchmark in benchmark specific resultdir
-                if not args.nosum:
+                # Only summarize if we have data.
+                if not args.nosum and (args.runs > 0 or args.load):
                     os.chdir(bench.name)
                     print_status("Summarizing", bench.name, "...")
                     bench.summary()
