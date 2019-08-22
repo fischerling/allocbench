@@ -6,7 +6,3 @@
 - verify (commit id, checksum) remote sources
 
 - git recursive clone
-
-- pylint Makefile target
-
-

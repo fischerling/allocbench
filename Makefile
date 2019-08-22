@@ -15,7 +15,7 @@ export CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
 export LDFLAGS = -pthread -static-libgcc
 export LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 
-.PHONY: all clean $(MAKEFILES)
+.PHONY: all clean pylint $(MAKEFILES)
 all: $(OBJDIR)/ccinfo  $(MAKEFILES)
 
 $(MAKEFILES):
@@ -29,3 +29,6 @@ $(OBJDIR):
 
 clean:
 	rm -rf $(OBJDIR)
+
+pylint:
+	pylint $(shell find $(PWD) -name "*.py" -not -path "$(OBJDIR)/*")
