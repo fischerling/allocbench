@@ -92,8 +92,6 @@ class Benchmark (object):
         self.Perm = namedtuple("Perm", self.args.keys())
 
         default_results = {"args": self.args,
-                           "mean": {alloc: {} for alloc in self.allocators},
-                           "std": {alloc: {} for alloc in self.allocators},
                            "allocators": self.allocators,
                            "facts": {"libcs": {}}
                           }
