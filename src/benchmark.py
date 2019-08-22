@@ -258,10 +258,7 @@ class Benchmark (object):
         for server in self.servers:
             Benchmark.terminate_subprocess(server)
 
-    def run(self, runs=5):
-        if runs < 1:
-            return
-
+    def run(self, runs=3):
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
             if Benchmark.perf_allowed is None:

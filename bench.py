@@ -246,9 +246,9 @@ def main():
                 else:
                     print_error("malt not found. Skipping analyse.")
 
-            if args.runs > 1:
+            if args.runs > 0:
                 print_status("Running", bench.name, "...")
-            bench.run(runs=args.runs)
+                bench.run(runs=args.runs)
 
             if need_resultdir:
                 print_info2("Changing cwd to:", resdir)
