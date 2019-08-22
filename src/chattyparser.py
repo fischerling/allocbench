@@ -1,6 +1,9 @@
+#!/usr/bin/env python3
+
 import re
 import matplotlib.pyplot as plt
 import numpy as np
+import sys
 
 ptr = "(?:0x)?(?P<ptr>(?:\w+)|(?:\(nil\)))"
 size = "(?P<size>\d+)"
@@ -178,3 +181,12 @@ def plot_hist_ascii(path, hist, calls):
             print(binsize.format((b)*16, (b+1)*16-1), end=" ", file=f)
             amount = "{:<" + amountmaxlength + "} {:.2f}% {}"
             print(amount.format(bins[b], perc, '*'*int(perc/2)), file=f)
+
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("chattyparser: parse chattymalloc output and create size histogram and memory profile", file=sys.stderr)
+        print(f"Usage: {sys.argv[0]} chattymalloc-file", file=sys.stderr)
+        exit(1)
+
+    plot(sys.argv[1])
