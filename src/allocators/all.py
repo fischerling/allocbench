@@ -11,8 +11,9 @@ from src.allocators.supermalloc import supermalloc
 from src.allocators.llalloc import llalloc
 from src.allocators.tbbmalloc import tbbmalloc
 from src.allocators.mimalloc import mimalloc
+from src.allocators.snmalloc import snmalloc
 
 
 allocators = [*src.allocators.glibcs.allocators, tcmalloc, tcmalloc_nofs,
               jemalloc, hoard, mesh, supermalloc, scalloc, llalloc, tbbmalloc,
-              mimalloc]
+              mimalloc, snmalloc]
