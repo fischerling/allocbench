@@ -55,6 +55,8 @@ class BenchmarkLld(Benchmark):
             p = subprocess.run(["tar", "xf", test_archive], stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, universal_newlines=True)
 
+        self.args["test"] = os.listdir(test_dir)
+
         return True
 
     def cleanup(self):
