@@ -55,6 +55,11 @@ class BenchmarkLld(Benchmark):
             p = subprocess.run(["tar", "xf", test_archive], stdout=subprocess.PIPE,
                                stderr=subprocess.PIPE, universal_newlines=True)
 
+            # delete archive
+            if p.returncode == 0:
+                os.remove(test_archive)
+                
+
         self.args["test"] = os.listdir(test_dir)
 
         return True
