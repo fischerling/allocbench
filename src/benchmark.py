@@ -410,7 +410,8 @@ class Benchmark (object):
                     if os.getcwd() != cwd:
                         os.chdir(cwd)
 
-                self.shutdown_servers()
+                if self.server_cmds != []:
+                    self.shutdown_servers()
 
                 if hasattr(self, "postallocator_hook"):
                     self.postallocator_hook((alloc_name, alloc), run,
