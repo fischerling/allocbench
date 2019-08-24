@@ -222,7 +222,7 @@ def main():
                 if find_cmd("malt") is not None:
                     analyse_alloc = "malt"
                 else:
-                    print_warning("malt not found. Using chattymalloc.")
+                    print_warn("malt not found. Using chattymalloc.")
                     analyse_alloc = "chattymalloc"
 
                 old_allocs = bench.allocators
