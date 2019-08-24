@@ -20,7 +20,7 @@ parser = argparse.ArgumentParser(description="benchmark memory allocators")
 parser.add_argument("-ds, --dont-save", action='store_true', dest="dont_save",
                     help="don't save benchmark results in RESULTDIR")
 parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
-parser.add_argument("--analyse", help="analyse benchmark behaviour using malt", action="store_true")
+parser.add_argument("--analyze", help="analyze benchmark behavior using malt", action="store_true")
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='count')
 parser.add_argument("-vdebug", "--verbose-debug", help="debug output",
@@ -174,8 +174,8 @@ def main():
         starttime = starttime[:starttime.rfind(':')]
         src.globalvars.facts["starttime"] = starttime
 
-    # Create result directory if we analyse, save or summarize
-    need_resultdir = not (args.nosum and args.dont_save and not args.analyse)
+    # Create result directory if we analyze, save or summarize
+    need_resultdir = not (args.nosum and args.dont_save and not args.analyze)
     if need_resultdir:
         if args.resultdir:
             resdir = os.path.join(args.resultdir)
@@ -206,28 +206,28 @@ def main():
 
             # Create benchmark result directory
             bench.result_dir = os.path.abspath(os.path.join(resdir, bench.name))
-            if args.analyse or not args.nosum:
+            if args.analyze or not args.nosum:
                 print_info2("Creating benchmark result dir:", bench.result_dir)
                 os.makedirs(bench.result_dir, exist_ok=True)
 
             if args.load:
                 bench.load(path=args.load)
 
-            if args.runs > 0 or args.analyse:
+            if args.runs > 0 or args.analyze:
                 print_status("Preparing", bench.name, "...")
                 bench.prepare()
 
-            if args.analyse:
+            if args.analyze:
                 print_status("Analysing {} ...".format(bench))
                 if find_cmd("malt") is not None:
-                    analyse_alloc = "malt"
+                    analyze_alloc = "malt"
                 else:
                     print_warn("malt not found. Using chattymalloc.")
-                    analyse_alloc = "chattymalloc"
+                    analyze_alloc = "chattymalloc"
 
                 old_allocs = bench.allocators
-                analyse_alloc_module = importlib.import_module(f"src.allocators.{analyse_alloc}")
-                bench.allocators = {analyse_alloc: getattr(analyse_alloc_module, analyse_alloc).build()}
+                analyze_alloc_module = importlib.import_module(f"src.allocators.{analyze_alloc}")
+                bench.allocators = {analyze_alloc: getattr(analyze_alloc_module, analyze_alloc).build()}
 
                 try:
                     bench.run(runs=1)
@@ -235,16 +235,16 @@ def main():
                     print_error(traceback.format_exc())
                     print_error("Skipping analysis of", bench, "!")
 
-                # Remove results for analyse_alloc
-                if analyse_alloc in bench.results:
-                    del(bench.results[analyse_alloc])
-                if "stats" in bench.results and analyse_alloc in bench.results["stats"]:
-                    del(bench.results["stats"][analyse_alloc])
+                # Remove results for analyze_alloc
+                if analyze_alloc in bench.results:
+                    del(bench.results[analyze_alloc])
+                if "stats" in bench.results and analyze_alloc in bench.results["stats"]:
+                    del(bench.results["stats"][analyze_alloc])
 
                 # restore allocs
                 bench.allocators = old_allocs
 
-                if analyse_alloc == "chattymalloc":
+                if analyze_alloc == "chattymalloc":
                     print_info("Plotting chattymalloc histograms")
                     for f in os.listdir(bench.result_dir):
                         if f.startswith("chatty_") and f.endswith(".txt"):
