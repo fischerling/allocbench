@@ -152,19 +152,21 @@ class Allocator (object):
                     f.write(str(datetime.now().timestamp()))
 
         print_info2("Create allocator dictionary")
+        res_dict = {"cmd_prefix": self.cmd_prefix or "",
+                    "binary_suffix": self.binary_suffix or "",
+                    "LD_PRELOAD": self.LD_PRELOAD or "",
+                    "LD_LIBRARY_PATH": self.LD_LIBRARY_PATH or "",
+                    "color": self.color}
+
+        paths = {"dir": self.dir}
+        paths["srcdir"] = self.sources.dir if self.sources is not None else ""
+
         for attr in ["LD_PRELOAD", "LD_LIBRARY_PATH", "cmd_prefix"]:
             value = getattr(self, attr, "") or ""
-            paths = {"dir": self.dir}
-            paths["srcdir"] = self.sources.dir if self.sources is not None else ""
+            if value != "":
+                value = value.format(**paths)
+                res_dict[attr] = value
 
-            value = value.format(**paths)
-            setattr(self, attr, value)
-
-        res_dict = {"cmd_prefix": self.cmd_prefix,
-                    "binary_suffix": self.binary_suffix or "",
-                    "LD_PRELOAD": self.LD_PRELOAD,
-                    "LD_LIBRARY_PATH": self.LD_LIBRARY_PATH,
-                    "color": self.color}
         print_debug("Resulting dictionary:", res_dict)
         return res_dict
 
