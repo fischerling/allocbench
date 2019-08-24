@@ -10,6 +10,7 @@ import subprocess
 import sys
 import traceback
 
+import src.chattyparser
 import src.facter
 import src.globalvars
 from src.util import *
@@ -242,7 +243,12 @@ def main():
 
                 # restore allocs
                 bench.allocators = old_allocs
-                print(bench.results)
+
+                if analyse_alloc == "chattymalloc":
+                    print_info("Plotting chattymalloc histograms")
+                    for f in os.listdir(bench.result_dir):
+                        if f.startswith("chatty_") and f.endswith(".txt"):
+                            chattyparser.plot(f)
 
             if args.runs > 0:
                 print_status("Running", bench.name, "...")
