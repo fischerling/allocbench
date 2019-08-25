@@ -248,7 +248,7 @@ def main():
                     print_info("Plotting chattymalloc histograms")
                     for f in os.listdir(bench.result_dir):
                         if f.startswith("chatty_") and f.endswith(".txt"):
-                            src.chattyparser.plot(f)
+                            src.chattyparser.plot(os.path.join(bench.result_dir, f))
 
             if args.runs > 0:
                 print_status("Running", bench.name, "...")
