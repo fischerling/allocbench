@@ -25,8 +25,15 @@ class Benchmark_Cfrac(Benchmark):
                                 title='"Cfrac l1 cache misses"',
                                 filepostfix="l1misses")
 
-        self.export_stats_to_csv("task-clock")
+        # Memusage
+        self.barplot_single_arg("{VmHWM}",
+                                ylabel='"VmHWM in KB"',
+                                title='"Cfrac WmHWM"',
+                                filepostfix="vmhwm")
+
         self.export_stats_to_dataref("task-clock")
+
+        self.export_stats_to_dataref("VmWHM")
 
 
 cfrac = Benchmark_Cfrac()
