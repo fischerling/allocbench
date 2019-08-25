@@ -244,7 +244,7 @@ def main():
                 # restore allocs
                 bench.allocators = old_allocs
 
-                if analyze_alloc == "chattymalloc":
+                if not args.nosum and analyze_alloc == "chattymalloc":
                     print_info("Plotting chattymalloc histograms")
                     for f in os.listdir(bench.result_dir):
                         if f.startswith("chatty_") and f.endswith(".txt"):
