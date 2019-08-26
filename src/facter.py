@@ -1,7 +1,9 @@
 import ctypes
+import datetime
 import multiprocessing
 import os
 import platform
+import subprocess
 
 import src.globalvars as gv
 
@@ -18,6 +20,15 @@ def collect_facts():
 
     with open(os.path.join(gv.builddir, "ccinfo"), "r") as ccinfo:
         gv.facts["cc"] = ccinfo.readlines()[-1][:-1]
+
+    gv.facts["allocbench"] = subprocess.run(["git", "rev-parse", "master"],
+                                            stdout=subprocess.PIPE,
+                                            universal_newlines=True).stdout
+
+    starttime = datetime.datetime.now().isoformat()
+    # strip seconds from string
+    starttime = starttime[:starttime.rfind(':')]
+    gv.facts["starttime"] = starttime
 
 
 # Copied from pip.
