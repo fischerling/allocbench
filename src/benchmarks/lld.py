@@ -83,7 +83,7 @@ class BenchmarkLld(Benchmark):
             
             plt.legend(loc="best")
             plt.ylabel("Zeit in ms")
-            plt.title("Gesamte Laufzeit")
+            plt.title(f"Gesamte Laufzeit {perm.test}")
             plt.savefig(".".join([self.name, perm.test, "runtime", "png"]))
             plt.clf()
 
