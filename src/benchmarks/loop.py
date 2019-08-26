@@ -40,7 +40,8 @@ class Benchmark_Loop(Benchmark):
                             ylabel='"L1 misses in %"',
                             title='"Loop l1 cache misses: " + arg + " " + str(arg_value)',
                             filepostfix="l1misses",
-                            autoticks=False)
+                            autoticks=False,
+                            yerr=False)
 
         # Speed Matrix
         self.write_best_doublearg_tex_table("perm.nthreads / ({task-clock}/1000)",

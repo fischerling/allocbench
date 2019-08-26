@@ -26,7 +26,8 @@ class Benchmark_Espresso(Benchmark):
         self.barplot_single_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                                 ylabel='"L1 misses in %"',
                                 title='"Espresso l1 cache misses"',
-                                filepostfix="l1misses")
+                                filepostfix="l1misses",
+                                yerr=False)
 
         # Memusage
         self.barplot_single_arg("{VmHWM}",

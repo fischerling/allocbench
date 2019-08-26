@@ -23,7 +23,8 @@ class Benchmark_Cfrac(Benchmark):
         self.barplot_single_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                                 ylabel='"L1 misses in %"',
                                 title='"Cfrac l1 cache misses"',
-                                filepostfix="l1misses")
+                                filepostfix="l1misses",
+                                yerr=False)
 
         # Memusage
         self.barplot_single_arg("{VmHWM}",

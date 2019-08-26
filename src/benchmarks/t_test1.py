@@ -41,7 +41,8 @@ class Benchmark_t_test1(Benchmark):
                             ylabel='"L1 misses in %"',
                             title='"T-Test1 l1 cache misses: " + arg + " " + str(arg_value)',
                             filepostfix="l1misses",
-                            autoticks=False)
+                            autoticks=False,
+                            yerr=False)
 
         # Speed Matrix
         self.write_best_doublearg_tex_table(yval,

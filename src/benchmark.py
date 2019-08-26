@@ -514,7 +514,7 @@ class Benchmark (object):
 
     def barplot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                            title="'default title'", filepostfix="", sumdir="",
-                           arg="", scale=None, file_ext="png"):
+                           arg="", scale=None, file_ext="png", yerr=True):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
@@ -526,6 +526,10 @@ class Benchmark (object):
         for i, allocator in enumerate(allocators):
             x_vals = list(range(i, narg * (nallocators+1), nallocators+1))
             y_vals = []
+            y_errs = None
+            if yerr:
+                y_errs = []
+
             for perm in self.iterate_args(args=args):
                 if scale:
                     if scale == allocator:
@@ -537,7 +541,10 @@ class Benchmark (object):
                 else:
                     y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
 
-            plt.bar(x_vals, y_vals, width=1, label=allocator,
+                if yerr:
+                    y_errs.append(eval(yval.format(**self.results["stats"][allocator][perm]["std"])))
+
+            plt.bar(x_vals, y_vals, width=1, label=allocator, yerr=y_errs,
                     color=allocators[allocator]["color"])
 
         plt.legend(loc="best")

@@ -78,7 +78,9 @@ class BenchmarkLld(Benchmark):
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
                 
-                plt.bar([i], self.results["stats"][allocator][perm]["mean"]["task-clock"],
+                plt.bar([i],
+                        self.results["stats"][allocator][perm]["mean"]["task-clock"],
+                        yerr=self.results["stats"][allocator][perm]["std"]["task-clock"],
                         label=allocator, color=allocators[allocator]["color"])
             
             plt.legend(loc="best")
