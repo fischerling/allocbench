@@ -13,38 +13,6 @@ sys.path.insert(0,parentdir)
 
 import src.globalvars
 
-def specific_summary(bench, set_name, allocators):
-    os.mkdir(set_name)
-    os.chdir(set_name)
-
-    if bench.name == "loop":
-        allocators["bumpptr"] = {"color": "C9"}
-
-    old_allocs = bench.results["allocators"]
-
-    if bench.name == "mysql" and "Hoard" in allocators:
-        del(allocators["Hoard"])
-    bench.results["allocators"] = allocators
-    bench.summary()
-    bench.results["allocators"] = old_allocs
-
-    if bench.name == "loop":
-        del(allocators["bumpptr"])
-
-
-    os.chdir("..")
-
-def bench_sum(bench, sets):
-    os.makedirs(bench.name)
-    os.chdir(bench.name)
-    os.mkdir("all")
-    os.chdir("all")
-    bench.summary()
-    os.chdir("..")
-    for s in sets:
-        specific_summary(bench, s, sets[s])
-    os.chdir("..")
-
 sets = {"glibcs": ["glibc", "glibc-noThreadCache", "glibc-noFalsesharing",
                    "glibc-noFalsesharingClever"],
         "tcmalloc": ["TCMalloc", "TCMalloc-NoFalsesharing"],
@@ -52,17 +20,35 @@ sets = {"glibcs": ["glibc", "glibc-noThreadCache", "glibc-noFalsesharing",
                  "TCMalloc", "TCMalloc-NoFalsesharing"],
         "ba" : ["glibc", "TCMalloc", "jemalloc", "Hoard"],
         "industry" : ["glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc", "mimalloc"],
-        "science" : ["scalloc", "SuperMalloc", "Mesh", "Hoard"]}
+        "research" : ["scalloc", "SuperMalloc", "Mesh", "Hoard", "snmalloc"]}
 
-# colorize allocs
-new_sets = {}
-for s in sets:
-    new_allocs = {}
-    for i, a in enumerate(sets[s]):
-        new_allocs[a] = {"color": "C"+str(i)}
-    new_sets[s] = new_allocs
 
-sets = new_sets
+def specific_summary(bench, allocators):
+    old_allocs = bench.results["allocators"]
+    new_allocs = {k: v for k, v in old_allocs.items() if k in allocators}
+
+    bench.results["allocators"] = new_allocs
+    bench.summary()
+    bench.results["allocators"] = old_allocs
+
+
+def bench_sum(bench, sets):
+    os.makedirs(bench.name)
+    os.chdir(bench.name)
+
+    os.mkdir("all")
+    os.chdir("all")
+    bench.summary()
+    os.chdir("..")
+
+    for s in sets:
+        os.mkdir(s)
+        os.chdir(s)
+        specific_summary(bench, sets[s])
+        os.chdir("..")
+
+    os.chdir("..")
+
 
 parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
 parser.add_argument("results", help="path to results", type=str)
@@ -77,7 +63,6 @@ def main():
     with open("facts.save", "rb") as f:
         src.globalvars.facts = pickle.load(f)
 
-    print(src.globalvars.facts)
     for b in src.globalvars.benchmarks:
         if args.benchmarks and not b in args.benchmarks:
             continue
@@ -86,15 +71,18 @@ def main():
 
         bench = eval("importlib.import_module('src.benchmarks.{0}').{0}".format(b))
         try:
+            print(f"{bench.name} ...", end="", flush=True)
             bench.load()
         except FileNotFoundError as e:
-            print(bench.name, "No data available")
+            print(" No data available")
             continue
-        
+
         try:
             bench_sum(bench, sets)
         except FileExistsError as e:
-            print(e)
+            print(e, end="")
+
+        print()
 
 
 if __name__ == "__main__":
