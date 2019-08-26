@@ -28,12 +28,12 @@ class Benchmark_Cfrac(Benchmark):
         # Memusage
         self.barplot_single_arg("{VmHWM}",
                                 ylabel='"VmHWM in KB"',
-                                title='"Cfrac WmHWM"',
+                                title='"Cfrac VmHWM"',
                                 filepostfix="vmhwm")
 
         self.export_stats_to_dataref("task-clock")
 
-        self.export_stats_to_dataref("VmWHM")
+        self.export_stats_to_dataref("VmHWM")
 
 
 cfrac = Benchmark_Cfrac()
