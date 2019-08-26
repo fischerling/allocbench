@@ -23,8 +23,6 @@ parser.add_argument("-l", "--load", help="load benchmark results from directory"
 parser.add_argument("--analyze", help="analyze benchmark behavior using malt", action="store_true")
 parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
 parser.add_argument("-v", "--verbose", help="more output", action='count')
-parser.add_argument("-vdebug", "--verbose-debug", help="debug output",
-                    action='store_true', dest="verbose_debug")
 parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
 parser.add_argument("-xb", "--exclude-benchmarks", help="explicitly excluded benchmarks", nargs='+')
 parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+')
@@ -80,10 +78,8 @@ def main():
     # default | 0: Only print status and errors
     # 1: Print warnings and some infos
     # 2: Print all infos
-    # debug | 99: Print all awailable infos
-    if args.verbose_debug:
-        src.globalvars.verbosity = 99
-    elif args.verbose:
+    # 3: Print all awailable infos
+    if args.verbose:
         src.globalvars.verbosity = args.verbose
 
     print_info2("Arguments:", args)

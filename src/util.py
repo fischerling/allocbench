@@ -63,7 +63,7 @@ def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
 
 
 def print_debug(*objects, sep=' ', end='\n', file=sys.stdout):
-    if src.globalvars.verbosity < 99:
+    if src.globalvars.verbosity < 3:
         return
     print(*objects, sep=sep, end=end, file=file)
 
