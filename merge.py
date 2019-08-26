@@ -1,23 +1,17 @@
 #!/usr/bin/env python3
 
 import argparse
-import inspect
 import os
 import pickle
-import sys
-
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
-
-parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
-parser.add_argument("src", help="path to results which should be merged into dest", type=str)
-parser.add_argument("dest", help="path to results in which src should be merged", type=str)
-parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
-parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Merge to allocbench results")
+    parser.add_argument("src", help="results which should be merged into dest", type=str)
+    parser.add_argument("dest", help="results in which src should be merged", type=str)
+    parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
+    parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
+
     args = parser.parse_args()
 
     for src_save in os.listdir(args.src):
@@ -37,11 +31,11 @@ def main():
             print("Can't merge", src_save, "because", os.path.basename(src_save), "not in", args.dest)
             continue
 
-        with open(src_save, "rb") as f:
-            src_results = pickle.load(f)
+        with open(src_save, "rb") as src_file:
+            src_results = pickle.load(src_file)
 
-        with open(dest_save, "rb") as f:
-            dest_results = pickle.load(f)
+        with open(dest_save, "rb") as dest_file:
+            dest_results = pickle.load(dest_file)
 
         for alloc in src_results["allocators"]:
             if alloc in dest_results["allocators"]:
@@ -53,8 +47,8 @@ def main():
             dest_results[alloc] = src_results[alloc]
             dest_results["stats"][alloc] = src_results["stats"][alloc]
 
-        with open(dest_save, "wb") as f:
-            pickle.dump(dest_results, f)
+        with open(dest_save, "wb") as result_file:
+            pickle.dump(dest_results, result_file)
 
 
 if __name__ == "__main__":
