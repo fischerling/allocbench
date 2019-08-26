@@ -85,6 +85,11 @@ class Benchmark (object):
             if not hasattr(self, k):
                 setattr(self, k, Benchmark.defaults[k])
 
+        # Set result_dir
+        if not hasattr(self, "result_dir"):
+            self.result_dir = os.path.abspath(os.path.join(src.globalvars.resdir,
+                                                           self.name))
+
         # non copy types
         if not hasattr(self, "args"):
             self.args = {}
@@ -114,6 +119,7 @@ class Benchmark (object):
         print_debug("Args:", self.args)
         print_debug("Requirements:", self.requirements)
         print_debug("Results dictionary:", self.results)
+        print_debug("Results directory:", self.result_dir)
 
     def save(self, path=None):
         f = path if path else self.name + ".save"
