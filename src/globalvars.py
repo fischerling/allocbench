@@ -11,18 +11,20 @@ verbosity = 0
 """Dict holding the allocators to compare"""
 allocators = {}
 
+"""Directory of allocbench sources"""
+srcdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+"""Source directory for all benchmarks"""
+benchsrcdir = os.path.join(srcdir, "benchmarks")
+
 """Root directory of allocbench"""
-allocbenchdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-allocbenchdir = os.path.dirname(allocbenchdir)
+allocbenchdir = os.path.dirname(srcdir)
 
 """Path of the build directory"""
 builddir = os.path.join(allocbenchdir, "build")
 
 """Directory were the benchmark results are stored"""
 resdir = None
-
-"""Source directory for all benchmarks"""
-benchsrcdir = os.path.join(allocbenchdir, "src", "benchmarks")
 
 """List of available benchmarks"""
 benchmarks = [e[:-3] for e in os.listdir(os.path.join(allocbenchdir, benchsrcdir))
