@@ -22,7 +22,8 @@ class BenchmarkHTTPD(Benchmark):
 
         super().__init__()
 
-    def process_output(self, result, stdout, stderr, allocator, perm, verbose):
+    @staticmethod
+    def process_output(result, stdout, stderr, allocator, perm):
         result["time"] = re.search("Time taken for tests:\\s*(\\d*\\.\\d*) seconds", stdout).group(1)
         result["requests"] = re.search("Requests per second:\\s*(\\d*\\.\\d*) .*", stdout).group(1)
 

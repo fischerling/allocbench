@@ -29,7 +29,8 @@ class BenchmarkFalsesharing(Benchmark):
         self.requirements = ["cache-thrash", "cache-scratch"]
         super().__init__()
 
-    def process_output(self, result, stdout, stderr, allocator, perm, verbose):
+    @staticmethod
+    def process_output(result, stdout, stderr, allocator, perm):
         result["time"] = TIME_RE.match(stdout).group("time")
 
     def summary(self):

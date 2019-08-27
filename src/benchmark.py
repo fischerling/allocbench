@@ -27,9 +27,6 @@ class Benchmark (object):
 
     defaults = {
         "name": "default_benchmark",
-        "description": ("This is the default benchmark description please add"
-                        "your own useful one."),
-
         "measure_cmd": "perf stat -x, -d",
         "cmd": "true",
         "server_cmds": [],
@@ -310,8 +307,7 @@ class Benchmark (object):
 
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
-                    self.preallocator_hook((alloc_name, alloc), run, env,
-                                           verbose=src.globalvars.verbosity)
+                    self.preallocator_hook((alloc_name, alloc), run, env)
 
                 # Run benchmark for alloc
                 for perm in self.iterate_args():
@@ -402,8 +398,7 @@ class Benchmark (object):
 
                         if hasattr(self, "process_output"):
                             self.process_output(result, res.stdout, res.stderr,
-                                                alloc_name, perm,
-                                                verbose=src.globalvars.verbosity)
+                                                alloc_name, perm)
 
                         # save a valid result so we can expand invalid ones
                         if valid_result is not None:
@@ -420,8 +415,7 @@ class Benchmark (object):
                     self.shutdown_servers()
 
                 if hasattr(self, "postallocator_hook"):
-                    self.postallocator_hook((alloc_name, alloc), run,
-                                            verbose=src.globalvars.verbosity)
+                    self.postallocator_hook((alloc_name, alloc), run)
 
             print()
 

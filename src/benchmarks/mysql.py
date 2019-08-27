@@ -96,12 +96,13 @@ class BenchmarkMYSQL(Benchmark):
 
             self.shutdown_servers()
 
-    def cleanup(self):
+    @staticmethod
+    def cleanup():
         if os.path.exists("mysql_test"):
             print_status("Delete mysqld directory")
             shutil.rmtree("mysql_test", ignore_errors=True)
 
-    def process_output(self, result, stdout, stderr, allocator, perm, verbose):
+    def process_output(self, result, stdout, stderr, allocator, perm):
         result["transactions"] = re.search("transactions:\\s*(\\d*)", stdout).group(1)
         result["queries"] = re.search("queries:\\s*(\\d*)", stdout).group(1)
         # Latency

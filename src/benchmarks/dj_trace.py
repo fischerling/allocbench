@@ -143,7 +143,8 @@ class BenchmarkDJTrace(Benchmark):
 
         return False
 
-    def process_output(self, result, stdout, stderr, allocator, perm, verbose):
+    @staticmethod
+    def process_output(result, stdout, stderr, allocator, perm):
         def to_int(string):
             return int(string.replace(',', ""))
 

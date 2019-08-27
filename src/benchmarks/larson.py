@@ -28,7 +28,8 @@ class BenchmarkLarson(Benchmark):
         self.requirements = ["larson"]
         super().__init__()
 
-    def process_output(self, result, stdout, stderr, target, perm, verbose):
+    @staticmethod
+    def process_output(result, stdout, stderr, target, perm):
         for line in stdout.splitlines():
             res = THROUGHPUT_RE.match(line)
             if res:
