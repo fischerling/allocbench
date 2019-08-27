@@ -43,8 +43,7 @@ class Benchmark_Larson(Benchmark):
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                             ylabel="'l1 cache misses in %'",
                             title="'Larson cache misses: ' + arg + ' ' + str(arg_value)",
-                            filepostfix="cachemisses",
-                            yerr=False)
+                            filepostfix="cachemisses")
 
 
 larson = Benchmark_Larson()
