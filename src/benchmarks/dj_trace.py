@@ -19,7 +19,7 @@ CYCLES_RE = re.compile(f"^{TIME_RE} cycles$")
 CPU_TIME_RE = re.compile(f"^{TIME_RE} usec across.*threads$")
 
 MAX_RSS_RE = re.compile(f"^{RSS_RE} Kb Max RSS")
-IDEAL_RSS_RE = re.compile("^{RSS_RE} Kb Max Ideal RSS")
+IDEAL_RSS_RE = re.compile(f"^{RSS_RE} Kb Max Ideal RSS")
 
 MALLOC_RE = re.compile(f"^Avg malloc time:\\s*{TIME_RE} in.*calls$")
 CALLOC_RE = re.compile(f"^Avg calloc time:\\s*{TIME_RE} in.*calls$")
