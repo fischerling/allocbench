@@ -98,3 +98,9 @@ def print_warn(*objects, sep=' ', end='\n', file=sys.stdout):
 
 def print_error(*objects, sep=' ', end='\n', file=sys.stderr):
     allocbench_msg("RED", *objects, sep=sep, end=end, file=file)
+
+
+def print_license_and_exit():
+    print("Copyright (C) 2018-2019 Florian Fischer")
+    print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
+    exit(0)
