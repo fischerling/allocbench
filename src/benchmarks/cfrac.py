@@ -1,9 +1,11 @@
+""" Definition of the cfrac benchmark"""
+
 from src.benchmark import Benchmark
 
-class Benchmark_Cfrac(Benchmark):
+class BenchmarkCfrac(Benchmark):
+    """TODO"""
     def __init__(self):
         self.name = "cfrac"
-        self.descrition = """TODO."""
 
         self.cmd = "cfrac{binary_suffix} {num}"
 
@@ -37,4 +39,4 @@ class Benchmark_Cfrac(Benchmark):
         self.export_stats_to_dataref("VmHWM")
 
 
-cfrac = Benchmark_Cfrac()
+cfrac = BenchmarkCfrac()

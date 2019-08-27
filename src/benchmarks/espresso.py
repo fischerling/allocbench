@@ -1,15 +1,18 @@
+"""Definition of the espresso benchmark"""
+
 import os
 
 from src.benchmark import Benchmark
 import src.globalvars
 
-class Benchmark_Espresso(Benchmark):
+class BenchmarkEspresso(Benchmark):
+    """TODO"""
     def __init__(self):
         self.name = "espresso"
-        self.descrition = """TODO."""
 
         self.cmd = "espresso{binary_suffix} {file}"
-        self.args = {"file": [os.path.join(src.globalvars.benchsrcdir, self.name, "largest.espresso")]}
+        self.args = {"file": [os.path.join(src.globalvars.benchsrcdir, self.name,
+                                           "largest.espresso")]}
 
         super().__init__()
 
@@ -40,4 +43,4 @@ class Benchmark_Espresso(Benchmark):
         self.export_stats_to_dataref("VmHWM")
 
 
-espresso = Benchmark_Espresso()
+espresso = BenchmarkEspresso()

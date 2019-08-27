@@ -1,19 +1,23 @@
-import matplotlib.pyplot as plt
-import numpy as np
+"""Benchmark definition using the llvm-lld speed benchmark"""
+
 import os
 from urllib.request import urlretrieve
 import subprocess
 import sys
 
+import matplotlib.pyplot as plt
+
 from src.benchmark import Benchmark
-from src.util import print_status
 
 
 class BenchmarkLld(Benchmark):
+    """LLVM-lld speed benchmark
+
+    This benchmark runs the lld speed benchmark provided by the llvm project.
+    """
+
     def __init__(self):
         self.name = "lld"
-        self.descrition = """This benchmark runs the lld benchmarks provided
-                             by the llvm project."""
 
         self.run_dir = "lld-speed-test/{test}"
         # TODO: don't hardcode ld.lld location
@@ -33,11 +37,11 @@ class BenchmarkLld(Benchmark):
             readsofar = blocknum * blocksize
             if totalsize > 0:
                 percent = readsofar * 1e2 / totalsize
-                s = "\r%5.1f%% %*d / %d" % (
+                status = "\r%5.1f%% %*d / %d" % (
                     percent, len(str(totalsize)), readsofar, totalsize)
-                sys.stderr.write(s)
+                sys.stderr.write(status)
             else:  # total size is unknown
-                sys.stderr.write("\rdownloaded %d" % (readsofar,))
+                sys.stderr.write(f"\rdownloaded {readsofar}")
 
         test_dir = "lld-speed-test"
         test_archive = f"{test_dir}.tar.xz"
@@ -52,24 +56,24 @@ class BenchmarkLld(Benchmark):
                 sys.stderr.write("\n")
 
             # Extract tests
-            p = subprocess.run(["tar", "xf", test_archive], stdout=subprocess.PIPE,
-                               stderr=subprocess.PIPE, universal_newlines=True)
+            proc = subprocess.run(["tar", "xf", test_archive], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, universal_newlines=True)
 
             # delete archive
-            if p.returncode == 0:
+            if proc.returncode == 0:
                 os.remove(test_archive)
-                
 
         self.args["test"] = os.listdir(test_dir)
 
         return True
+
 
     def cleanup(self):
         for perm in self.iterate_args():
             a_out = os.path.join("lld-speed-test", perm.test, "a.out")
             if os.path.isfile(a_out):
                 os.remove(a_out)
-            
+
 
     def summary(self):
         args = self.results["args"]
@@ -77,12 +81,12 @@ class BenchmarkLld(Benchmark):
 
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
-                
+
                 plt.bar([i],
                         self.results["stats"][allocator][perm]["mean"]["task-clock"],
                         yerr=self.results["stats"][allocator][perm]["std"]["task-clock"],
                         label=allocator, color=allocators[allocator]["color"])
-            
+
             plt.legend(loc="best")
             plt.ylabel("Zeit in ms")
             plt.title(f"Gesamte Laufzeit {perm.test}")

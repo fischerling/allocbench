@@ -1,32 +1,36 @@
+"""Definition of the falsesahring benchmark"""
+
+import re
+
 import matplotlib.pyplot as plt
 import numpy as np
-import re
 
 from src.benchmark import Benchmark
 
-time_re = re.compile("^Time elapsed = (?P<time>\\d*\\.\\d*) seconds.$")
+TIME_RE = re.compile("^Time elapsed = (?P<time>\\d*\\.\\d*) seconds.$")
 
 
-class Benchmark_Falsesharing(Benchmark):
+class BenchmarkFalsesharing(Benchmark):
+    """Falsesharing benchmark.
+
+    This benchmarks makes small allocations and writes to them multiple
+    times. If the allocated objects are on the same cache line the writes
+    will be expensive because of cache thrashing.
+    """
+
     def __init__(self):
         self.name = "falsesharing"
-        self.descrition = """This benchmarks makes small allocations and writes
-                             to them multiple times. If the allocated objects
-                             are on the same cache line the writes will be
-                             expensive because of cache thrashing."""
 
         self.cmd = "cache-{bench}{binary_suffix} {threads} 100 8 1000000"
 
-        self.args = {
-                        "bench": ["thrash", "scratch"],
-                        "threads": Benchmark.scale_threads_for_cpus(2)
-                    }
+        self.args = {"bench": ["thrash", "scratch"],
+                     "threads": Benchmark.scale_threads_for_cpus(2)}
 
         self.requirements = ["cache-thrash", "cache-scratch"]
         super().__init__()
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
-        result["time"] = time_re.match(stdout).group("time")
+        result["time"] = TIME_RE.match(stdout).group("time")
 
     def summary(self):
         # Speedup thrash
@@ -40,13 +44,13 @@ class Benchmark_Falsesharing(Benchmark):
 
                 single_threaded_perm = self.Perm(bench=bench, threads=1)
                 single_threaded = np.mean([float(m["time"])
-                                          for m in self.results[allocator][single_threaded_perm]])
+                                           for m in self.results[allocator][single_threaded_perm]])
 
                 for perm in self.iterate_args_fixed({"bench": bench}, args=args):
 
-                    d = [float(m["time"]) for m in self.results[allocator][perm]]
+                    data = [float(m["time"]) for m in self.results[allocator][perm]]
 
-                    y_vals.append(single_threaded / np.mean(d))
+                    y_vals.append(single_threaded / np.mean(data))
 
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-',
                          label=allocator, color=allocators[allocator]["color"])
@@ -71,4 +75,4 @@ class Benchmark_Falsesharing(Benchmark):
                             fixed=["bench"])
 
 
-falsesharing = Benchmark_Falsesharing()
+falsesharing = BenchmarkFalsesharing()

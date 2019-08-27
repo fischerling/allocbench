@@ -1,57 +1,57 @@
-import matplotlib.pyplot as plt
-import numpy as np
+"""Benchmark definition using the traces collected by DJ Delorie"""
+
 import os
-from urllib.request import urlretrieve
 import sys
 import re
+from urllib.request import urlretrieve
+import matplotlib.pyplot as plt
+import numpy as np
 
 from src.benchmark import Benchmark
 from src.util import print_status
 
-comma_sep_number_re = "(?:\\d*(?:,\\d*)?)*"
-rss_re = "(?P<rss>" + comma_sep_number_re + ")"
-time_re = "(?P<time>" + comma_sep_number_re + ")"
 
-cycles_re = re.compile("^{} cycles$".format(time_re))
-cpu_time_re = re.compile("^{} usec across.*threads$".format(time_re))
+COMMA_SEP_NUMBER_RE = "(?:\\d*(?:,\\d*)?)*"
+RSS_RE = f"(?P<rss>{COMMA_SEP_NUMBER_RE})"
+TIME_RE = f"(?P<time>{COMMA_SEP_NUMBER_RE})"
 
-max_rss_re = re.compile("^{} Kb Max RSS".format(rss_re))
-ideal_rss_re = re.compile("^{} Kb Max Ideal RSS".format(rss_re))
+CYCLES_RE = re.compile(f"^{TIME_RE} cycles$")
+CPU_TIME_RE = re.compile(f"^{TIME_RE} usec across.*threads$")
 
-malloc_re = re.compile("^Avg malloc time:\\s*{} in.*calls$".format(time_re))
-calloc_re = re.compile("^Avg calloc time:\\s*{} in.*calls$".format(time_re))
-realloc_re = re.compile("^Avg realloc time:\\s*{} in.*calls$".format(time_re))
-free_re = re.compile("^Avg free time:\\s*{} in.*calls$".format(time_re))
+MAX_RSS_RE = re.compile(f"^{RSS_RE} Kb Max RSS")
+IDEAL_RSS_RE = re.compile("^{RSS_RE} Kb Max Ideal RSS")
+
+MALLOC_RE = re.compile(f"^Avg malloc time:\\s*{TIME_RE} in.*calls$")
+CALLOC_RE = re.compile(f"^Avg calloc time:\\s*{TIME_RE} in.*calls$")
+REALLOC_RE = re.compile(f"^Avg realloc time:\\s*{TIME_RE} in.*calls$")
+FREE_RE = re.compile(f"^Avg free time:\\s*{TIME_RE} in.*calls$")
 
 
-class Benchmark_DJ_Trace(Benchmark):
+class BenchmarkDJTrace(Benchmark):
+    """DJ Trace Benchmark
+
+    This benchmark uses the workload simulator written by DJ Delorie to
+    simulate workloads provided by him under https://delorie.com/malloc. Those
+    workloads are generated from traces of real aplications and are also used
+    by delorie to measure improvements in the glibc allocator.
+    """
+
     def __init__(self):
         self.name = "dj_trace"
-        self.descrition = """This benchmark uses the workload simulator written
-                             by DJ Delorie to simulate workloads provided by
-                             him under https://delorie.com/malloc. Those
-                             workloads are generated from traces of real
-                             aplications and are also used by delorie to
-                             measure improvements in the glibc allocator."""
 
         self.cmd = "trace_run{binary_suffix} dj_workloads/{workload}.wl"
         self.measure_cmd = ""
 
-        self.args = {
-                        "workload": [
-                                        "389-ds-2",
-                                        "dj",
-                                        "dj2",
-                                        "mt_test_one_alloc",
-                                        "oocalc",
-                                        "qemu-virtio",
-                                        "qemu-win7",
-                                        "proprietary-1",
-                                        "proprietary-2",
-                                      ]
-                    }
-        self.results = {
-                        "389-ds-2": {
+        self.args = {"workload": ["389-ds-2",
+                                  "dj",
+                                  "dj2",
+                                  "mt_test_one_alloc",
+                                  "oocalc",
+                                  "qemu-virtio",
+                                  "qemu-win7",
+                                  "proprietary-1",
+                                  "proprietary-2"]}
+        self.results = {"389-ds-2": {
                             "malloc": 170500018, "calloc": 161787184,
                             "realloc": 404134, "free": 314856324,
                             "threads": 41},
@@ -79,8 +79,7 @@ class Benchmark_DJ_Trace(Benchmark):
                             "free": 319919727, "threads": 20},
                         "proprietary-2": {
                             "malloc": 9753948, "calloc": 4693,
-                            "realloc": 117, "free": 10099261, "threads": 19},
-                        }
+                            "realloc": 117, "free": 10099261, "threads": 19}}
 
         self.requirements = ["trace_run"]
         super().__init__()
@@ -92,11 +91,11 @@ class Benchmark_DJ_Trace(Benchmark):
             readsofar = blocknum * blocksize
             if totalsize > 0:
                 percent = readsofar * 1e2 / totalsize
-                s = "\r%5.1f%% %*d / %d" % (
+                status = "\r%5.1f%% %*d / %d" % (
                     percent, len(str(totalsize)), readsofar, totalsize)
-                sys.stderr.write(s)
+                sys.stderr.write(status)
             else:  # total size is unknown
-                sys.stderr.write("\rdownloaded %d" % (readsofar,))
+                sys.stderr.write(f"\rdownloaded {readsofar}")
 
         if not os.path.isdir("dj_workloads"):
             os.mkdir("dj_workloads")
@@ -107,8 +106,8 @@ class Benchmark_DJ_Trace(Benchmark):
                     "proprietary-2": "92M", "qemu-win7": "23M",
                     "389-ds-2": "3.4G", "dj2": "294M"}
 
-        for wl in self.args["workload"]:
-            file_name = wl + ".wl"
+        for workload in self.args["workload"]:
+            file_name = workload + ".wl"
             file_path = os.path.join("dj_workloads", file_name)
             if not os.path.isfile(file_path):
                 if download_all is None:
@@ -119,47 +118,49 @@ class Benchmark_DJ_Trace(Benchmark):
                     else:
                         download_all = choice in ['', 'Y', 'y']
 
-                if (not download_all and
-                        input("want to download {} ({}) [Y/n] ".format(wl, wl_sizes[wl])) not in ['', 'Y', 'y']):
-                    continue
+                if not download_all:
+                    choice = input(f"want to download {workload} ({wl_sizes[workload]}) [Y/n] ")
+                    if choice not in ['', 'Y', 'y']:
+                        continue
 
-                if download_all:
-                    print_status("downloading {} ({}) ...".format(wl, wl_sizes[wl]))
+                else:
+                    print_status(f"downloading {workload} ({wl_sizes[workload]}) ...")
 
                 url = "http://www.delorie.com/malloc/" + file_name
                 urlretrieve(url, file_path, reporthook)
                 sys.stderr.write("\n")
 
         available_workloads = []
-        for wl in self.args["workload"]:
-            file_name = wl + ".wl"
+        for workload in self.args["workload"]:
+            file_name = workload + ".wl"
             file_path = os.path.join("dj_workloads", file_name)
             if os.path.isfile(file_path):
-                available_workloads.append(wl)
+                available_workloads.append(workload)
 
-        if len(available_workloads) > 0:
+        if available_workloads:
             self.args["workload"] = available_workloads
             return True
 
         return False
 
     def process_output(self, result, stdout, stderr, allocator, perm, verbose):
-        def to_int(s):
-            return int(s.replace(',', ""))
+        def to_int(string):
+            return int(string.replace(',', ""))
 
-        regexs = {7: malloc_re, 8: calloc_re, 9: realloc_re, 10: free_re}
+
+        regexs = {7: MALLOC_RE, 8: CALLOC_RE, 9: REALLOC_RE, 10: FREE_RE}
         functions = {7: "malloc", 8: "calloc", 9: "realloc", 10: "free"}
-        for i, l in enumerate(stdout.splitlines()):
+        for i, line in enumerate(stdout.splitlines()):
             if i == 0:
-                result["cycles"] = to_int(cycles_re.match(l).group("time"))
+                result["cycles"] = to_int(CYCLES_RE.match(line).group("time"))
             elif i == 2:
-                result["cputime"] = to_int(cpu_time_re.match(l).group("time"))
+                result["cputime"] = to_int(CPU_TIME_RE.match(line).group("time"))
             elif i == 3:
-                result["Max_RSS"] = to_int(max_rss_re.match(l).group("rss"))
+                result["Max_RSS"] = to_int(MAX_RSS_RE.match(line).group("rss"))
             elif i == 4:
-                result["Ideal_RSS"] = to_int(ideal_rss_re.match(l).group("rss"))
+                result["Ideal_RSS"] = to_int(IDEAL_RSS_RE.match(line).group("rss"))
             elif i in [7, 8, 9, 10]:
-                res = regexs[i].match(l)
+                res = regexs[i].match(line)
                 fname = functions[i]
                 result["avg_" + fname] = to_int(res.group("time"))
 
@@ -171,12 +172,12 @@ class Benchmark_DJ_Trace(Benchmark):
         cycles_means = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
-                d = [x["cputime"] for x in self.results[allocator][perm]]
+                data = [x["cputime"] for x in self.results[allocator][perm]]
                 # data is in milliseconds
-                cpu_time_means[allocator][perm] = np.mean(d)/1000
+                cpu_time_means[allocator][perm] = np.mean(data)/1000
 
-                d = [x["cycles"] for x in self.results[allocator][perm]]
-                cycles_means[allocator][perm] = np.mean(d)
+                data = [x["cycles"] for x in self.results[allocator][perm]]
+                cycles_means[allocator][perm] = np.mean(data)
 
                 plt.bar([i], cpu_time_means[allocator][perm], label=allocator,
                         color=allocators[allocator]["color"])
@@ -234,8 +235,8 @@ class Benchmark_DJ_Trace(Benchmark):
                                 title='"Highwatermark of Vm (VmHWM)"',
                                 filepostfix="newrss")
 
-        del(allocators["Ideal_RSS"])
-        del(self.results["stats"]["Ideal_RSS"])
+        del allocators["Ideal_RSS"]
+        del self.results["stats"]["Ideal_RSS"]
 
         rss_means = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
@@ -337,7 +338,7 @@ class Benchmark_DJ_Trace(Benchmark):
 
             # Changes. First allocator in allocators is the reference
             fmt_changes = "{:<20} {:>14.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}%"
-            for i, allocator in enumerate(list(allocators)[1:]):
+            for allocator in list(allocators)[1:]:
                 print("{0} Changes {1} {0}".format("-" * 10, allocator), file=f)
                 print(fmt.format("Workload", "Total", "malloc", "calloc",
                                  "realloc", "free", "RSS"), file=f)
@@ -384,4 +385,4 @@ class Benchmark_DJ_Trace(Benchmark):
                       '\n', file=f)
 
 
-dj_trace = Benchmark_DJ_Trace()
+dj_trace = BenchmarkDJTrace()

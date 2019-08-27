@@ -1,10 +1,15 @@
+"""Definition of the realloc micro benchmark"""
+
 from src.benchmark import Benchmark
 
 
-class Benchmark_Realloc(Benchmark):
+class BenchmarkRealloc(Benchmark):
+    """Realloc micro benchmark
+
+    realloc a pointer 100 times
+    """
     def __init__(self):
         self.name = "realloc"
-        self.descrition = """Realloc 100 times"""
 
         self.cmd = "realloc"
 
@@ -22,4 +27,4 @@ class Benchmark_Realloc(Benchmark):
         self.export_stats_to_dataref("task-clock")
 
 
-realloc = Benchmark_Realloc()
+realloc = BenchmarkRealloc()

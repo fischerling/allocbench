@@ -1,12 +1,16 @@
+"""Definition of the loop micro benchmark"""
+
 from src.benchmark import Benchmark
-from src.allocators.bumpptr import bumpptr
 
 
-class Benchmark_Loop(Benchmark):
+class BenchmarkLoop(Benchmark):
+    """Loop micro benchmark
+
+    This benchmark allocates and frees n blocks in t concurrent threads.
+    """
+
     def __init__(self):
         self.name = "loop"
-        self.descrition = """This benchmark allocates and frees n blocks in t concurrent
-                             threads."""
 
         self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
@@ -15,9 +19,6 @@ class Benchmark_Loop(Benchmark):
 
         self.requirements = ["loop"]
         super().__init__()
-
-        # add bumpptr alloc
-        self.allocators["bumpptr"] = bumpptr.build()
 
     def summary(self):
         # Speed
@@ -30,7 +31,7 @@ class Benchmark_Loop(Benchmark):
         scale = list(self.results["allocators"].keys())[0]
         self.plot_fixed_arg("perm.nthreads / ({task-clock}/1000)",
                             ylabel='"MOPS/cpu-second normalized {}"'.format(scale),
-                            title='"Loop: " + arg + " " + str(arg_value) + " normalized {}"'.format(scale),
+                            title=f'"Loop: " + arg + " " + str(arg_value) + " normalized {scale}"',
                             filepostfix="time.norm",
                             scale=scale,
                             autoticks=False)
@@ -50,4 +51,4 @@ class Benchmark_Loop(Benchmark):
         self.export_stats_to_dataref("task-clock")
 
 
-loop = Benchmark_Loop()
+loop = BenchmarkLoop()

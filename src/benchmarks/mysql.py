@@ -1,5 +1,4 @@
 import multiprocessing
-import numpy as np
 import os
 import re
 import shutil
@@ -7,12 +6,11 @@ import subprocess
 from subprocess import PIPE
 import sys
 
-from src.globalvars import allocators
 from src.benchmark import Benchmark
 from src.util import print_status, print_debug, print_info2
 
 TESTDIR = os.path.join(os.getcwd(), "mysql_test")
-MYSQL_USER = "root"
+MYSQL_USER = "fischerling"
 RUN_TIME = 10
 TABLES = 5
 
@@ -26,10 +24,14 @@ SERVER_CMD = (f"mysqld --no-defaults -h {TESTDIR} --socket={TESTDIR}/socket --po
               f"--max-connections={multiprocessing.cpu_count()} --secure-file-priv=")
 
 
-class Benchmark_MYSQL(Benchmark):
+class BenchmarkMYSQL(Benchmark):
+    """Mysql bechmark definition
+
+    See sysbench documentation for more details about the oltp_read_only benchmark
+    """
+
     def __init__(self):
         self.name = "mysql"
-        self.descrition = """See sysbench documentation."""
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
         self.cmd = CMD
@@ -55,8 +57,8 @@ class Benchmark_MYSQL(Benchmark):
 
             # Init database
             self.results["facts"]["mysqld"] = subprocess.run(["mysqld", "--version"],
-                                                            stdout=PIPE,
-                                                            universal_newlines=True).stdout[:-1]
+                                                             stdout=PIPE,
+                                                             universal_newlines=True).stdout[:-1]
             if "MariaDB" in self.results["facts"]["mysqld"]:
                 init_db_cmd = ["mysql_install_db", "--basedir=/usr",
                                f"--datadir={TESTDIR}"]
@@ -77,16 +79,15 @@ class Benchmark_MYSQL(Benchmark):
             self.start_servers()
 
             # Create sbtest TABLE
-            p = subprocess.run((f"mysql -u {MYSQL_USER} -S {TESTDIR}/socket").split(),
-                                input=b"CREATE DATABASE sbtest;\n",
-                                stdout=PIPE, stderr=PIPE)
+            p = subprocess.run(f"mysql -u {MYSQL_USER} -S {TESTDIR}/socket".split(),
+                               input=b"CREATE DATABASE sbtest;\n",
+                               stdout=PIPE, stderr=PIPE)
 
             if p.returncode != 0:
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
                 raise Exception("Creating test tables failed with:", p.returncode)
 
             print_status("Prepare test tables ...")
-            ret = True
             p = subprocess.run(PREPARE_CMD.split(), stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
                 print_debug("Stdout:", p.stdout, file=sys.stderr)
@@ -159,11 +160,12 @@ class Benchmark_MYSQL(Benchmark):
         # Colored latex table showing transactions count
         d = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
-            for i, allocator in enumerate(allocators):
-                t = [float(x["transactions"]) for x in self.results[allocator][perm]]
-                m = np.mean(t)
-                s = np.std(t)/m
-                d[allocator][perm] = {"mean": m, "std": s}
+            for allocator in allocators:
+                transactions = [float(measure["transactions"])
+                                for measure in self.results[allocator][perm]]
+                mean = np.mean(transactions)
+                std = np.std(transactions)/mean
+                d[allocator][perm] = {"mean": mean, "std": std}
 
         mins = {}
         maxs = {}
@@ -208,4 +210,4 @@ class Benchmark_MYSQL(Benchmark):
         self.export_stats_to_dataref("transactions")
 
 
-mysql = Benchmark_MYSQL()
+mysql = BenchmarkMYSQL()

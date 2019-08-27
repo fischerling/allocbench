@@ -1,12 +1,15 @@
+"""Definition of the httpd benchmark"""
+
 import re
 
 from src.benchmark import Benchmark
 
 
-class Benchmark_HTTPD(Benchmark):
+class BenchmarkHTTPD(Benchmark):
+    """TODO"""
+
     def __init__(self):
         self.name = "httpd"
-        self.descrition = """TODO"""
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(2),
                      "site": ["index.html", "index.php"]}
@@ -60,4 +63,4 @@ class Benchmark_HTTPD(Benchmark):
                                # title='"ab -n 10000 -c threads"')
 
 
-httpd = Benchmark_HTTPD()
+httpd = BenchmarkHTTPD()

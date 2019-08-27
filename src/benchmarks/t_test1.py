@@ -1,12 +1,16 @@
+"""Definition of the commonly used t-test1 allocator test"""
+
 from src.benchmark import Benchmark
-from src.allocators.bumpptr import bumpptr
 
 
-class Benchmark_t_test1(Benchmark):
+class BenchmarkTTest1(Benchmark):
+    """t-test1 unit test
+
+    This benchmark from ptmalloc2 allocates and frees n bins in t concurrent threads.
+    """
+
     def __init__(self):
         self.name = "t_test1"
-        self.descrition = """This benchmark from ptmalloc2 allocates and frees
-                             n bins in t concurrent threads."""
 
         self.cmd = "t-test1 {nthreads} {nthreads} 1000000 {maxsize}"
 
@@ -15,8 +19,6 @@ class Benchmark_t_test1(Benchmark):
 
         self.requirements = ["t-test1"]
         super().__init__()
-
-        self.allocators["bumpptr"] = bumpptr.build()
 
     def summary(self):
         # mops / per second
@@ -50,4 +52,4 @@ class Benchmark_t_test1(Benchmark):
         self.export_stats_to_csv("task-clock")
 
 
-t_test1 = Benchmark_t_test1()
+t_test1 = BenchmarkTTest1()
