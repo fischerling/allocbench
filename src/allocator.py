@@ -1,6 +1,7 @@
 import copy
 from datetime import datetime
 import inspect
+import importlib
 import os
 import shutil
 import subprocess
@@ -180,4 +181,62 @@ def patch_alloc(name, alloc, patches, **kwargs):
     new_alloc.__dict__.update((k, v) for k, v in kwargs.items() if k in alloc.allowed_attributes)
 
     return new_alloc
+
+
+def read_allocators_collection_file(alloc_file):
+    """Read and evaluate a python file looking for an exported dict called allocators"""
+
+    exec_globals = {"__file__": name}
+    with open(name, "r") as alloc_file:
+        exec(compile(alloc_file.read()), exec_globals)
+
+    if "allocators" in exec_globals:
+        return exec_globals["allocators"]
+    else:
+        print_error("No global dictionary 'allocators' in", name)
+        return {}
+
+def collect_allocators(allocators):
+    """Collect allocators to benchmark
+
+    If allocators is None we use either the allocators exported in the default
+    allocators file at build/allocators/allocators.py or the ones installed.
+
+    Otherwise allocators is interpreted as a list of names or files. If an entry in
+    allocators is a file it is handled as a allocator collection file exporting
+    a allocators variable. If the entry is no file it is interpreted as an allocator
+    name and is searched for in our allocator definitions located at src/allocators.
+    """
+
+    # Default allocators definition file
+    default_allocators_file = "build/allocators/allocators.py"
+
+    if allocators is None and os.path.isfile(default_allocators_file):
+        return read_allocators_collection_file(default_allocators_file)
+
+    elif allocators is not None:
+        ret = {}
+        for name in allocators:
+            # file exists -> interpret as python file with a global variable allocators
+            if os.path.isfile(name):
+                print_status("Sourcing allocators definitions at", name, "...")
+                ret.update(read_allocators_collection_file(name))
+
+            # file is one of our allocator definitions import it
+            elif os.path.isfile("src/allocators/" + name + ".py"):
+                module = importlib.import_module('src.allocators.' + name)
+                # name is collection
+                if hasattr(module, "allocators"):
+                    for alloc in module.allocators:
+                        ret[alloc.name] = alloc.build()
+                # name is single allocator
+                elif issubclass(getattr(module, name).__class__, src.allocator.Allocator):
+                    ret[name] = getattr(module, name).build()
+            else:
+                print_error(name, "is neither a python file or a known allocator definition.")
+        return ret
+    else:
+        print_status("Using system-wide installed allocators ...")
+        importlib.import_module('src.allocators.installed_allocators')
+        return src.allocators.installed_allocators.allocators
 
