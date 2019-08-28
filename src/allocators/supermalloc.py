@@ -36,6 +36,7 @@ class SuperMalloc(Allocator):
         kwargs["LD_PRELOAD"] = "{srcdir}/release/lib/libsupermalloc.so"
         kwargs["build_cmds"] = ["cd {srcdir}/release; make",
                                 "mkdir -p {dir}"]
+        kwargs["patches"] = ["{patchdir}/remove_faulty_aligned_alloc_test.patch"]
 
         super().__init__(name, **kwargs)
 

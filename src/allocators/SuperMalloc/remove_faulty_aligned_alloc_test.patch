@@ -1,0 +1,13 @@
+diff --git a/Makefile.include b/Makefile.include
+index bb3cef3..09ee7eb 100644
+--- a/Makefile.include
++++ b/Makefile.include
+@@ -37,7 +37,7 @@ default: tests
+ #lib: $(LIB)/libsupermalloc.so
+ #.PHONY: lib
+ 
+-TESTS = aligned_alloc calloc posix_memalign $(UNITTESTS) test-malloc_test new-malloc-test malloc-test-fixed-work test22 cache-index madvise-small test38 test-no-overlaps #unit-timing
++TESTS = calloc posix_memalign $(UNITTESTS) test-malloc_test new-malloc-test malloc-test-fixed-work test22 cache-index madvise-small test38 test-no-overlaps #unit-timing
+ TESTS_IN_DIR = $(patsubst %, $(BLD)/%, $(TESTS))
+ 
+ LDFLAGS += -ldl
