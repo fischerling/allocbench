@@ -17,11 +17,17 @@ srcdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())
 """Source directory for all benchmarks"""
 benchsrcdir = os.path.join(srcdir, "benchmarks")
 
+"""Source directory for all benchmarks"""
+allocsrcdir = os.path.join(srcdir, "allocators")
+
 """Root directory of allocbench"""
 allocbenchdir = os.path.dirname(srcdir)
 
 """Path of the build directory"""
 builddir = os.path.join(allocbenchdir, "build")
+
+"""Path of the allocators build directory"""
+allocbuilddir = os.path.join(builddir, "allocators")
 
 """Directory were the benchmark results are stored"""
 resdir = None
