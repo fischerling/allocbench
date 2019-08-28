@@ -79,7 +79,8 @@ def main():
     parser.add_argument("-v", "--verbose", help="more output", action='count')
     parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
     parser.add_argument("-xb", "--exclude-benchmarks", help="explicitly excluded benchmarks", nargs='+')
-    parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+')
+    parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+',
+                        default=["all"])
     parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
     parser.add_argument("--license", help="print license info and exit", action='store_true')
 
