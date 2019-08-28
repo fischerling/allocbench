@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
 
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Start an allocbench run"""
+
 import argparse
 import atexit
 import datetime
@@ -10,25 +29,14 @@ import subprocess
 import sys
 import traceback
 
+from src.allocator import collect_allocators
 import src.chattyparser
 import src.facter
 import src.globalvars
-from src.util import *
-
-
-parser = argparse.ArgumentParser(description="benchmark memory allocators")
-parser.add_argument("-ds, --dont-save", action='store_true', dest="dont_save",
-                    help="don't save benchmark results in RESULTDIR")
-parser.add_argument("-l", "--load", help="load benchmark results from directory", type=str)
-parser.add_argument("--analyze", help="analyze benchmark behavior using malt", action="store_true")
-parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
-parser.add_argument("-v", "--verbose", help="more output", action='count')
-parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
-parser.add_argument("-xb", "--exclude-benchmarks", help="explicitly excluded benchmarks", nargs='+')
-parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+')
-parser.add_argument("-ns", "--nosum", help="don't produce plots", action='store_true')
-parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
-parser.add_argument("--license", help="print license info and exit", action='store_true')
+from src.util import find_cmd
+from src.util import print_status, print_warn, print_error
+from src.util import print_info, print_info2, print_debug
+from src.util import print_license_and_exit
 
 
 def epilog():
@@ -42,22 +50,22 @@ def epilog():
             endtime = datetime.datetime.now().isoformat()
             endtime = endtime[:endtime.rfind(':')]
             src.globalvars.facts["endtime"] = endtime
-            with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as f:
-                pickle.dump(src.globalvars.facts, f)
+            with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as facts_file:
+                pickle.dump(src.globalvars.facts, facts_file)
 
 
 def check_dependencies():
     """Check if known requirements of allocbench are met"""
     # used python 3.6 features: f-strings
     if sys.version_info[0] < 3 or sys.version_info[1] < 6:
-        logger.critical("At least python version 3.6 is required.")
+        print_error("At least python version 3.6 is required.")
         exit(1)
 
     # matplotlib is needed by Benchmark.plot_*
     try:
-        import matplotlib
+        importlib.import_module("matplotlib")
     except ModuleNotFoundError:
-        logger.critical("matplotlib not found.")
+        print_error("matplotlib not found.")
         exit(1)
     # TODO mariadb
 
@@ -65,11 +73,19 @@ def check_dependencies():
 def main():
     check_dependencies()
 
+    parser = argparse.ArgumentParser(description="benchmark memory allocators")
+    parser.add_argument("--analyze", help="analyze benchmark behavior using malt", action="store_true")
+    parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
+    parser.add_argument("-v", "--verbose", help="more output", action='count')
+    parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
+    parser.add_argument("-xb", "--exclude-benchmarks", help="explicitly excluded benchmarks", nargs='+')
+    parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+')
+    parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
+    parser.add_argument("--license", help="print license info and exit", action='store_true')
+
     args = parser.parse_args()
     if args.license:
-        print("Copyright (C) 2018-2019 Florian Fischer")
-        print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
-        return
+        print_license_and_exit()
 
     atexit.register(epilog)
 
@@ -94,98 +110,29 @@ def main():
         print("", end="", flush=True)
     subprocess.run(make_cmd)
 
-    # collect facts about benchmark environment
-    src.facter.collect_facts()
-
     # allocators to benchmark
-    allocators = {}
-    # Default allocators definition file
-    default_allocators_file = "build/allocators/allocators.py"
+    src.globalvars.allocators = collect_allocators(args.allocators)
 
-    if args.allocators is None and os.path.isfile(default_allocators_file):
-        # TODO: fix default allocator file
-        # allocators.append(default_allocators_file)
-        pass
-
-    elif args.allocators is not None:
-        for name in args.allocators:
-            # file exists -> interpret as python file with a global variable allocators
-            if os.path.isfile(name):
-                with open(name, "r") as f:
-                    print_status("Sourcing allocators definitions at", name, "...")
-                    g = {}
-                    exec(f.read(), g)
-
-                if "allocators" in g:
-                    allocators.update(g["allocators"])
-                else:
-                    print_error("No global dictionary 'allocators' in", name)
-
-            # file is one of our allocator definitions import it
-            elif os.path.isfile("src/allocators/" + name + ".py"):
-                module = importlib.import_module('src.allocators.' + name)
-                # name is collection
-                if hasattr(module, "allocators"):
-                    for alloc in module.allocators:
-                        allocators[alloc.name] = alloc.build()
-                # name is single allocator
-                elif issubclass(getattr(module, name).__class__, src.allocator.Allocator):
-                    allocators[name] = getattr(module, name).build()
-            else:
-                print_error(name, "is neither a python file or a known allocator definition.")
-    else:
-        print_status("Using system-wide installed allocators ...")
-        importlib.import_module('src.allocators.installed_allocators')
-        allocators = src.allocators.installed_allocators.allocators
-
-    # set colors
-    explicit_colors = [v["color"] for k, v in allocators.items() if v["color"] is not None]
-    print_debug("Explicit colors:", explicit_colors)
-    avail_colors = [color for color in ["C" + str(i) for i in range(0,16)] if color not in explicit_colors]
-    print_debug("available colors:", avail_colors)
-
-    for k, v in allocators.items():
-        if v["color"] is None:
-            v["color"] = avail_colors.pop()
-
-    src.globalvars.allocators = allocators
     print_info("Allocators:", *src.globalvars.allocators.keys())
     print_debug("Allocators:", *src.globalvars.allocators.items())
 
-    # Load old results
-    if args.load:
-        with open(os.path.join(args.load, "facts.save"), "rb") as f:
-            old_facts = pickle.load(f)
+    # collect facts about benchmark environment
+    src.facter.collect_facts()
 
-        if old_facts != src.globalvars.facts and args.runs > 0:
-            print_error("Can't combine benchmarks with different facts")
-            print_error("Aborting.")
-            exit(1)
-        # We are just summarizing old results -> use their facts
-        else:
-            src.globalvars.facts = old_facts
+    # Create result directory
+    if args.resultdir:
+        src.globalvars.resdir = os.path.join(args.resultdir)
     else:
-        starttime = datetime.datetime.now().isoformat()
-        # strip seconds from string
-        starttime = starttime[:starttime.rfind(':')]
-        src.globalvars.facts["starttime"] = starttime
+        src.globalvars.resdir = os.path.join("results",
+                                             src.globalvars.facts["hostname"],
+                                             src.globalvars.facts["starttime"])
 
-    # Create result directory if we analyze, save or summarize
-    need_resultdir = not (args.nosum and args.dont_save and not args.analyze)
-    if need_resultdir:
-        if args.resultdir:
-            resdir = os.path.join(args.resultdir)
-        else:
-            resdir = os.path.join("results", src.globalvars.facts["hostname"],
-                                  src.globalvars.facts["starttime"])
-        # Make resdir globally available
-        src.globalvars.resdir = resdir
+    print_info2("Creating result dir:", src.globalvars.resdir)
+    os.makedirs(src.globalvars.resdir, exist_ok=True)
 
-        print_info2("Creating result dir:", resdir)
-        os.makedirs(resdir, exist_ok=True)
+    cwd = os.getcwd()
 
     # Run actual benchmarks
-    cwd = os.getcwd()
     for bench in src.globalvars.benchmarks:
         if args.benchmarks and bench not in args.benchmarks:
             continue
@@ -193,92 +140,70 @@ def main():
         if args.exclude_benchmarks and bench in args.exclude_benchmarks:
             continue
 
-        try:
-            bench_module = importlib.import_module(f"src.benchmarks.{bench}")
-            if not hasattr(bench_module, bench):
-                continue
+        bench_module = importlib.import_module(f"src.benchmarks.{bench}")
 
-            bench = getattr(bench_module, bench)
+        if not hasattr(bench_module, bench):
+            print_error(f"{bench_module} has no member {bench}.")
+            print_error(f"Skipping {bench_module}")
+            continue
+
+        bench = getattr(bench_module, bench)
+
+        print_status("Preparing", bench.name, "...")
+        bench.prepare()
+
+        if args.analyze:
+            print_status("Analysing {} ...".format(bench))
 
             # Create benchmark result directory
-            bench.result_dir = os.path.abspath(os.path.join(resdir, bench.name))
-            if args.analyze or not args.nosum:
+            if not os.path.isdir(bench.result_dir):
                 print_info2("Creating benchmark result dir:", bench.result_dir)
                 os.makedirs(bench.result_dir, exist_ok=True)
 
-            if args.load:
-                bench.load(path=args.load)
+            if find_cmd("malt") is not None:
+                analyze_alloc = "malt"
+            else:
+                print_warn("malt not found. Using chattymalloc.")
+                analyze_alloc = "chattymalloc"
 
-            if args.runs > 0 or args.analyze:
-                print_status("Preparing", bench.name, "...")
-                bench.prepare()
+            old_allocs = bench.allocators
+            analyze_alloc_module = importlib.import_module(f"src.allocators.{analyze_alloc}")
+            bench.allocators = {analyze_alloc: getattr(analyze_alloc_module, analyze_alloc).build()}
 
-            if args.analyze:
-                print_status("Analysing {} ...".format(bench))
-                if find_cmd("malt") is not None:
-                    analyze_alloc = "malt"
-                else:
-                    print_warn("malt not found. Using chattymalloc.")
-                    analyze_alloc = "chattymalloc"
+            try:
+                bench.run(runs=1)
+            except Exception:
+                print_error(traceback.format_exc())
+                print_error("Skipping analysis of", bench, "!")
 
-                old_allocs = bench.allocators
-                analyze_alloc_module = importlib.import_module(f"src.allocators.{analyze_alloc}")
-                bench.allocators = {analyze_alloc: getattr(analyze_alloc_module, analyze_alloc).build()}
+            # Remove results for analyze_alloc
+            if analyze_alloc in bench.results:
+                del bench.results[analyze_alloc]
+            if "stats" in bench.results and analyze_alloc in bench.results["stats"]:
+                del bench.results["stats"][analyze_alloc]
 
-                try:
-                    bench.run(runs=1)
-                except Exception:
-                    print_error(traceback.format_exc())
-                    print_error("Skipping analysis of", bench, "!")
+            # restore allocs
+            bench.allocators = old_allocs
 
-                # Remove results for analyze_alloc
-                if analyze_alloc in bench.results:
-                    del(bench.results[analyze_alloc])
-                if "stats" in bench.results and analyze_alloc in bench.results["stats"]:
-                    del(bench.results["stats"][analyze_alloc])
-
-                # restore allocs
-                bench.allocators = old_allocs
-
-                if not args.nosum and analyze_alloc == "chattymalloc":
-                    print_info("Plotting chattymalloc histograms")
-                    for f in os.listdir(bench.result_dir):
-                        if f.startswith("chatty_") and f.endswith(".txt"):
-                            src.chattyparser.plot(os.path.join(bench.result_dir, f))
-
-            if args.runs > 0:
-                print_status("Running", bench.name, "...")
+        if args.runs > 0:
+            print_status("Running", bench.name, "...")
+            try:
                 bench.run(runs=args.runs)
-
-            if need_resultdir:
-                print_info2("Changing cwd to:", resdir)
-                os.chdir(resdir)
-
-                # Save results in resultdir
-                if not args.dont_save:
-                    bench.save()
-
-                # Summarize benchmark in benchmark specific resultdir
-                # Only summarize if we have data.
-                if not args.nosum and (args.runs > 0 or args.load):
-                    os.chdir(bench.name)
-                    print_status("Summarizing", bench.name, "...")
-                    bench.summary()
-
+            except Exception:
+                # Reset cwd
                 os.chdir(cwd)
 
-            if args.runs > 0 and hasattr(bench, "cleanup"):
-                print_status("Cleaning up", bench.name, "...")
-                bench.cleanup()
+                print_error(traceback.format_exc())
+                print_error("Skipping", bench, "!")
 
-        except Exception:
-            # Reset cwd
-            os.chdir(cwd)
+                continue
 
-            print_error(traceback.format_exc())
-            print_error("Skipping", bench, "!")
+        # Save results in resultdir
+        bench.save(os.path.join(src.globalvars.resdir, f"{bench.name}.save"))
 
-            continue
+        if hasattr(bench, "cleanup"):
+            print_status("Cleaning up", bench.name, "...")
+            bench.cleanup()
 
 
 if __name__ == "__main__":
