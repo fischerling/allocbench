@@ -107,8 +107,6 @@ class AllocatorSources:
 
         print_status("Patching", self.name, "...")
         for patch in patches:
-            print(self.patchdir)
-            print(patch)
             with open(patch.format(patchdir=self.patchdir), "rb") as patch_file:
                 proc = subprocess.run("patch -p1", shell=True, cwd=cwd,
                                       stderr=subprocess.PIPE, stdout=stdout,

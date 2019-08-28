@@ -4,6 +4,10 @@
 
 - implement requirements for allocators
 
+- convert cmake build systems to make: espresso, cfrac
+
+- merge measurements if facts match
+
 - Use https://www4.cs.fau.de/~flow/allocbench/dj_workloads.tar.xz
 - verify (commit id, checksum) remote sources
 
