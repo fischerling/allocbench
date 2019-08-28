@@ -1,4 +1,22 @@
-import copy
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Alloactor related class definitions and helpers"""
+
 from datetime import datetime
 import inspect
 import importlib
@@ -11,31 +29,36 @@ import src.globalvars
 from src.util import print_status, print_debug, print_error, print_info2
 
 
-library_path = ""
-for l in subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        universal_newlines=True).stdout.splitlines():
+LIBRARY_PATH = ""
+for line in subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           universal_newlines=True).stdout.splitlines():
 
-    if not l.startswith('\t'):
-        library_path += l
+    if not line.startswith('\t'):
+        LIBRARY_PATH += line
 
-builddir = os.path.join(src.globalvars.builddir, "allocators")
-srcdir = os.path.join(builddir, "src")
+BUILDDIR = os.path.join(src.globalvars.builddir, "allocators")
+SRCDIR = os.path.join(src.globalvars.allocbuilddir, "src")
 
-if not os.path.isdir(srcdir):
-    os.makedirs(srcdir)
+if not os.path.isdir(SRCDIR):
+    os.makedirs(SRCDIR)
 
 
-class Allocator_Sources (object):
-    def __init__(self, name, retrieve_cmds=[], prepare_cmds=[], reset_cmds=[]):
+class AllocatorSources:
+    """Class representing sources an allocator is build from
+
+    AllocatorSources can retrieve, prepare and reset their managed sources
+    """
+    def __init__(self, name, retrieve_cmds=None, prepare_cmds=None, reset_cmds=None):
         self.name = name
-        self.dir = os.path.join(srcdir, self.name)
-        self.retrieve_cmds = retrieve_cmds
-        self.patchdir = os.path.join("src/allocators/", self.name)
-        self.prepare_cmds = prepare_cmds
-        self.reset_cmds = reset_cmds
+        self.dir = os.path.join(SRCDIR, self.name)
+        self.patchdir = os.path.join(src.globalvars.allocsrcdir, self.name)
+        self.retrieve_cmds = retrieve_cmds or []
+        self.prepare_cmds = prepare_cmds or []
+        self.reset_cmds = reset_cmds or []
 
-    def run_cmds(self, function, cwd=srcdir):
+    def run_cmds(self, function, cwd=SRCDIR):
+        """Helper to run retrieve, prepare or reset commands"""
         print_status(function, self.name, "...")
 
         cmds = getattr(self, function+"_cmds")
@@ -43,17 +66,23 @@ class Allocator_Sources (object):
         stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
 
         for cmd in cmds:
-            p = subprocess.run(cmd, shell=True, cwd=cwd, stderr=subprocess.PIPE,
-                               stdout=stdout)
+            proc = subprocess.run(cmd, shell=True, cwd=cwd,
+                                  stderr=subprocess.PIPE, stdout=stdout,
+                                  universal_newlines=True)
 
-            if p.returncode:
-                print_error(function, self.name, "failed with", p.returncode,
+            if proc.returncode:
+                print_error(function, self.name, "failed with", proc.returncode,
                             file=sys.stderr)
-                print_debug(p.stderr, file=sys.stderr)
+                print_debug(proc.stderr, file=sys.stderr)
                 return False
         return True
 
     def prepare(self):
+        """Prepare the managed sources for building
+
+        If the sources aren't available yet they are retrieved.
+        Otherwise they are reset.
+        """
         if not os.path.isdir(self.dir):
             if (not self.run_cmds("retrieve") or
                     not self.run_cmds("prepare", cwd=self.dir)):
@@ -64,38 +93,45 @@ class Allocator_Sources (object):
             self.reset()
 
     def reset(self):
+        """Reset the managed sources"""
         if not self.run_cmds("reset", cwd=self.dir):
             exit(1)
 
     def patch(self, patches):
+        """Patch the managed sources using patch(1)"""
         if not patches:
             return
 
         stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
-        cwd = os.path.join(srcdir, self.name)
+        cwd = os.path.join(SRCDIR, self.name)
 
         print_status("Patching", self.name, "...")
         for patch in patches:
-            with open(patch.format(patchdir=self.patchdir), "rb") as f:
-                p = subprocess.run("patch -p1", shell=True, cwd=cwd,
-                                   stderr=subprocess.PIPE, stdout=stdout,
-                                   input=f.read())
+            print(self.patchdir)
+            print(patch)
+            with open(patch.format(patchdir=self.patchdir), "rb") as patch_file:
+                proc = subprocess.run("patch -p1", shell=True, cwd=cwd,
+                                      stderr=subprocess.PIPE, stdout=stdout,
+                                      input=patch_file.read())
 
-                if p.returncode:
+                if proc.returncode:
                     print_error("Patching of", self.name, "failed.",
                                 file=sys.stderr)
-                    print_debug(p.stderr, file=sys.stderr)
+                    print_debug(proc.stderr, file=sys.stderr)
                     exit(1)
 
 
-class Allocator (object):
+class Allocator:
+    """Allocator base class
+
+    It builds the allocator and produces a for allocbench usable allocator dict"""
     allowed_attributes = ["binary_suffix", "version", "sources", "build_cmds",
                           "LD_PRELOAD", "cmd_prefix", "color", "patches",
                           "LD_LIBRARY_PATH"]
 
     def __init__(self, name, **kwargs):
         self.name = name
-        self.dir = os.path.join(builddir, self.name)
+        self.dir = os.path.join(BUILDDIR, self.name)
         # Update attributes
         self.__dict__.update((k, v) for k, v in kwargs.items()
                              if k in self.allowed_attributes)
@@ -106,14 +142,15 @@ class Allocator (object):
                 setattr(self, attr, None)
 
     def build(self):
+        """Build the allocator if needed and produce allocator dict"""
         build_needed = not os.path.isdir(self.dir)
-        buildtimestamp_file = os.path.join(self.dir, ".buildtime")
+        buildtimestamp_path = os.path.join(self.dir, ".buildtime")
 
         if not build_needed:
             print_info2("Old build found. Comparing build time with mtime")
 
-            with open(buildtimestamp_file, "r") as f:
-                timestamp = datetime.fromtimestamp(float(f.read()))
+            with open(buildtimestamp_path, "r") as buildtimestamp_file:
+                timestamp = datetime.fromtimestamp(float(buildtimestamp_file.read()))
 
             modtime = os.stat(inspect.getfile(self.__class__)).st_mtime
             modtime = datetime.fromtimestamp(modtime)
@@ -139,18 +176,19 @@ class Allocator (object):
                     cmd = cmd.format(**{"dir": self.dir,
                                         "srcdir": self.sources.dir})
 
-                    p = subprocess.run(cmd, cwd=builddir, shell=True,
-                                       stderr=subprocess.PIPE, stdout=stdout)
-                    if p.returncode:
-                        print_error(cmd, "failed with:", p.returncode)
-                        print_debug(p.stderr, file=sys.stderr)
+                    proc = subprocess.run(cmd, cwd=BUILDDIR, shell=True,
+                                          stderr=subprocess.PIPE, stdout=stdout,
+                                          universal_newlines=True)
+                    if proc.returncode:
+                        print_error(cmd, "failed with:", proc.returncode)
+                        print_debug(proc.stderr, file=sys.stderr)
                         print_error("Building", self.name, "failed ...")
                         shutil.rmtree(self.dir, ignore_errors=True)
                         exit(2)
 
-                with open(buildtimestamp_file, "w") as f:
-                    print_info2("Save build time to:", buildtimestamp_file)
-                    f.write(str(datetime.now().timestamp()))
+                with open(buildtimestamp_path, "w") as buildtimestamp_file:
+                    print_info2("Save build time to:", buildtimestamp_path)
+                    buildtimestamp_file.write(str(datetime.now().timestamp()))
 
         print_info2("Create allocator dictionary")
         res_dict = {"cmd_prefix": self.cmd_prefix or "",
@@ -172,29 +210,18 @@ class Allocator (object):
         return res_dict
 
 
-def patch_alloc(name, alloc, patches, **kwargs):
-    new_alloc = copy.deepcopy(alloc)
-    new_alloc.name = name
-    new_alloc.patches = patches
-
-    new_alloc.dir = os.path.join(builddir, name)
-    new_alloc.__dict__.update((k, v) for k, v in kwargs.items() if k in alloc.allowed_attributes)
-
-    return new_alloc
-
-
-def read_allocators_collection_file(alloc_file):
+def read_allocators_collection_file(alloc_path):
     """Read and evaluate a python file looking for an exported dict called allocators"""
 
-    exec_globals = {"__file__": name}
-    with open(name, "r") as alloc_file:
+    exec_globals = {"__file__": alloc_path}
+    with open(alloc_path, "r") as alloc_file:
         exec(compile(alloc_file.read()), exec_globals)
 
     if "allocators" in exec_globals:
         return exec_globals["allocators"]
-    else:
-        print_error("No global dictionary 'allocators' in", name)
-        return {}
+
+    print_error("No global dictionary 'allocators' in", alloc_path)
+    return {}
 
 def collect_allocators(allocators):
     """Collect allocators to benchmark
@@ -214,7 +241,7 @@ def collect_allocators(allocators):
     if allocators is None and os.path.isfile(default_allocators_file):
         return read_allocators_collection_file(default_allocators_file)
 
-    elif allocators is not None:
+    if allocators is not None:
         ret = {}
         for name in allocators:
             # file exists -> interpret as python file with a global variable allocators
@@ -235,8 +262,7 @@ def collect_allocators(allocators):
             else:
                 print_error(name, "is neither a python file or a known allocator definition.")
         return ret
-    else:
-        print_status("Using system-wide installed allocators ...")
-        importlib.import_module('src.allocators.installed_allocators')
-        return src.allocators.installed_allocators.allocators
 
+    print_status("Using system-wide installed allocators ...")
+    importlib.import_module('src.allocators.installed_allocators')
+    return src.allocators.installed_allocators.allocators
