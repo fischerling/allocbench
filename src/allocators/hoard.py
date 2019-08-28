@@ -1,13 +1,32 @@
-import src.allocator
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.
+
+"""Hoard allocator definition for allocbench"""
+
+from src.allocator import Allocator, AllocatorSources
 
 
-sources = src.allocator.Allocator_Sources("Hoard",
+sources = AllocatorSources("Hoard",
             retrieve_cmds=["git clone https://github.com/emeryberger/Hoard.git"],
             reset_cmds=["git reset --hard"])
 
 
-class Hoard (src.allocator.Allocator):
-    """Hoard definition for allocbench"""
+class Hoard(Allocator):
+    """Hoard allocator"""
     def __init__(self, name, **kwargs):
 
         kwargs["sources"] = sources

@@ -1,19 +1,39 @@
-from src.allocator import Allocator, Allocator_Sources, library_path
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Glibc definitions"""
 
-version = 2.29
+from src.allocator import Allocator, AllocatorSources, LIBRARY_PATH
 
-glibc_src = Allocator_Sources("glibc",
+VERSION = 2.29
+
+GLIBC_SRC = AllocatorSources("glibc",
                       retrieve_cmds=["git clone git://sourceware.org/git/glibc.git"],
-                      prepare_cmds=[f"git checkout glibc-{version}"],
+                      prepare_cmds=[f"git checkout glibc-{VERSION}"],
                       reset_cmds=["git reset --hard"])
 
 
-class Glibc (Allocator):
-    """Glibc definition for allocbench"""
+class Glibc(Allocator):
+    """Glibc definition for allocbench
+
+    Glibcs are loaded using their own supplied loader"""
     def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = glibc_src
+        kwargs["sources"] = GLIBC_SRC
 
         configure_args = ""
         if "configure_args" in kwargs:
@@ -26,7 +46,7 @@ class Glibc (Allocator):
                                 "cd glibc-build; make install"]
 
         kwargs["cmd_prefix"] = ("{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:"
-                                + library_path)
+                                + LIBRARY_PATH)
 
         # kwargs["LD_LIBRARY_PATH"] = "{dir}/lib:" + library_path
 

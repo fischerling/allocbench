@@ -1,22 +1,41 @@
-from src.allocator import Allocator, Allocator_Sources, library_path
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.
+
+"""Scalloc definition for allocbench"""
+
+from src.allocator import Allocator, AllocatorSources
 from src.util import print_error
 
 
-version = "v1.0.0"
+VERSION = "v1.0.0"
 
-scalloc_src = Allocator_Sources("scalloc",
+SCALLOC_SRC = AllocatorSources("scalloc",
                       retrieve_cmds=["git clone https://github.com/cksystemsgroup/scalloc"],
-                      prepare_cmds=["git checkout {}".format(version),
+                      prepare_cmds=[f"git checkout {VERSION}",
                                     "cd {srcdir}; tools/make_deps.sh",
                                     "cd {srcdir}; build/gyp/gyp --depth=. scalloc.gyp"],
                       reset_cmds=["git reset --hard"])
 
 
-class Scalloc (Allocator):
-    """Scalloc definition for allocbench"""
+class Scalloc(Allocator):
+    """Scalloc allocator"""
     def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = scalloc_src
+        kwargs["sources"] = SCALLOC_SRC
 
         kwargs["build_cmds"] = ["cd {srcdir}; BUILDTYPE=Release make",
                                 "mkdir -p {dir}"]

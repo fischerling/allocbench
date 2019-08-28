@@ -1,18 +1,37 @@
-import src.allocator
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.
 
-version = "master"
+"""Snmalloc definition for allocbench"""
 
-snmalloc_src = src.allocator.Allocator_Sources("snmalloc",
+from src.allocator import Allocator, AllocatorSources
+
+VERSION = "master"
+
+SNMALLOC_SRC = AllocatorSources("snmalloc",
                          ["git clone https://github.com/microsoft/snmalloc"],
-                         ["git checkout ".format(version)],
+                         [f"git checkout {VERSION}"],
                          ["git reset --hard"])
 
 
-class Snmalloc (src.allocator.Allocator):
-    """snmalloc definition for allocbench"""
+class Snmalloc(Allocator):
+    """snmalloc allocator"""
     def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = snmalloc_src
+        kwargs["sources"] = SNMALLOC_SRC
         kwargs["LD_PRELOAD"] = "{dir}/libsnmallocshim.so"
         kwargs["build_cmds"] = ["mkdir -p {dir}",
                                 "cd {dir}; cmake -G Ninja {srcdir} -DCMAKE_BUILD_TYPE=Release",
