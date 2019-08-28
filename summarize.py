@@ -30,10 +30,17 @@ from src.util import print_status, print_debug, print_error
 from src.util import print_license_and_exit
 
 
-def specific_summary(bench, allocators):
-    """Summarize bench in PWD for allocators"""
+def specific_summary(bench, sum_dir, allocators):
+    """Summarize bench in sum_dir for allocators"""
     old_allocs = bench.results["allocators"]
     allocs_in_set = {k: v for k, v in old_allocs.items() if k in allocators}
+
+    if not allocs_in_set:
+        return
+
+    # create and change to sum_dir
+    os.mkdir(sum_dir)
+    os.chdir(sum_dir)
 
     bench.results["allocators"] = allocs_in_set
 
@@ -55,6 +62,7 @@ def specific_summary(bench, allocators):
 
     bench.summary()
     bench.results["allocators"] = old_allocs
+    os.chdir("..")
 
 
 def bench_sum(bench):
@@ -77,10 +85,7 @@ def bench_sum(bench):
     os.chdir("..")
 
     for set_name in sets:
-        os.mkdir(set_name)
-        os.chdir(set_name)
-        specific_summary(bench, sets[set_name])
-        os.chdir("..")
+        specific_summary(bench, set_name, sets[set_name])
 
     os.chdir("..")
 
