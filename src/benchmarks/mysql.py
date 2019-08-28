@@ -29,8 +29,8 @@ from src.benchmark import Benchmark
 from src.util import print_status, print_debug, print_info2
 
 TESTDIR = os.path.join(os.getcwd(), "mysql_test")
-MYSQL_USER = "fischerling"
-RUN_TIME = 10
+MYSQL_USER = "root"
+RUN_TIME = 300
 TABLES = 5
 
 PREPARE_CMD = (f"sysbench oltp_read_only --db-driver=mysql --mysql-user={MYSQL_USER} "
