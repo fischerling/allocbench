@@ -25,6 +25,8 @@ import subprocess
 from subprocess import PIPE
 import sys
 
+import numpy as np
+
 from src.benchmark import Benchmark
 from src.util import print_status, print_debug, print_info2
 
