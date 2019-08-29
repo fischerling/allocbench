@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
+
 """Parser and Plotter for the traces produced by chattymalloc"""
 
 import re
@@ -94,7 +111,6 @@ def parse(path="chattymalloc.txt", coll_size=True, req_size=None, nohist=False):
     requested_size = [0]
     # Dictionary mapping allocation sizes to the count of their appearance
     hist = {}
-    line_count = 0
 
     def record(ptr, size, optr=None, free=False):
         """Wrapper around record_allocation using local variables from parse"""
@@ -102,8 +118,7 @@ def parse(path="chattymalloc.txt", coll_size=True, req_size=None, nohist=False):
                           coll_size, req_size, nohist, optr, free)
 
     with open(path, "r") as trace_file:
-        for line in trace_file.readlines():
-            line_count += 1
+        for i, line in enumerate(trace_file.readlines()):
             valid_line = False
             for func, func_regex in TRACE_REGEX.items():
                 res = func_regex.match(line)
@@ -124,12 +139,13 @@ def parse(path="chattymalloc.txt", coll_size=True, req_size=None, nohist=False):
                     break
 
             if not valid_line:
-                print("\ninvalid line at", line_count, ":", line)
+                print(f"\ninvalid line at {i}: {line}")
 
     return hist, calls, np.array(requested_size)
 
 
 def plot(path):
+    """Plot a histogram and a memory profile of the given chattymalloc trace"""
     hist, calls, total_sizes = parse(path=path, req_size=None)
 
     plot_hist_ascii(f"{path}.hist", hist, calls)
@@ -142,6 +158,7 @@ def plot(path):
 
 
 def plot_profile(total_sizes, trace_path, plot_path, sizes):
+    """Plot a memory profile of the total memory and the top 5 sizes"""
     x_vals = range(0, len(total_sizes))
 
     plt.plot(x_vals, total_sizes / 1000, marker='',
@@ -159,10 +176,11 @@ def plot_profile(total_sizes, trace_path, plot_path, sizes):
     plt.clf()
 
 def plot_hist_ascii(path, hist, calls):
+    """Plot an ascii histogram"""
     bins = {}
     for size in sorted(hist):
-        bin = int(size / 16)
-        bins[bin] = bins.get(bin, 0) + hist[size]
+        size_class = int(size / 16)
+        bins[size_class] = bins.get(size_class, 0) + hist[size]
 
 
     total = sum(calls.values()) - calls["free"]
@@ -172,6 +190,10 @@ def plot_hist_ascii(path, hist, calls):
             print(func, calls[func], file=hist_file)
 
         print(file=hist_file)
+
+        print("Top 10 allocation sizes", file=hist_file)
+        for i, size in enumerate([t[1] for t in sorted([(n, s) for s, n in hist.items()])[-10:]]):
+            print(f"{i}. {size} B occurred {hist[size]} times", file=hist_file)
 
         print("allocations <= 64", sum([n for s, n in hist.items() if s <= 64]), file=hist_file)
         print("allocations <= 1024", sum([n for s, n in hist.items() if s <= 1024]), file=hist_file)
@@ -191,6 +213,13 @@ def plot_hist_ascii(path, hist, calls):
 
 
 if __name__ == "__main__":
+    # Code duplication with src.util.print_license_and_exit
+    # to keep chattyparser independent from allocbench
+    if "--license" in sys.argv:
+        print("Copyright (C) 2018-2019 Florian Fischer")
+        print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
+        exit(0)
+
     if len(sys.argv) != 2:
         print("chattyparser: parse chattymalloc output and",
               "create size histogram and memory profile", file=sys.stderr)
