@@ -3,13 +3,14 @@ from collections import namedtuple
 import copy
 import csv
 import itertools
-import matplotlib.pyplot as plt
 import multiprocessing
-import numpy as np
 import os
 import pickle
 import subprocess
 from time import sleep
+
+import matplotlib.pyplot as plt
+import numpy as np
 
 import src.globalvars
 import src.util
@@ -53,6 +54,7 @@ class Benchmark:
 
     @staticmethod
     def scale_threads_for_cpus(factor, steps=None):
+        """Simple helper to scale thread count to execution units"""
         cpus = multiprocessing.cpu_count()
         max_threads = cpus * factor
         if not steps:
@@ -96,8 +98,7 @@ class Benchmark:
 
         default_results = {"args": self.args,
                            "allocators": self.allocators,
-                           "facts": {"libcs": {}}
-                          }
+                           "facts": {"libcs": {}}}
         default_results.update({alloc: {} for alloc in self.allocators})
 
         if not hasattr(self, "results"):
@@ -113,13 +114,14 @@ class Benchmark:
 
         print_debug("Creating benchmark", self.name)
         print_debug("Cmd:", self.cmd)
-        print_debug("Server Cmds:", self.server_cmds)
         print_debug("Args:", self.args)
+        print_debug("Server Cmds:", self.server_cmds)
         print_debug("Requirements:", self.requirements)
         print_debug("Results dictionary:", self.results)
         print_debug("Results directory:", self.result_dir)
 
     def save(self, path=None):
+        """Save benchmark results to a pickle file"""
         f = path if path else self.name + ".save"
         print_info("Saving results to:", f)
         # Pickle can't handle namedtuples so convert the dicts of namedtuples
@@ -150,6 +152,7 @@ class Benchmark:
             pickle.dump(save_data, f)
 
     def load(self, path=None):
+        """Load benchmark results from a pickle file"""
         if not path:
             f = self.name + ".save"
         else:
@@ -159,7 +162,6 @@ class Benchmark:
                 f = path
 
         print_info("Loading results from:", f)
-        # TODO merge loaded result
         with open(f, "rb") as f:
             self.results = pickle.load(f)
         # Build new named tuples
@@ -259,11 +261,13 @@ class Benchmark:
             self.servers.append(server)
 
     def shutdown_servers(self):
+        """Terminate all started servers"""
         print_info("Shutting down servers")
         for server in self.servers:
             Benchmark.terminate_subprocess(server)
 
     def run(self, runs=3):
+        """generic run implementation"""
         # check if perf is allowed on this system
         if self.measure_cmd == self.defaults["measure_cmd"]:
             if Benchmark.perf_allowed is None:
@@ -318,9 +322,10 @@ class Benchmark:
                     # Available substitutions in cmd
                     substitutions = {"run": run}
                     substitutions.update(self.__dict__)
-                    substitutions.update(perm._asdict())
-                    substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
                     substitutions.update(alloc)
+                    if perm:
+                        substitutions.update(perm._asdict())
+                        substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
 
                     cmd_argv = self.cmd.format(**substitutions)
                     cmd_argv = src.util.prefix_cmd_with_abspath(cmd_argv).split()
@@ -423,7 +428,6 @@ class Benchmark:
         # reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(f"{os.pathsep}{src.globalvars.builddir}/benchmarks/{self.name}", "")
 
-
         # expand invalid results
         if valid_result != {}:
             for allocator in self.allocators:
@@ -435,6 +439,7 @@ class Benchmark:
         self.calc_desc_statistics()
 
     def calc_desc_statistics(self):
+        """Calculate descriptive statistics for each datapoint"""
         allocs = self.results["allocators"]
         self.results["stats"] = {}
         for alloc in allocs:
@@ -474,6 +479,7 @@ class Benchmark:
 
                 self.results["stats"][alloc][perm] = stats
 
+    ###### Summary helpers ######
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                         autoticks=True, title="'default title'", filepostfix="",
                         sumdir="", arg="", scale=None, file_ext="png"):
@@ -683,8 +689,8 @@ class Benchmark:
                 for perm in self.iterate_args(args=self.results["args"]):
                     for statistic, values in stats[alloc][perm].items():
                         cur_line = line.format(self.name, alloc,
-                                         "/".join([str(p) for p in list(perm)]),
-                                         statistic, values[datapoint])
+                                               "/".join([str(p) for p in list(perm)]),
+                                               statistic, values[datapoint])
                         # Replace empty outliers
                         cur_line.replace("[]", "")
                         # Replace underscores

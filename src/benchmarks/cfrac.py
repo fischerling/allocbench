@@ -29,7 +29,7 @@ class BenchmarkCfrac(Benchmark):
         self.args = {"num": [175451865205073170563711388363274837927895]}
 
         self.requirements = ["cfrac"]
-        super().__init__("cfrac")
+        super().__init__(name)
 
     def summary(self):
         # Speed
