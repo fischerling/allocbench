@@ -1,3 +1,22 @@
+# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
+
+"""Helper functions for allocbench"""
+
 import os
 import subprocess
 import sys
@@ -6,11 +25,13 @@ import src.globalvars
 
 
 def is_exe(fpath):
+    """Check if the given path is an exexutable file"""
     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
 
 def find_cmd(cmd):
-    fpath, fname = os.path.split(cmd)
+    """Return abspath of cmd if it is an executable or in PATH"""
+    fpath, _ = os.path.split(cmd)
 
     # Search for file
     if fpath:
@@ -45,6 +66,7 @@ def prefix_cmd_with_abspath(cmd):
 
 
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
+    """Colored output function wrapping print"""
     if src.globalvars.verbosity < 0:
         return
 
@@ -63,44 +85,52 @@ def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
 
 
 def print_debug(*objects, sep=' ', end='\n', file=sys.stdout):
+    """Print colorless debug message"""
     if src.globalvars.verbosity < 3:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
 def print_info(*objects, sep=' ', end='\n', file=sys.stdout):
+    """Print colorless info message"""
     if src.globalvars.verbosity < 1:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
 def print_info0(*objects, sep=' ', end='\n', file=sys.stdout):
+    """Print colorless info message at every verbosity level message"""
     if src.globalvars.verbosity < 0:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
 def print_info2(*objects, sep=' ', end='\n', file=sys.stdout):
+    """Print colorless info message at the second verbosity level message"""
     if src.globalvars.verbosity < 2:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
 def print_status(*objects, sep=' ', end='\n', file=sys.stdout):
+    """Print green status message"""
     allocbench_msg("GREEN", *objects, sep=sep, end=end, file=file)
 
 
 def print_warn(*objects, sep=' ', end='\n', file=sys.stdout):
+    """Print yellow warning"""
     if src.globalvars.verbosity < 1:
         return
     allocbench_msg("YELLOW", *objects, sep=sep, end=end, file=file)
 
 
 def print_error(*objects, sep=' ', end='\n', file=sys.stderr):
+    """Print red error message"""
     allocbench_msg("RED", *objects, sep=sep, end=end, file=file)
 
 
 def print_license_and_exit():
+    """Print GPL info and Copyright before exit"""
     print("Copyright (C) 2018-2019 Florian Fischer")
     print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
     exit(0)
