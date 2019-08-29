@@ -23,6 +23,17 @@ import sys
 
 import src.globalvars
 
+def download_reporthook(blocknum, blocksize, totalsize):
+    """Status report hook for urlretrieve"""
+    readsofar = blocknum * blocksize
+    if totalsize > 0:
+        percent = readsofar * 100 / totalsize
+        status = "\r%5.1f%% %*d / %d" % (
+                  percent, len(str(totalsize)), readsofar, totalsize)
+        sys.stderr.write(status)
+    else:  # total size is unknown
+        sys.stderr.write(f"\rdownloaded {readsofar}")
+
 
 def is_exe(fpath):
     """Check if the given path is an exexutable file"""

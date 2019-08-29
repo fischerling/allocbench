@@ -25,6 +25,7 @@ import sys
 import matplotlib.pyplot as plt
 
 from src.benchmark import Benchmark
+from src.util import download_reporthook
 
 
 class BenchmarkLld(Benchmark):
@@ -50,16 +51,6 @@ class BenchmarkLld(Benchmark):
     def prepare(self):
         super().prepare()
 
-        def reporthook(blocknum, blocksize, totalsize):
-            readsofar = blocknum * blocksize
-            if totalsize > 0:
-                percent = readsofar * 1e2 / totalsize
-                status = "\r%5.1f%% %*d / %d" % (
-                    percent, len(str(totalsize)), readsofar, totalsize)
-                sys.stderr.write(status)
-            else:  # total size is unknown
-                sys.stderr.write(f"\rdownloaded {readsofar}")
-
         test_dir = "lld-speed-test"
         test_archive = f"{test_dir}.tar.xz"
         if not os.path.isdir(test_dir):
@@ -69,7 +60,7 @@ class BenchmarkLld(Benchmark):
                     return False
 
                 url = f"https://s3-us-west-2.amazonaws.com/linker-tests/{test_archive}"
-                urlretrieve(url, test_archive, reporthook)
+                urlretrieve(url, test_archive, download_reporthook)
                 sys.stderr.write("\n")
 
             # Extract tests

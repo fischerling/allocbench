@@ -18,6 +18,7 @@
 """Benchmark definition using the traces collected by DJ Delorie"""
 
 import os
+import subprocess
 import sys
 import re
 from urllib.request import urlretrieve
@@ -25,7 +26,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from src.benchmark import Benchmark
-from src.util import print_status
+from src.util import print_status, download_reporthook
 
 
 COMMA_SEP_NUMBER_RE = "(?:\\d*(?:,\\d*)?)*"
@@ -104,61 +105,31 @@ class BenchmarkDJTrace(Benchmark):
     def prepare(self):
         super().prepare()
 
-        def reporthook(blocknum, blocksize, totalsize):
-            readsofar = blocknum * blocksize
-            if totalsize > 0:
-                percent = readsofar * 1e2 / totalsize
-                status = "\r%5.1f%% %*d / %d" % (
-                    percent, len(str(totalsize)), readsofar, totalsize)
-                sys.stderr.write(status)
-            else:  # total size is unknown
-                sys.stderr.write(f"\rdownloaded {readsofar}")
+        workload_dir = "dj_workloads"
+        workload_archive = f"{workload_dir}.tar.xz"
 
-        if not os.path.isdir("dj_workloads"):
-            os.mkdir("dj_workloads")
+        if not os.path.isdir(workload_dir):
+            if not os.path.isfile(workload_archive):
+                choice = input("Download missing workloads (367M / ~6GB unpacked) [Y/n] ")
+                if not choice in ['', 'Y', 'y']:
+                    return False
 
-        download_all = None
-        wl_sizes = {"dj": "14M", "oocalc": "65M", "mt_test_one_alloc": "5.7M",
-                    "proprietary-1": "2.8G", "qemu-virtio": "34M",
-                    "proprietary-2": "92M", "qemu-win7": "23M",
-                    "389-ds-2": "3.4G", "dj2": "294M"}
-
-        for workload in self.args["workload"]:
-            file_name = workload + ".wl"
-            file_path = os.path.join("dj_workloads", file_name)
-            if not os.path.isfile(file_path):
-                if download_all is None:
-                    choice = input(("Download all missing workloads"
-                                    " (upto 6.7GB) [Y/n/x] "))
-                    if choice == "x":
-                        break
-                    else:
-                        download_all = choice in ['', 'Y', 'y']
-
-                if not download_all:
-                    choice = input(f"want to download {workload} ({wl_sizes[workload]}) [Y/n] ")
-                    if choice not in ['', 'Y', 'y']:
-                        continue
-
-                else:
-                    print_status(f"downloading {workload} ({wl_sizes[workload]}) ...")
-
-                url = "http://www.delorie.com/malloc/" + file_name
-                urlretrieve(url, file_path, reporthook)
+                url = f"https://www4.cs.fau.de/~flow/allocbench/{workload_archive}"
+                urlretrieve(url, workload_archive, download_reporthook)
                 sys.stderr.write("\n")
 
-        available_workloads = []
-        for workload in self.args["workload"]:
-            file_name = workload + ".wl"
-            file_path = os.path.join("dj_workloads", file_name)
-            if os.path.isfile(file_path):
-                available_workloads.append(workload)
+            # Extract workloads
+            proc = subprocess.run(["tar", "xf", workload_archive], stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE, universal_newlines=True)
 
-        if available_workloads:
-            self.args["workload"] = available_workloads
+            # delete archive
+            if proc.returncode == 0:
+                os.remove(workload_archive)
+
+            self.args["workload"] = os.listdir(workload_)
+
             return True
 
-        return False
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
