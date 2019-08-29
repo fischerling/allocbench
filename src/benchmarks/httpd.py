@@ -26,7 +26,7 @@ class BenchmarkHTTPD(Benchmark):
     """TODO"""
 
     def __init__(self):
-        self.name = "httpd"
+        name = "httpd"
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(2),
                      "site": ["index.html", "index.php"]}
@@ -37,7 +37,7 @@ class BenchmarkHTTPD(Benchmark):
 
         self.requirements = ["nginx", "ab"]
 
-        super().__init__()
+        super().__init__(name)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):

@@ -33,7 +33,7 @@ class BenchmarkLarson(Benchmark):
     """
 
     def __init__(self):
-        self.name = "larson"
+        name = "larson"
 
         # Parameters taken from the paper "Memory Allocation for Long-Running Server
         # Applications" from Larson and Krishnan
@@ -43,7 +43,7 @@ class BenchmarkLarson(Benchmark):
                      "threads": Benchmark.scale_threads_for_cpus(2)}
 
         self.requirements = ["larson"]
-        super().__init__()
+        super().__init__(name)
 
     @staticmethod
     def process_output(result, stdout, stderr, target, perm):

@@ -36,7 +36,7 @@ class BenchmarkFalsesharing(Benchmark):
     """
 
     def __init__(self):
-        self.name = "falsesharing"
+        name = "falsesharing"
 
         self.cmd = "cache-{bench}{binary_suffix} {threads} 100 8 1000000"
 
@@ -44,7 +44,7 @@ class BenchmarkFalsesharing(Benchmark):
                      "threads": Benchmark.scale_threads_for_cpus(2)}
 
         self.requirements = ["cache-thrash", "cache-scratch"]
-        super().__init__()
+        super().__init__(name)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):

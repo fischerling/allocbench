@@ -25,15 +25,14 @@ import src.globalvars
 class BenchmarkEspresso(Benchmark):
     """TODO"""
     def __init__(self):
-        self.name = "espresso"
+        name = "espresso"
 
         self.cmd = "espresso{binary_suffix} {file}"
-        self.args = {"file": [os.path.join(src.globalvars.benchsrcdir, self.name,
+        self.args = {"file": [os.path.join(src.globalvars.benchsrcdir, name,
                                            "largest.espresso")]}
 
-        super().__init__()
-
         self.requirements = ["espresso"]
+        super().__init__(name)
 
     def summary(self):
         # Speed

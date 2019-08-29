@@ -75,12 +75,6 @@ Delorie using the tools from dj/malloc branch of the glibc.
 
 from src.benchmark import Benchmark
 
-NAME = "loop"
-
-CMD = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
-
-ARGS = {"maxsize":  [2 ** x for x in range(6, 16)],
-        "nthreads": Benchmark.scale_threads_for_cpus(2)}
 
 class BenchmarkLoop(Benchmark):
     """Loop micro benchmark
@@ -89,8 +83,15 @@ class BenchmarkLoop(Benchmark):
     """
 
     def __init__(self):
+        name = "loop"
+
+        self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
+
+        self.args = {"maxsize":  [2 ** x for x in range(6, 16)],
+                     "nthreads": Benchmark.scale_threads_for_cpus(2)}
+
         self.requirements = ["loop"]
-        super().__init__(NAME, CMD, ARGS)
+        super().__init__(name)
 
     def summary(self):
         # Speed

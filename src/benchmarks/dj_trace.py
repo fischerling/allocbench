@@ -54,7 +54,7 @@ class BenchmarkDJTrace(Benchmark):
     """
 
     def __init__(self):
-        self.name = "dj_trace"
+        name = "dj_trace"
 
         self.cmd = "trace_run{binary_suffix} dj_workloads/{workload}.wl"
         self.measure_cmd = ""
@@ -99,7 +99,7 @@ class BenchmarkDJTrace(Benchmark):
                             "realloc": 117, "free": 10099261, "threads": 19}}
 
         self.requirements = ["trace_run"]
-        super().__init__()
+        super().__init__(name)
 
     def prepare(self):
         super().prepare()

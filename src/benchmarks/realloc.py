@@ -26,14 +26,12 @@ class BenchmarkRealloc(Benchmark):
     realloc a pointer 100 times
     """
     def __init__(self):
-        self.name = "realloc"
+        name = "realloc"
 
         self.cmd = "realloc"
 
-        self.args = {"oneshot": [1]}
-
         self.requirements = ["realloc"]
-        super().__init__()
+        super().__init__(name)
 
     def summary(self):
         self.barplot_single_arg("{task-clock}",

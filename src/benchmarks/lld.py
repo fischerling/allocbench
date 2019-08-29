@@ -34,7 +34,7 @@ class BenchmarkLld(Benchmark):
     """
 
     def __init__(self):
-        self.name = "lld"
+        name = "lld"
 
         self.run_dir = "lld-speed-test/{test}"
         # TODO: don't hardcode ld.lld location
@@ -45,7 +45,7 @@ class BenchmarkLld(Benchmark):
                               "gold-fsds", "llvm-as", "mozilla"]}
 
         self.requirements = ["ld.lld"]
-        super().__init__()
+        super().__init__(name)
 
     def prepare(self):
         super().prepare()

@@ -22,14 +22,14 @@ from src.benchmark import Benchmark
 class BenchmarkCfrac(Benchmark):
     """TODO"""
     def __init__(self):
-        self.name = "cfrac"
+        name = "cfrac"
 
         self.cmd = "cfrac{binary_suffix} {num}"
 
         self.args = {"num": [175451865205073170563711388363274837927895]}
 
         self.requirements = ["cfrac"]
-        super().__init__()
+        super().__init__("cfrac")
 
     def summary(self):
         # Speed

@@ -27,7 +27,7 @@ class BenchmarkLoop(Benchmark):
     """
 
     def __init__(self):
-        self.name = "loop"
+        name = "loop"
 
         self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
@@ -35,7 +35,7 @@ class BenchmarkLoop(Benchmark):
                      "nthreads": Benchmark.scale_threads_for_cpus(2)}
 
         self.requirements = ["loop"]
-        super().__init__()
+        super().__init__(name)
 
     def summary(self):
         # Speed

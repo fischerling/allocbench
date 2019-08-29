@@ -20,18 +20,17 @@ from src.util import print_info0, print_info, print_debug
 nan = np.NaN
 
 
-class Benchmark (object):
+class Benchmark:
     """Default implementation of most methods allocbench expects from a benchmark"""
 
+    # class member to remember if we are allowed to use perf
     perf_allowed = None
 
-    defaults = {
-        "name": "default_benchmark",
-        "measure_cmd": "perf stat -x, -d",
-        "cmd": "true",
-        "server_cmds": [],
-        "allocators": copy.deepcopy(src.globalvars.allocators),
-    }
+    defaults = {"cmd": "false",
+                "args": {},
+                "measure_cmd": "perf stat -x, -d",
+                "server_cmds": [],
+                "allocators": copy.deepcopy(src.globalvars.allocators)}
 
     @staticmethod
     def terminate_subprocess(popen, timeout=5):
@@ -76,20 +75,22 @@ class Benchmark (object):
     def __str__(self):
         return self.name
 
-    def __init__(self):
+    def __init__(self, name):
+        """Initialize a benchmark with default members if they aren't set already"""
+        self.name = name
+
         # Set default values
         for k in Benchmark.defaults:
             if not hasattr(self, k):
                 setattr(self, k, Benchmark.defaults[k])
 
+        # List of Popen server objects
+        self.servers = []
+
         # Set result_dir
         if not hasattr(self, "result_dir"):
             self.result_dir = os.path.abspath(os.path.join(src.globalvars.resdir,
                                                            self.name))
-
-        # non copy types
-        if not hasattr(self, "args"):
-            self.args = {}
 
         self.Perm = namedtuple("Perm", self.args.keys())
 
@@ -179,12 +180,13 @@ class Benchmark (object):
             self.calc_desc_statistics()
 
     def prepare(self):
+        """default prepare implementation raising an error if a requirement is not found"""
         os.environ["PATH"] += f"{os.pathsep}{src.globalvars.builddir}/benchmarks/{self.name}"
 
         for r in self.requirements:
             exe = src.util.find_cmd(r)
             if exe is not None:
-                self.results["facts"]["libcs"][r] = src.facter.libc_ver(bin=exe)
+                self.results["facts"]["libcs"][r] = src.facter.libc_ver(executable=exe)
             else:
                 raise Exception("Requirement: {} not found".format(r))
 
@@ -220,7 +222,6 @@ class Benchmark (object):
 
         Servers are not allowed to deamonize because then they can't
         be terminated with their Popen object."""
-        self.servers = []
 
         substitutions = {"alloc": alloc_name,
                          "perm": alloc_name,

@@ -27,7 +27,7 @@ class BenchmarkTTest1(Benchmark):
     """
 
     def __init__(self):
-        self.name = "t_test1"
+        name = "t_test1"
 
         self.cmd = "t-test1 {nthreads} {nthreads} 1000000 {maxsize}"
 
@@ -35,7 +35,7 @@ class BenchmarkTTest1(Benchmark):
                      "nthreads": Benchmark.scale_threads_for_cpus(2)}
 
         self.requirements = ["t-test1"]
-        super().__init__()
+        super().__init__(name)
 
     def summary(self):
         # mops / per second

@@ -52,7 +52,7 @@ class BenchmarkMYSQL(Benchmark):
     """
 
     def __init__(self):
-        self.name = "mysql"
+        name = "mysql"
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
         self.cmd = CMD
@@ -61,7 +61,7 @@ class BenchmarkMYSQL(Benchmark):
 
         self.requirements = ["mysqld", "sysbench"]
 
-        super().__init__()
+        super().__init__(name)
 
         self.results["facts"]["runtime [s]"] = RUN_TIME
         self.results["facts"]["sysbench"] = subprocess.run(["sysbench", "--version"],
