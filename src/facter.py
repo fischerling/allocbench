@@ -25,6 +25,7 @@ import platform
 import subprocess
 
 import src.globalvars as gv
+from src.util import print_error
 
 
 def collect_facts():
@@ -108,3 +109,14 @@ def libc_ver(executable=None):
         return platform.libc_ver(executable)
 
     return ("glibc", glibc_version)
+
+def exec_ver(executable):
+    """Return version of executable"""
+    proc = subprocess.run([executable, "--version"],
+                          universal_newlines=True, stdout=subprocess.PIPE)
+
+    if proc.returncode != 0:
+        print_error(f"failed to get version of {executable}")
+        return ""
+
+    return proc.stdout[:-1]
