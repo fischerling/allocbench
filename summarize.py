@@ -27,7 +27,7 @@ import sys
 
 import src.globalvars
 from src.util import print_status, print_debug, print_error
-from src.util import print_license_and_exit
+from src.util import print_license_and_exit, print_version_and_exit
 
 
 def specific_summary(bench, sum_dir, allocators):
@@ -94,9 +94,13 @@ def main():
     if "--license" in sys.argv:
         print_license_and_exit()
 
+    if "--version" in sys.argv:
+        print_version_and_exit()
+
     parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
     parser.add_argument("--license", help="print license info and exit", action='store_true')
+    parser.add_argument("--versiob", help="print version info and exit", action='store_true')
     parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
     parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
 

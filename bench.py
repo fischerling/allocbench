@@ -36,7 +36,7 @@ import src.globalvars
 from src.util import find_cmd
 from src.util import print_status, print_warn, print_error
 from src.util import print_info, print_info2, print_debug
-from src.util import print_license_and_exit
+from src.util import print_license_and_exit, print_version_and_exit
 
 
 def epilog():
@@ -83,10 +83,14 @@ def main():
                         default=["all"])
     parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
     parser.add_argument("--license", help="print license info and exit", action='store_true')
+    parser.add_argument("--version", help="print version info and exit", action='store_true')
 
     args = parser.parse_args()
     if args.license:
         print_license_and_exit()
+
+    if args.version:
+        print_version_and_exit()
 
     atexit.register(epilog)
 

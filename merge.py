@@ -24,17 +24,21 @@ import os
 import pickle
 import sys
 
-from src.util import print_license_and_exit
+from src.util import print_license_and_exit, print_version_and_exit
 
 
 def main():
     if "--license" in sys.argv:
         print_license_and_exit()
 
+    if "--version" in sys.argv:
+        print_version_and_exit()
+
     parser = argparse.ArgumentParser(description="Merge to allocbench results")
     parser.add_argument("src", help="results which should be merged into dest", type=str)
     parser.add_argument("dest", help="results in which src should be merged", type=str)
     parser.add_argument("--license", help="print license info and exit", action='store_true')
+    parser.add_argument("--version", help="print version info and exit", action='store_true')
     parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
     parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
 
