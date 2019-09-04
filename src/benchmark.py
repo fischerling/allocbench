@@ -34,23 +34,25 @@ class Benchmark:
                 "allocators": copy.deepcopy(src.globalvars.allocators)}
 
     @staticmethod
-    def terminate_subprocess(popen, timeout=5):
+    def terminate_subprocess(proc, timeout=5):
         """Terminate or kill a Popen object"""
 
         # Skip already terminated subprocess
-        if popen.poll() is not None:
+        if proc.poll() is not None:
             return
 
-        print_info("Terminating subprocess", popen.args)
-        popen.terminate()
+        print_info("Terminating subprocess", proc.args)
+        proc.terminate()
         try:
-            print_info("Subprocess exited with ", popen.wait(timeout=timeout))
+            outs, errs = proc.communicate(timeout=timeout)
+            print_info("Subprocess exited with ", proc.returncode)
         except subprocess.TimeoutExpired:
-            print_error("Killing subprocess ", popen.args)
-            popen.kill()
-            popen.wait()
-        print_debug("Server Out:", popen.stdout.read())
-        print_debug("Server Err:", popen.stderr.read())
+            print_error("Killing subprocess ", proc.args)
+            proc.kill()
+            outs, errs = proc.communicate()
+
+        print_debug("Server Out:", outs)
+        print_debug("Server Err:", errs)
 
     @staticmethod
     def scale_threads_for_cpus(factor, steps=None):
