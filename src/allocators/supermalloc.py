@@ -25,7 +25,8 @@ VERSION = "709663fb81ba091b0a78058869a644a272f4163d"
 
 sources = AllocatorSources("SuperMalloc",
             retrieve_cmds=["git clone https://github.com/kuszmaul/SuperMalloc"],
-            prepare_cmds=[f"git checkout {VERSION}"])
+            prepare_cmds=[f"git checkout {VERSION}"],
+            reset_cmds=["git reset --hard"])
 
 
 class SuperMalloc(Allocator):
