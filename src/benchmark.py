@@ -531,8 +531,14 @@ class Benchmark:
         allocators = self.results["allocators"]
         nallocators = len(allocators)
 
-        arg = arg or list(args.keys())[0]
-        narg = len(args[arg])
+        if arg:
+            arg = args[arg]
+        elif args.keys():
+            arg = args[list(args.keys())[0]]
+        else:
+            arg = [""]
+
+        narg = len(arg)
 
         for i, allocator in enumerate(allocators):
             x_vals = list(range(i, narg * (nallocators+1), nallocators+1))
@@ -559,7 +565,7 @@ class Benchmark:
                     color=allocators[allocator]["color"])
 
         plt.legend(loc="best")
-        plt.xticks(list(range(int(np.floor(nallocators/2)), narg*(nallocators+1), nallocators+1)), args[arg])
+        plt.xticks(list(range(int(np.floor(nallocators/2)), narg*(nallocators+1), nallocators+1)), arg)
         plt.xlabel(eval(xlabel))
         plt.ylabel(eval(ylabel))
         plt.title(eval(title))
