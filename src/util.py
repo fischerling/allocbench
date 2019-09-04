@@ -71,9 +71,14 @@ def prefix_cmd_with_abspath(cmd):
 
     binary_abspath = subprocess.run(["whereis", cmd[0:binary_end]],
                                     stdout=subprocess.PIPE,
-                                    universal_newlines=True).stdout.split()[1]
+                                    universal_newlines=True).stdout
+    binary_abspath = binary_abspath.split()[1]
 
-    return binary_abspath + " " + cmd[binary_end:]
+    # add arguments of cmd to the abspath
+    if binary_end:
+        return binary_abspath + " " + cmd[binary_end:]
+    else:
+        return binary_abspath
 
 
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
