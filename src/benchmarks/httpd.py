@@ -32,8 +32,11 @@ class BenchmarkHTTPD(Benchmark):
                      "site": ["index.html", "index.php"]}
         self.cmd = "ab -n 10000 -c {nthreads} localhost:8080/{site}"
         self.measure_cmd = ""
-        self.server_cmds = ["nginx -c {builddir}/benchmarks/httpd/etc/nginx/nginx.conf",
-                            "php-fpm -c {builddir}/benchmarks/httpd/etc/php/php.ini -y {builddir}/benchmarks/httpd/etc/php/php-fpm.conf -F"]
+        self.servers = [{"name": "nginx",
+                         "cmd": "nginx -c {builddir}/benchmarks/httpd/etc/nginx/nginx.conf"},
+                        {"name": "php-fpm",
+                         "cmd": "php-fpm -c {builddir}/benchmarks/httpd/etc/php/php.ini "\
+                                 "-y {builddir}/benchmarks/httpd/etc/php/php-fpm.conf -F"}]
 
         self.requirements = ["nginx", "ab"]
 

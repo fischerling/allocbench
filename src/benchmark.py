@@ -30,7 +30,7 @@ class Benchmark:
     defaults = {"cmd": "false",
                 "args": {},
                 "measure_cmd": "perf stat -x, -d",
-                "server_cmds": [],
+                "servers": [],
                 "allocators": copy.deepcopy(src.globalvars.allocators)}
 
     @staticmethod
@@ -88,9 +88,6 @@ class Benchmark:
             if not hasattr(self, k):
                 setattr(self, k, Benchmark.defaults[k])
 
-        # List of Popen server objects
-        self.servers = []
-
         # Set result_dir
         if not hasattr(self, "result_dir"):
             self.result_dir = os.path.abspath(os.path.join(src.globalvars.resdir,
@@ -118,7 +115,7 @@ class Benchmark:
         print_debug("Creating benchmark", self.name)
         print_debug("Cmd:", self.cmd)
         print_debug("Args:", self.args)
-        print_debug("Server Cmds:", self.server_cmds)
+        print_debug("Servers:", self.servers)
         print_debug("Requirements:", self.requirements)
         print_debug("Results dictionary:", self.results)
         print_debug("Results directory:", self.result_dir)
@@ -236,10 +233,11 @@ class Benchmark:
         substitutions.update(self.__dict__)
         substitutions.update(alloc)
 
-        for server_cmd in self.server_cmds:
-            print_info("Starting Server for", alloc_name)
+        for server in self.servers:
+            server_name = server.get("name", "Server")
+            print_info(f"Starting {server_name} for {alloc_name}")
 
-            server_cmd = src.util.prefix_cmd_with_abspath(server_cmd)
+            server_cmd = src.util.prefix_cmd_with_abspath(server["cmd"])
             server_cmd = "{} {} {}".format(self.measure_cmd,
                                            alloc["cmd_prefix"],
                                            server_cmd)
@@ -247,7 +245,7 @@ class Benchmark:
             server_cmd = server_cmd.format(**substitutions)
             print_debug(server_cmd)
 
-            server = subprocess.Popen(server_cmd.split(), env=env,
+            proc = subprocess.Popen(server_cmd.split(), env=env,
                                       stdout=subprocess.PIPE,
                                       stderr=subprocess.PIPE,
                                       universal_newlines=True)
@@ -255,20 +253,56 @@ class Benchmark:
             # TODO: check if server is up
             sleep(5)
 
-            ret = server.poll()
+            ret = proc.poll()
             if ret is not None:
-                print_debug("Stdout:", server.stdout)
-                print_debug("Stderr:", server.stderr)
-                raise Exception("Starting Server failed with exit code " + str(ret))
+                print_debug("Stdout:", proc.stdout.read())
+                print_debug("Stderr:", proc.stderr.read())
+                raise Exception(f"Starting {server_name} failed with exit code: {ret}")
+            server["popen"] = proc
             # Register termination of the server
-            atexit.register(Benchmark.terminate_subprocess, popen=server)
-            self.servers.append(server)
+            atexit.register(Benchmark.shutdown_server, server=server)
+
+            if not "prepare_cmds" in server:
+                continue
+
+            print_info(f"Preparing {server_name}")
+            for prep_cmd in server["prepare_cmds"]:
+                prep_cmd = prep_cmd.format(**substitutions)
+                print_debug(prep_cmd)
+
+                proc = subprocess.run(prep_cmd.split(), universal_newlines=True,
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                print_debug("Stdout:", proc.stdout)
+                print_debug("Stderr:", proc.stderr)
+
+
+    @staticmethod
+    def shutdown_server(server):
+        """Terminate a started server running its shutdown_cmds in advance"""
+        server_name = server.get("name", "Server")
+        print_info(f"Shutting down {server_name}")
+
+        if server["popen"].poll():
+            return
+
+        if "shutdown_cmds" in server:
+            for shutdown_cmd in server["shutdown_cmds"]:
+                print_debug(shutdown_cmd)
+
+                proc = subprocess.run(shutdown_cmd.split(), universal_newlines=True,
+                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+                print_debug("Stdout:", proc.stdout)
+                print_debug("Stderr:", proc.stderr)
+
+        Benchmark.terminate_subprocess(server["popen"])
 
     def shutdown_servers(self):
         """Terminate all started servers"""
         print_info("Shutting down servers")
         for server in self.servers:
-            Benchmark.terminate_subprocess(server)
+            Benchmark.shutdown_server(server)
 
     def run(self, runs=3):
         """generic run implementation"""
@@ -338,7 +372,7 @@ class Benchmark:
                     argv = []
 
                     # Prepend cmd if we are not measuring servers
-                    if self.server_cmds == []:
+                    if self.servers == []:
                         prefix_argv = alloc["cmd_prefix"].format(**substitutions).split()
                         if self.measure_cmd != "":
                             measure_argv = self.measure_cmd.format(**substitutions)
@@ -378,7 +412,7 @@ class Benchmark:
 
                     # parse and store results
                     else:
-                        if self.server_cmds == []:
+                        if self.servers == []:
                             if os.path.isfile("status"):
                                 # Read VmHWM from status file. If our benchmark
                                 # didn't fork the first occurance of VmHWM is from
@@ -393,7 +427,8 @@ class Benchmark:
                         else:
                             result["server_status"] = []
                             for server in self.servers:
-                                with open("/proc/{}/status".format(server.pid), "r") as f:
+                                print(server)
+                                with open("/proc/{}/status".format(server["popen"].pid), "r") as f:
                                     result["server_status"].append(f.read())
 
                         # parse perf output if available
@@ -423,7 +458,7 @@ class Benchmark:
                     if os.getcwd() != cwd:
                         os.chdir(cwd)
 
-                if self.server_cmds != []:
+                if self.servers != []:
                     self.shutdown_servers()
 
                 if hasattr(self, "postallocator_hook"):

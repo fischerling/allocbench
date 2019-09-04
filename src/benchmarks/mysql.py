@@ -56,7 +56,8 @@ class BenchmarkMYSQL(Benchmark):
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
         self.cmd = CMD
-        self.server_cmds = [SERVER_CMD]
+        self.servers = [{"name": "mysqld",
+                         "cmd" : SERVER_CMD}]
         self.measure_cmd = ""
 
         self.requirements = ["mysqld", "sysbench"]
