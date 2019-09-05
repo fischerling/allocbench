@@ -14,7 +14,7 @@ MEMSIZE_KB=$(shell free -t | tail -1 | tr -s ' ' | cut -d ' ' -f 2)
 MEMSIZE=$(shell echo $(MEMSIZE_KB)"* 1024" | bc)
 
 TOOLS = print_status_on_exit.so exec
-ALLOCS = chattymalloc.so bumpptr_alloc.so
+ALLOCS = chattymalloc.so bumpptr_alloc.so speedymalloc.so
 TARGETS = $(addprefix $(OBJDIR)/allocators/,$(ALLOCS)) $(addprefix $(OBJDIR)/,$(TOOLS))
 
 .PHONY: all clean
@@ -22,6 +22,10 @@ TARGETS = $(addprefix $(OBJDIR)/allocators/,$(ALLOCS)) $(addprefix $(OBJDIR)/,$(
 all: $(TARGETS)
 
 $(OBJDIR)/allocators/bumpptr_alloc.so: bumpptr_alloc.c Makefile
+	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
+	$(CC) $(LDFLAGS) -shared -DMEMSIZE=$(MEMSIZE) $(CFLAGS) -o $@ $<
+
+$(OBJDIR)/allocators/speedymalloc.so: speedymalloc.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared -DMEMSIZE=$(MEMSIZE) $(CFLAGS) -o $@ $<
 
