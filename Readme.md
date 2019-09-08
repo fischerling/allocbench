@@ -17,11 +17,11 @@ git clone https://muhq.space/software/allocbench.git
 
 ## Usage
 
-usage: bench.py [-h] [-ds, --dont-save] [-l LOAD] [--analyse] [-r RUNS] [-v]
-                [-vdebug] [-b BENCHMARKS [BENCHMARKS ...]]
-                [-xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]]
-                [-a ALLOCATORS [ALLOCATORS ...]] [-ns] [-rd RESULTDIR]
-                [--license]
+	usage: bench.py [-h] [-ds, --dont-save] [-l LOAD] [--analyse] [-r RUNS] [-v]
+	                [-vdebug] [-b BENCHMARKS [BENCHMARKS ...]]
+	                [-xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]]
+	                [-a ALLOCATORS [ALLOCATORS ...]] [-ns] [-rd RESULTDIR]
+	                [--license]
 
 benchmark memory allocators
 
