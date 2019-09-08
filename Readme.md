@@ -23,27 +23,27 @@ git clone https://muhq.space/software/allocbench.git
 	                [-a ALLOCATORS [ALLOCATORS ...]] [-ns] [-rd RESULTDIR]
 	                [--license]
 
-benchmark memory allocators
+	benchmark memory allocators
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -ds, --dont-save      don't save benchmark results in RESULTDIR
-  -l LOAD, --load LOAD  load benchmark results from directory
-  --analyse             analyse benchmark behaviour using malt
-  -r RUNS, --runs RUNS  how often the benchmarks run
-  -v, --verbose         more output
-  -vdebug, --verbose-debug
-                        debug output
-  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
-                        benchmarks to run
-  -xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...], --exclude-benchmarks EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]
-                        explicitly excluded benchmarks
-  -a ALLOCATORS [ALLOCATORS ...], --allocators ALLOCATORS [ALLOCATORS ...]
-                        allocators to test
-  -ns, --nosum          don't produce plots
-  -rd RESULTDIR, --resultdir RESULTDIR
-                        directory where all results go
-  --license             print license info and exit
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  -ds, --dont-save      don't save benchmark results in RESULTDIR
+	  -l LOAD, --load LOAD  load benchmark results from directory
+	  --analyse             analyse benchmark behaviour using malt
+	  -r RUNS, --runs RUNS  how often the benchmarks run
+	  -v, --verbose         more output
+	  -vdebug, --verbose-debug
+	                        debug output
+	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
+	                        benchmarks to run
+	  -xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...], --exclude-benchmarks EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]
+	                        explicitly excluded benchmarks
+	  -a ALLOCATORS [ALLOCATORS ...], --allocators ALLOCATORS [ALLOCATORS ...]
+	                        allocators to test
+	  -ns, --nosum          don't produce plots
+	  -rd RESULTDIR, --resultdir RESULTDIR
+	                        directory where all results go
+	  --license             print license info and exit
 
 ### Examples
 
