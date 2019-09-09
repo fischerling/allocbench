@@ -13,3 +13,4 @@ lld-speed-test*
 status
 tags
 **/chattymalloc.txt
+src/obj
