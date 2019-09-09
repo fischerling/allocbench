@@ -127,8 +127,8 @@ void* realloc(void* ptr, size_t size) {
 		return NULL;
 
 	void* new_ptr = malloc(size);
-	// this may copies to much
-	memcpy(new_ptr, ptr, size);
+	size_t to_copy = ptr2chunk(ptr)->size;
+	memcpy(new_ptr, ptr, to_copy);
 	return new_ptr;
 }
 
