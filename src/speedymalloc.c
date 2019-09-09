@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <errno.h>
 #include <stddef.h> /* NULL, size_t */
 #include <stdint.h> /* uintptr_t */
@@ -13,61 +14,47 @@
 #define MEMSIZE 1024*4*1024*1024l
 #endif
 
+// sizeof(tls_t) == 4096
+#define CACHE_BINS 511
+// max cached object: 511 * 64 - 1 = 32703
+#define CACHE_BIN_SEPERATION 64
+
 #define unlikely(x)     __builtin_expect((x),0)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*
- * Allocations size < 1024 are 16 byte seperated into 64 bins
- * Allocations size in [1024, 5120) are 64 byte seperated
- * Allocations size in [5120, 21504) are 256 byte seperated
- * Allocations size in [21504, 54272) are 512 byte seperated
- * Allocations bigger than 54272 are not cached
- */
-static inline unsigned char size2bin(size_t size) {
-	if (size < 1024)
-		return size / 16;
-	else if (size < 5120)
-		return size / 64 + 48;
-	else if (size < 21504)
-		return size / 256 + 108;
-	else
-		return size / 512 + 150;
-}
-
-static inline size_t bin2size(unsigned char bin) {
-	if (bin < 64)
-		return (bin + 1) * 16;
-	else if (bin < 128)
-		return 1024 + (bin - 64) * 64;
-	else if (bin < 192)
-		return 5120 + (bin - 128) * 256;
-	else
-		return 21504 + (bin - 192) * 512;
-}
 
 typedef struct chunk {
-	size_t size;
+	size_t size; // Size header field for internal use
 	struct chunk* next;
 } chunk_t;
 
 static inline chunk_t* ptr2chunk(void* ptr) {
-	return (chunk_t*)((size_t*)ptr - 1);
+	return (chunk_t*)((uintptr_t)ptr - sizeof(size_t));
 }
 
 static inline void* chunk2ptr (chunk_t* chunk) {
-	return &chunk->next;
+	return (void*)((uintptr_t)chunk + sizeof(size_t));
 }
 
 typedef struct TLStates {
 	uintptr_t ptr;
-	chunk_t* bins[256];
+	chunk_t* bins[CACHE_BINS];
 } tls_t;
 
-
 __thread tls_t* tls;
+
+static inline int size2bin(size_t size) {
+	assert(size < CACHE_BINS * CACHE_BIN_SEPERATION);
+	return size / CACHE_BIN_SEPERATION;
+}
+
+static inline size_t bin2size(int bin) {
+	assert(bin >= 0 && bin < CACHE_BINS);
+	return bin * CACHE_BIN_SEPERATION;
+}
 
 static void init_tls(void) {
 	void *mem = mmap(NULL, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
@@ -84,17 +71,15 @@ static void* bump_alloc(size_t size) {
 	// allocate size header
 	tls->ptr += sizeof(size_t);
 
-	// align ptr;
-	if (tls->ptr % MIN_ALIGNMENT != 0) {
-		size_t mask = MIN_ALIGNMENT -1;
-		tls->ptr = (tls->ptr + mask) & ~mask;
-	}
+	// align ptr
+	size_t mask = MIN_ALIGNMENT -1;
+	tls->ptr = (tls->ptr + mask) & ~mask;
 
-	chunk_t* chunk = ptr2chunk((void*)tls->ptr);
-	chunk->size = size;
+	void* ptr = (void*)tls->ptr;
+	ptr2chunk(ptr)->size = size;
 	tls->ptr += size;
 
-	return chunk2ptr(chunk);
+	return ptr;
 }
 
 void* malloc(size_t size) {
@@ -103,8 +88,8 @@ void* malloc(size_t size) {
 	}
 
 	// cached sizes
-	if (size < 54272) {
-		unsigned char bin = size2bin(size);
+	if (size < CACHE_BINS * CACHE_BIN_SEPERATION) {
+		int bin = size2bin(size);
 		if (tls->bins[bin] != NULL) {
 			chunk_t* chunk = tls->bins[bin];
 			// remove first chunk from list
@@ -127,8 +112,8 @@ void free(void* ptr) {
 
 	chunk_t* chunk = ptr2chunk(ptr);
 
-	if (chunk->size < 54272) {
-		unsigned char bin = size2bin(chunk->size);
+	if (chunk->size < CACHE_BINS * CACHE_BIN_SEPERATION) {
+		int bin = size2bin(chunk->size);
 		chunk->next = tls->bins[bin];
 		tls->bins[bin] = chunk;
 	}
@@ -148,13 +133,25 @@ void* realloc(void* ptr, size_t size) {
 }
 
 void* memalign(size_t alignment, size_t size) {
+	if (alignment % 2 != 0)
+		return NULL;
+
 	if (unlikely(tls == NULL)) {
 		init_tls();
 	}
-	// align ptr to alignment and allocate using the bumppointer
+
+	// allocate size header
+	tls->ptr += sizeof(size_t);
+
+	// align returned pointer
 	size_t mask = alignment - 1;
 	tls->ptr = (tls->ptr + mask) & ~mask;
-	return bump_alloc(size);
+
+	void* ptr = (void*)tls->ptr;
+	ptr2chunk(ptr)->size = size;
+	tls->ptr += size;
+
+	return ptr;
 }
 
 int posix_memalign(void **memptr, size_t alignment, size_t size)
