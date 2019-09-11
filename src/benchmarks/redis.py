@@ -17,12 +17,18 @@
 
 """Definition of the redis benchmark"""
 
+import os
 import re
+import subprocess
+import sys
+from urllib.request import urlretrieve
 
 from src.benchmark import Benchmark
+from src.util import print_info, download_reporthook
 
 
 REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
+
 
 class BenchmarkRedis(Benchmark):
     """Redis benchmark
@@ -40,6 +46,52 @@ class BenchmarkRedis(Benchmark):
                          "shutdown_cmds": ["redis-cli shutdown"]}]
 
         super().__init__(name)
+
+    def prepare(self):
+        super().prepare()
+
+        redis_version = "5.0.5"
+        redis_archive = f"redis-{redis_version}.tar.gz"
+        redis_url = f"http://download.redis.io/releases/{redis_archive}"
+        redis_dir = os.path.join(self.build_dir, f"redis-{redis_version}")
+
+        if not os.path.isdir(redis_dir):
+            if not os.path.isfile(redis_archive):
+                print(f"Downloading redis-{redis_version}...")
+                urlretrieve(redis_url, redis_archive, download_reporthook)
+                sys.stderr.write("\n")
+
+            # Create build_dir
+            os.mkdir(self.build_dir)
+
+            # Extract redis
+            proc = subprocess.run(["tar", "Cxf", self.build_dir, redis_archive],
+                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+
+            # delete archive
+            if proc.returncode == 0:
+                os.remove(redis_archive)
+            else:
+                return False
+
+            # building redis
+            proc = subprocess.run(["make", "-C", redis_dir],
+                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+
+            if proc.returncode != 0:
+                return False
+
+
+            # create symlinks
+            for exe in ["redis-cli", "redis-server", "redis-benchmark"]:
+                src = os.path.join(redis_dir, "src", exe)
+                dest = os.path.join(self.build_dir, exe)
+                os.link(src, dest)
+
+        return True
+
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
