@@ -47,18 +47,18 @@ typedef struct TLStates {
 __thread tls_t* tls;
 
 static inline int size2bin(size_t size) {
-	assert(size < CACHE_BINS * CACHE_BIN_SEPERATION);
-	return size / CACHE_BIN_SEPERATION;
+	assert(size > 0 && size < CACHE_BINS * CACHE_BIN_SEPERATION);
+	return (size - 1) / CACHE_BIN_SEPERATION;
 }
 
 static inline size_t bin2size(int bin) {
 	assert(bin >= 0 && bin < CACHE_BINS);
-	return bin * CACHE_BIN_SEPERATION;
+	return (bin + 1) * CACHE_BIN_SEPERATION;
 }
 
 static void init_tls(void) {
 	void *mem = mmap(NULL, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-	if(mem == MAP_FAILED) {
+	if (mem == MAP_FAILED) {
 		perror("mmap");
 		exit(1);
 	}
@@ -107,8 +107,9 @@ void free(void* ptr) {
 		init_tls();
 	}
 
-	if (ptr == NULL)
+	if (ptr == NULL) {
 		return;
+	}
 
 	chunk_t* chunk = ptr2chunk(ptr);
 
@@ -120,11 +121,13 @@ void free(void* ptr) {
 }
 
 void* realloc(void* ptr, size_t size) {
-	if(ptr == NULL)
+	if (ptr == NULL) {
 		return malloc(size);
+	}
 
-	if(size == 0)
+	if (size == 0) {
 		return NULL;
+	}
 
 	void* new_ptr = malloc(size);
 	size_t to_copy = ptr2chunk(ptr)->size;
@@ -133,8 +136,10 @@ void* realloc(void* ptr, size_t size) {
 }
 
 void* memalign(size_t alignment, size_t size) {
-	if (alignment % 2 != 0)
+	/* if not power of two */
+	if (!((alignment != 0) && !(alignment & (alignment - 1)))) {
 		return NULL;
+	}
 
 	if (unlikely(tls == NULL)) {
 		init_tls();
@@ -158,26 +163,26 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
 	void *out;
 
-	if(memptr == NULL) {
+	if (memptr == NULL) {
 		return 22;
 	}
 
-	if((alignment % sizeof(void*)) != 0) {
+	if ((alignment % sizeof(void*)) != 0) {
 		return 22;
 	}
 
 	/* if not power of two */
-	if(!((alignment != 0) && !(alignment & (alignment - 1)))) {
+	if (!((alignment != 0) && !(alignment & (alignment - 1)))) {
 		return 22;
 	}
 
-	if(size == 0) {
+	if (size == 0) {
 		*memptr = NULL;
 		return 0;
 	}
 
 	out = memalign(alignment, size);
-	if(out == NULL) {
+	if (out == NULL) {
 		return 12;
 	}
 
@@ -190,7 +195,7 @@ void* calloc(size_t nmemb, size_t size)
 	void *out;
 	size_t fullsize = nmemb * size;
 
-	if((size != 0) && ((fullsize / size) != nmemb)) {
+	if ((size != 0) && ((fullsize / size) != nmemb)) {
 		return NULL;
 	}
 	
@@ -204,7 +209,7 @@ void* calloc(size_t nmemb, size_t size)
 void* valloc(size_t size)
 {
 	long ret = sysconf(_SC_PAGESIZE);
-	if(ret == -1) {
+	if (ret == -1) {
 		return NULL;
 	}
 
@@ -216,14 +221,14 @@ void* pvalloc(size_t size)
 	size_t ps, rem, allocsize;
 
 	long ret = sysconf(_SC_PAGESIZE);
-	if(ret == -1) {
+	if (ret == -1) {
 		return NULL;
 	}
 
 	ps = ret;
 	rem = size % ps;
 	allocsize = size;
-	if(rem != 0) {
+	if (rem != 0) {
 		allocsize = ps + (size - rem);
 	}
 
@@ -232,11 +237,11 @@ void* pvalloc(size_t size)
 
 void* aligned_alloc(size_t alignment, size_t size)
 {
-	if(alignment > size) {
+	if (alignment > size) {
 		return NULL;
 	}
 
-	if((size % alignment) != 0) {
+	if ((size % alignment) != 0) {
 		return NULL;
 	}
 
