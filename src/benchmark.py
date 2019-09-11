@@ -332,7 +332,7 @@ class Benchmark:
         # save one valid result to expand invalid results
         valid_result = {}
 
-        self.fatcs["runs"] = runs
+        self.results["facts"]["runs"] = runs
 
         n = len(list(self.iterate_args())) * len(self.allocators)
         for run in range(1, runs + 1):
