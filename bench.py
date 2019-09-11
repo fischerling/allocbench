@@ -121,6 +121,10 @@ def main():
     print_info("Allocators:", *src.globalvars.allocators.keys())
     print_debug("Allocators:", *src.globalvars.allocators.items())
 
+    if src.globalvars.allocators == {}:
+        print_error("Abort because there are no allocators to benchmark")
+        exit(1)
+
     # collect facts about benchmark environment
     src.facter.collect_facts()
 
