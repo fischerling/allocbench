@@ -61,7 +61,7 @@ class BenchmarkLld(Benchmark):
             if not os.path.isfile(test_archive):
                 choice = input("Download missing test archive (1.1GB) [Y/n/x] ")
                 if not choice in ['', 'Y', 'y']:
-                    return False
+                    return
 
                 url = f"https://s3-us-west-2.amazonaws.com/linker-tests/{test_archive}"
                 urlretrieve(url, test_archive, download_reporthook)
@@ -76,8 +76,6 @@ class BenchmarkLld(Benchmark):
                 os.remove(test_archive)
 
         self.args["test"] = os.listdir(test_dir)
-
-        return True
 
 
     def cleanup(self):

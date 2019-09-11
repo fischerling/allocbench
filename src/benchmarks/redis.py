@@ -74,26 +74,17 @@ class BenchmarkRedis(Benchmark):
             # delete archive
             if proc.returncode == 0:
                 os.remove(redis_archive)
-            else:
-                return False
 
             # building redis
             proc = subprocess.run(["make", "-C", redis_dir],
                                   # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                   universal_newlines=True)
 
-            if proc.returncode != 0:
-                return False
-
-
             # create symlinks
             for exe in ["redis-cli", "redis-server", "redis-benchmark"]:
                 src = os.path.join(redis_dir, "src", exe)
                 dest = os.path.join(self.build_dir, exe)
                 os.link(src, dest)
-
-        return True
-
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):

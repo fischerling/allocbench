@@ -159,7 +159,13 @@ def main():
         bench = getattr(bench_module, bench)
 
         print_status("Preparing", bench.name, "...")
-        bench.prepare()
+        try:
+            bench.prepare()
+        except Exception:
+            print_error(traceback.format_exc())
+            print_error(f"Skipping {bench}! Preparing failed.")
+            continue
+
 
         if args.analyze:
             print_status("Analysing {} ...".format(bench))

@@ -69,6 +69,7 @@ class BenchmarkDJTrace(Benchmark):
                                   "qemu-win7",
                                   "proprietary-1",
                                   "proprietary-2"]}
+
         self.results = {"389-ds-2": {
                             "malloc": 170500018, "calloc": 161787184,
                             "realloc": 404134, "free": 314856324,
@@ -112,7 +113,7 @@ class BenchmarkDJTrace(Benchmark):
             if not os.path.isfile(workload_archive):
                 choice = input("Download missing workloads (367M / ~6GB unpacked) [Y/n] ")
                 if not choice in ['', 'Y', 'y']:
-                    return False
+                    return
 
                 url = f"https://www4.cs.fau.de/~flow/allocbench/{workload_archive}"
                 urlretrieve(url, workload_archive, download_reporthook)
@@ -126,10 +127,8 @@ class BenchmarkDJTrace(Benchmark):
             if proc.returncode == 0:
                 os.remove(workload_archive)
 
-            self.args["workload"] = os.listdir(workload_)
-
-            return True
-
+        for workload in os.listdir(workload_dir):
+            self.args["workload"].append(os.path.splitext(workload)[0])
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
