@@ -92,6 +92,10 @@ class Benchmark:
         if not hasattr(self, "result_dir"):
             self.result_dir = os.path.abspath(os.path.join(src.globalvars.resdir,
                                                            self.name))
+        # Set build_dir
+        if not hasattr(self, "build_dir"):
+            self.build_dir = os.path.abspath(os.path.join(src.globalvars.builddir,
+                                                          "benchmarks", self.name))
 
         self.Perm = namedtuple("Perm", self.args.keys())
 
