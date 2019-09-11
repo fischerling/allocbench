@@ -144,6 +144,7 @@ class Allocator:
         build_needed = not os.path.isdir(self.dir)
         buildtimestamp_path = os.path.join(self.dir, ".buildtime")
 
+        print_info2(f"Building {self.name}...")
         if not build_needed:
             print_info2("Old build found. Comparing build time with mtime")
 
@@ -158,7 +159,7 @@ class Allocator:
             print_debug("Time of last build:", timestamp.isoformat())
             print_debug("Last modification of allocators file:",
                         modtime.isoformat())
-            print_info2("Build needed:", build_needed)
+            print_info2("" if build_needed else "No " + "build needed")
 
         if build_needed:
             if self.sources:
