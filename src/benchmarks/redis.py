@@ -55,6 +55,8 @@ class BenchmarkRedis(Benchmark):
         redis_url = f"http://download.redis.io/releases/{redis_archive}"
         redis_dir = os.path.join(self.build_dir, f"redis-{redis_version}")
 
+        self.results["facts"]["versions"]["redis"] = redis_version
+
         if not os.path.isdir(redis_dir):
             if not os.path.isfile(redis_archive):
                 print(f"Downloading redis-{redis_version}...")

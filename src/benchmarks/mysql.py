@@ -28,6 +28,7 @@ import sys
 import numpy as np
 
 from src.benchmark import Benchmark
+import src.facter
 from src.util import print_status, print_debug, print_info2
 
 TESTDIR = os.path.join(os.getcwd(), "mysql_test")
@@ -71,6 +72,10 @@ class BenchmarkMYSQL(Benchmark):
 
     def prepare(self):
         super().prepare()
+
+        # save mysqld and sysbench versions
+        for exe in self.requirements:
+            self.results["facts"]["versions"][exe] = src.facter.exe_version(exe, "--version")
 
         # Setup Test Environment
         if not os.path.exists("mysql_test"):

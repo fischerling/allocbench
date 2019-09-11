@@ -20,6 +20,7 @@
 import re
 
 from src.benchmark import Benchmark
+import src.facter
 
 
 class BenchmarkHTTPD(Benchmark):
@@ -41,6 +42,12 @@ class BenchmarkHTTPD(Benchmark):
         self.requirements = ["nginx", "ab"]
 
         super().__init__(name)
+
+    def prepare(self):
+        super().prepare()
+
+        self.results["facts"]["versions"]["nginx"] = src.facter.exe_version("nginx", "-v")
+        self.results["facts"]["versions"]["ab"] = src.facter.exe_version("ab", "-V")
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):

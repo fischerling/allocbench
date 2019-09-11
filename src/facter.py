@@ -110,13 +110,13 @@ def libc_ver(executable=None):
 
     return ("glibc", glibc_version)
 
-def exec_ver(executable):
+def exe_version(executable, version_flag="--version"):
     """Return version of executable"""
-    proc = subprocess.run([executable, "--version"],
+    proc = subprocess.run([executable, version_flag],
                           universal_newlines=True, stdout=subprocess.PIPE)
 
     if proc.returncode != 0:
-        print_error(f"failed to get version of {executable}")
+        print_warning(f"failed to get version of {executable}")
         return ""
 
     return proc.stdout[:-1]

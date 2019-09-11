@@ -25,6 +25,7 @@ import sys
 import matplotlib.pyplot as plt
 
 from src.benchmark import Benchmark
+import src.facter
 from src.util import download_reporthook
 
 
@@ -50,6 +51,9 @@ class BenchmarkLld(Benchmark):
 
     def prepare(self):
         super().prepare()
+
+        # save lld version
+        self.results["facts"]["versions"]["lld"] = src.facter.exe_version("ld.lld", "-v")
 
         test_dir = "lld-speed-test"
         test_archive = f"{test_dir}.tar.xz"

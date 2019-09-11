@@ -193,7 +193,6 @@ class Benchmark:
             exe = src.util.find_cmd(r)
             if exe is not None:
                 self.results["facts"]["libcs"][r] = src.facter.libc_ver(executable=exe)
-                self.results["facts"]["versions"][r] = src.facter.exec_ver(exe)
             else:
                 raise Exception("Requirement: {} not found".format(r))
 
