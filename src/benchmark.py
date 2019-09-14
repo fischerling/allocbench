@@ -363,7 +363,7 @@ class Benchmark:
                     print_info0(i, "of", n, "\r", end='')
 
                     # Available substitutions in cmd
-                    substitutions = {"run": run}
+                    substitutions = {"run": run, "alloc": alloc_name}
                     substitutions.update(self.__dict__)
                     substitutions.update(alloc)
                     if perm:
@@ -404,13 +404,13 @@ class Benchmark:
 
                     result = {}
 
-                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr:
+                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr or "Segmentation fault" in res.stderr:
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
                         if res.returncode != 0:
                             print_error("{} failed with exit code {} for {}".format(argv, res.returncode, alloc_name))
-                        else:
+                        elif "ERROR: ld.so" in res.stderr:
                             print_error("Preloading of {} failed for {}".format(alloc["LD_PRELOAD"], alloc_name))
 
                     # parse and store results
