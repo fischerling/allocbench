@@ -202,6 +202,8 @@ def main():
 
         if args.runs > 0:
             print_status("Running", bench.name, "...")
+            start_time = datetime.datetime.now()
+            bench.results['facts']['start-time'] = start_time.isoformat()
             try:
                 bench.run(runs=args.runs)
             except Exception:
@@ -212,6 +214,9 @@ def main():
                 print_error("Skipping", bench, "!")
 
                 continue
+            end_time = datetime.datetime.now()
+            bench.results['facts']['end-time'] = end_time.isoformat()
+            bench.results['facts']['duration'] = end_time - start_time
 
         # Save results in resultdir
         bench.save(os.path.join(src.globalvars.resdir, f"{bench.name}.save"))
