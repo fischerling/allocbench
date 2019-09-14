@@ -22,9 +22,16 @@ all: $(OBJDIR)/ccinfo  $(MAKEFILES) $(CMAKELISTS)
 $(CMAKELISTS):
 	$(eval BENCHDIR=$(OBJDIR)$(shell echo $@ | sed s/src//))
 	@if test \( ! \( -d $(BENCHDIR) \) \) ;then mkdir -p $(BENCHDIR);fi
-	cd $(BENCHDIR); cmake $(PWD)/$@; make
+ifneq (,$(findstring s,$(MAKEFLAGS)))
+	cd $(BENCHDIR); cmake $(PWD)/$@ >/dev/null
+else
+	cd $(BENCHDIR); cmake $(PWD)/$@
+endif
+	$(MAKE) -C $(BENCHDIR)
 
 $(MAKEFILES):
+	$(eval BENCHDIR=$(OBJDIR)$(shell echo $@ | sed s/src//))
+	@if test \( ! \( -d $(BENCHDIR) \) \) ;then mkdir -p $(BENCHDIR);fi
 	$(MAKE) -C $@ OBJDIR=$(OBJDIR)$(shell echo $@ | sed s/src//)
 
 $(OBJDIR)/ccinfo: | $(OBJDIR)
