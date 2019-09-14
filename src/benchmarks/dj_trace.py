@@ -216,7 +216,8 @@ class BenchmarkDJTrace(Benchmark):
         self.results["stats"]["Ideal_RSS"] = {}
         for perm in self.iterate_args(args=args):
             ideal_rss = self.results[list(allocators.keys())[0]][perm][0]["Ideal_RSS"]/1000
-            self.results["stats"]["Ideal_RSS"][perm] = {"mean": {"Max_RSS": ideal_rss}}
+            self.results["stats"]["Ideal_RSS"][perm] = {"mean": {"Max_RSS": ideal_rss},
+                                                        "std": {"Max_RSS": 0}}
 
         self.barplot_single_arg("{Max_RSS}/1000",
                                 ylabel='"Max RSS in MB"',
