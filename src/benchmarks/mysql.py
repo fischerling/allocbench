@@ -137,7 +137,7 @@ class BenchmarkMYSQL(Benchmark):
         result["avg"] = re.search("avg:\\s*(\\d*.\\d*)", stdout).group(1)
         result["max"] = re.search("max:\\s*(\\d*.\\d*)", stdout).group(1)
 
-        with open("/proc/"+str(self.servers[0].pid)+"/status", "r") as f:
+        with open("/proc/"+str(self.servers[0]["popen"].pid)+"/status", "r") as f:
             for l in f.readlines():
                 if l.startswith("VmHWM:"):
                     result["rssmax"] = int(l.replace("VmHWM:", "").strip().split()[0])
