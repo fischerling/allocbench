@@ -369,6 +369,8 @@ class Benchmark:
                     if perm:
                         substitutions.update(perm._asdict())
                         substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
+                    else:
+                        substitutions["perm"] = ""
 
                     cmd_argv = self.cmd.format(**substitutions)
                     cmd_argv = src.util.prefix_cmd_with_abspath(cmd_argv).split()
