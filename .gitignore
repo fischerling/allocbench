@@ -1,4 +1,5 @@
 build/*
+cache/*
 results/*
 allocators/*.so
 dj_workloads/*
