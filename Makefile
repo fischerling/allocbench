@@ -1,5 +1,5 @@
-MAKEFILES = $(shell dirname $(shell find . -name Makefile ! -path ./Makefile ! -path "./build/*"))
-CMAKELISTS = $(shell dirname $(shell find . -name CMakeLists.txt ! -path "./build/*"))
+MAKEFILES = $(shell dirname $(shell find src/ -name Makefile))
+CMAKELISTS = $(shell dirname $(shell find src/ -name CMakeLists.txt))
 
 OBJDIR = $(PWD)/build
 
