@@ -182,6 +182,8 @@ def main():
                 analyze_alloc = "chattymalloc"
 
             old_allocs = bench.allocators
+            old_measure_cmd = bench.measure_cmd
+            bench.measure_cmd = ""
             analyze_alloc_module = importlib.import_module(f"src.allocators.{analyze_alloc}")
             bench.allocators = {analyze_alloc: getattr(analyze_alloc_module, analyze_alloc).build()}
 
@@ -190,6 +192,8 @@ def main():
             except Exception:
                 print_error(traceback.format_exc())
                 print_error("Skipping analysis of", bench, "!")
+
+            bench.measure_cmd = old_measure_cmd
 
             # Remove results for analyze_alloc
             if analyze_alloc in bench.results:
