@@ -11,3 +11,5 @@
 	- verify (commit id, checksum) remote sources
 	- git recursive clone
 
+- implement verbosity aware system() wrapper
+
