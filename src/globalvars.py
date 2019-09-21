@@ -41,16 +41,22 @@ verbosity = 0
 
 allocators = {}
 
+# allocbench/src/
 srcdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
+# allocbench/src/benchmarks
 benchsrcdir = os.path.join(srcdir, "benchmarks")
 
+# allocbench/src/allocators
 allocsrcdir = os.path.join(srcdir, "allocators")
 
+# allocbench
 allocbenchdir = os.path.dirname(srcdir)
 
+# allocbench/build
 builddir = os.path.join(allocbenchdir, "build")
 
+# allocbench/build/allocators
 allocbuilddir = os.path.join(builddir, "allocators")
 
 resdir = None

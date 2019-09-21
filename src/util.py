@@ -164,12 +164,12 @@ def print_version_and_exit():
 
     proc = subprocess.run(["git", "status", "--porcelain"],
                           universal_newlines=True, stdout=subprocess.PIPE)
-    
+
     if proc.returncode != 0:
         print_error("git status --porcelain failed")
         exit(1)
 
     dirty = "-dirty" if proc.stdout != "" else ""
-    
+
     print(f"{commit}{dirty}")
     exit(0)
