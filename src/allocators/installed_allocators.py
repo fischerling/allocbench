@@ -22,11 +22,11 @@ import subprocess
 # TODO: add more allocators
 MAYBE_ALLOCATORS = ["tcmalloc", "jemalloc", "hoard"]
 
-allocators = {"libc": {"cmd_prefix":    "",
-                       "binary_suffix": "",
-                       "LD_PRELOAD":    "",
-                       "LD_LIBRARY_PATH":    "",
-                       "color":         "C1"}}
+allocators = {"libc": {"cmd_prefix":      "",
+                       "binary_suffix":   "",
+                       "LD_PRELOAD":      "",
+                       "LD_LIBRARY_PATH": "",
+                       "color":           "C1"}}
 
 for i, t in enumerate(MAYBE_ALLOCATORS):
     try:

@@ -17,29 +17,23 @@
 
 """SuperMalloc definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-import src.allocator
-
-VERSION = "709663fb81ba091b0a78058869a644a272f4163d"
-
-sources = AllocatorSources("SuperMalloc",
-            retrieve_cmds=["git clone https://github.com/kuszmaul/SuperMalloc"],
-            prepare_cmds=[f"git checkout {VERSION}"],
-            reset_cmds=["git reset --hard"])
-
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 class SuperMalloc(Allocator):
     """SuperMalloc allocator"""
-    def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = sources
-        kwargs["LD_PRELOAD"] = "{srcdir}/release/lib/libsupermalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}/release; make",
-                                "mkdir -p {dir}"]
-        kwargs["patches"] = ["{patchdir}/remove_faulty_aligned_alloc_test.patch"]
+    sources = GitArtifact("SuperMalloc", "https://github.com/kuszmaul/SuperMalloc")
+
+    def __init__(self, name, **kwargs):
+        self.LD_PRELOAD = "{dir}/libsupermalloc.so"
+        self.build_cmds = ["cd {srcdir}/release; make",
+                           "mkdir -p {dir}",
+                           "ln -f -s {srcdir}/release/lib/libsupermalloc.so {dir}/libsupermalloc.so"]
+        self.patches = ["{patchdir}/remove_faulty_aligned_alloc_test.patch"]
 
         super().__init__(name, **kwargs)
 
 
-supermalloc = SuperMalloc("SuperMalloc", color="xkcd:lime")
+supermalloc = SuperMalloc("SuperMalloc", color="xkcd:lime",
+                          version="709663fb81ba091b0a78058869a644a272f4163d")

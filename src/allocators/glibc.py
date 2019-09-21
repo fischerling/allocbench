@@ -17,52 +17,48 @@
 
 """Glibc definitions"""
 
-from src.allocator import Allocator, AllocatorSources, LIBRARY_PATH
-
-VERSION = 2.29
-
-GLIBC_SRC = AllocatorSources("glibc",
-                      retrieve_cmds=["git clone git://sourceware.org/git/glibc.git"],
-                      prepare_cmds=[f"git checkout glibc-{VERSION}"],
-                      reset_cmds=["git reset --hard"])
+from src.allocator import Allocator, LIBRARY_PATH
+from src.artifact import GitArtifact
 
 
 class Glibc(Allocator):
     """Glibc definition for allocbench
 
     Glibcs are loaded using their own supplied loader"""
+
+    sources = GitArtifact("glibc", "git://sourceware.org/git/glibc.git")
+
     def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = GLIBC_SRC
 
         configure_args = ""
         if "configure_args" in kwargs:
             configure_args = kwargs["configure_args"]
-            del(kwargs["configure_args"])
+            del kwargs["configure_args"]
 
-        kwargs["build_cmds"] = ["mkdir -p glibc-build",
-                                "cd glibc-build; {srcdir}/configure --prefix={dir} " + configure_args,
-                                "cd glibc-build; make",
-                                "cd glibc-build; make install"]
+        self.build_cmds = ["mkdir -p glibc-build",
+                           "cd glibc-build; {srcdir}/configure --prefix={dir} " + configure_args,
+                           "cd glibc-build; make",
+                           "cd glibc-build; make install"]
 
-        kwargs["cmd_prefix"] = ("{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:"
-                                + LIBRARY_PATH)
-
-        # kwargs["LD_LIBRARY_PATH"] = "{dir}/lib:" + library_path
+        self.cmd_prefix = "{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:" + LIBRARY_PATH
 
         super().__init__(name, **kwargs)
 
 
-glibc = Glibc("glibc", color="xkcd:red")
+glibc = Glibc("glibc", version="glibc-2.29", color="xkcd:red")
 
 glibc_notc = Glibc("glibc-noThreadCache",
                    configure_args="--disable-experimental-malloc",
+                   version="glibc-2.29",
                    color="xkcd:maroon")
 
 glibc_nofs = Glibc("glibc-noFalsesharing",
                    patches=["{patchdir}/glibc_2.29_no_passive_falsesharing.patch"],
+                   version="glibc-2.29",
                    color="xkcd:pink")
 
 glibc_nofs_fancy = Glibc("glibc-noFalsesharingClever",
                          patches=["{patchdir}/glibc_2.29_no_passive_falsesharing_fancy.patch"],
+                         version="glibc-2.29",
                          color="xkcd:orange")

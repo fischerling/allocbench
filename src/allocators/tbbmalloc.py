@@ -17,27 +17,22 @@
 
 """tbbmalloc definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-VERSION = "2019_U8"
-
-source = AllocatorSources("tbb",
-                         ["git clone https://github.com/intel/tbb.git"],
-                         [f"git checkout {VERSION}"],
-                         ["git reset --hard"])
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class TBBMalloc(Allocator):
     """tbbmalloc allocator"""
-    def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = source
-        kwargs["LD_PRELOAD"] = "{dir}/libtbbmalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; make tbbmalloc -j4",
-                                "mkdir -p {dir}",
-                                'ln -f -s $(find {srcdir} -executable -name "*libtbbmalloc_proxy.so*" | head -1) {dir}/libtbbmalloc.so']
+    source = GitArtifact("tbb", "https://github.com/intel/tbb.git"),
+
+    def __init__(self, name, **kwargs):
+        self.LD_PRELOAD = "{dir}/libtbbmalloc.so"
+        self.build_cmds = ["cd {srcdir}; make tbbmalloc -j4",
+                           "mkdir -p {dir}",
+                           'ln -f -s $(find {srcdir} -executable -name "*libtbbmalloc_proxy.so*" | head -1) {dir}/libtbbmalloc.so']
 
         super().__init__(name, **kwargs)
 
 
-tbbmalloc = TBBMalloc("tbbmalloc", color="xkcd:green")
+tbbmalloc = TBBMalloc("tbbmalloc", color="xkcd:green", version="2019_U8")
