@@ -59,6 +59,7 @@ class Allocator:
         self.name = name
         self.srcdir = os.path.join(SRCDIR, self.name)
         self.dir = os.path.join(BUILDDIR, self.name)
+        self.patchdir = os.path.join(src.globalvars.allocsrcdir, self.name)
         # Update attributes
         self.__dict__.update((k, v) for k, v in kwargs.items()
                              if k in self.allowed_attributes)
