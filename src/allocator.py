@@ -56,10 +56,11 @@ class Allocator:
                           "build_cmds"]
 
     def __init__(self, name, **kwargs):
+        self.class_file = inspect.getfile(self.__class__)
         self.name = name
         self.srcdir = os.path.join(SRCDIR, self.name)
         self.dir = os.path.join(BUILDDIR, self.name)
-        self.patchdir = os.path.join(src.globalvars.allocsrcdir, self.name)
+        self.patchdir = os.path.join(os.path.splitext(self.class_file)[0])
         # Update attributes
         self.__dict__.update((k, v) for k, v in kwargs.items()
                              if k in self.allowed_attributes)
@@ -117,7 +118,7 @@ class Allocator:
             with open(buildtimestamp_path, "r") as buildtimestamp_file:
                 timestamp = datetime.fromtimestamp(float(buildtimestamp_file.read()))
 
-            modtime = os.stat(inspect.getfile(self.__class__)).st_mtime
+            modtime = os.stat(self.class_file).st_mtime
             modtime = datetime.fromtimestamp(modtime)
 
             build_needed = timestamp < modtime
