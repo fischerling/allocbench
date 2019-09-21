@@ -23,8 +23,13 @@ import subprocess
 import sys
 from urllib.request import urlretrieve
 
+from src.artifact import GitArtifact
 from src.benchmark import Benchmark
 from src.util import print_info, download_reporthook
+
+
+LINUX_ARTIFACT = GitArtifact("linux", "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
+LINUX_VERSION = "v5.3"
 
 
 class BenchmarkFd(Benchmark):
@@ -36,7 +41,7 @@ class BenchmarkFd(Benchmark):
 
         super().__init__(name)
         
-        self.cmd = "fd -HI -e c \"\" {build_dir}/linux"
+        self.cmd = "fd -HI -e c '.*[0-9].*' {build_dir}/linux"
 
     def prepare(self):
         super().prepare()
@@ -75,15 +80,8 @@ class BenchmarkFd(Benchmark):
                 dest = os.path.join(self.build_dir, exe)
                 os.link(src, dest)
         
-        linux_version = "v5.3"
-        linux_url = f"git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git"
-        linux_dir = os.path.join(self.build_dir, "linux")
-        if not os.path.isdir(linux_dir):
-            # Extract redis
-            proc = subprocess.run(["git", "clone", linux_url, linux_dir],
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
 
+        LINUX_ARTIFACT.provide(LINUX_VERSION, os.path.join(self.build_dir, "linux"))
 
     def summary(self):
         self.barplot_single_arg("{task-clock}",
