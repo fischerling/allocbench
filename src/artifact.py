@@ -27,7 +27,7 @@ import os
 import subprocess
 
 import src.globalvars
-from src.util import print_info, print_debug
+from src.util import print_info, print_debug, sha1sum
 
 ARTIFACT_STORE_DIR = os.path.join(src.globalvars.allocbenchdir, "cache")
 
@@ -87,3 +87,52 @@ class GitArtifact(Artifact):
                               universal_newlines=True)
         if proc.returncode != 0:
             raise Exception(f"Failed to provide {self.name}")
+
+        print_debug("update submodules in worktree. By running: ",
+                    ["git", "submodule", "update", "--init", "--recursive"], f"in {self.repo}")
+        proc = subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=location,
+                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              universal_newlines=True)
+
+class ArchiveArtifact(Artifact):
+    """External archive"""
+    supported_formats = ["tar"]
+    def __init__(self, name, url, format, checksum):
+        super().__init__(name)
+        self.url = url
+        if format not in self.supported_formats:
+            raise Exception(f'Archive format "{format}" not in supported list {self.supported_formats}')
+        self.format = format
+        self.archive = os.path.join(self.basedir, f"{self.name}.{self.format}")
+        self.checksum = checksum
+
+    def retrieve(self):
+        """download the archive"""
+        super().retrieve(["wget", "-O", self.archive, self.url])
+
+    def provide(self, location=None):
+        """extract the archive"""
+
+        # Download archive
+        if not os.path.exists(self.archive):
+            self.retrieve()
+
+        # compare checksums
+        if sha1sum(self.archive) != self.checksum:
+            raise Exception(f"Archive {self.archive} does not match provided checksum")
+
+        if not location:
+            location = os.path.join(self.basedir, "content")
+
+        os.makedirs(location, exist_ok=True)
+
+        # Extract archive
+        if self.format == "tar":
+            cmd = ["tar", "Cxf", location, self.archive]
+
+        print_debug(f"extract archive by running: {cmd} in {self.basedir}")
+        proc = subprocess.run(cmd, cwd=self.basedir,
+                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              universal_newlines=True)
+        if proc.returncode != 0:
+            raise Exception(f"Failed to extract {self.name}")

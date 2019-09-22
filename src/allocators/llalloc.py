@@ -17,25 +17,24 @@
 
 """Lockless allocator definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-
-LLALLOC_SOURCE = AllocatorSources("lockless_allocator",
-                      retrieve_cmds=["wget https://locklessinc.com/downloads/lockless_allocator_src.tgz",
-                                     "tar xf lockless_allocator_src.tgz"],
-                      prepare_cmds=[],
-                      reset_cmds=[])
+from src.allocator import Allocator
+from src.artifact import ArchiveArtifact
 
 
 class LocklessAllocator(Allocator):
     """Lockless allocator"""
     def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = LLALLOC_SOURCE
+        self.sources = ArchiveArtifact("llalloc",
+                                  "https://locklessinc.com/downloads/lockless_allocator_src.tgz",
+                                  "tar",
+                                  "c6cb5a57882fa4775b5227a322333a6126b61f7c")
 
-        kwargs["build_cmds"] = ["cd {srcdir}; make", "mkdir -p {dir}"]
+        self.build_cmds = ["cd {srcdir}/lockless_allocator; make",
+                           "mkdir -p {dir}",
+                           "ln -f -s {srcdir}/lockless_allocator/libllalloc.so.1.3 {dir}/libllalloc.so"]
 
-        kwargs["LD_PRELOAD"] = "{srcdir}/libllalloc.so.1.3"
+        self.LD_PRELOAD = "{dir}/libllalloc.so"
 
         super().__init__(name, **kwargs)
 

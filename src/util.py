@@ -17,6 +17,7 @@
 
 """Helper functions for allocbench"""
 
+import hashlib
 import os
 import subprocess
 import sys
@@ -173,3 +174,13 @@ def print_version_and_exit():
     
     print(f"{commit}{dirty}")
     exit(0)
+
+def sha1sum(filename):
+    """Return sha1sum of a file"""
+    sha1  = hashlib.sha1()
+    barray  = bytearray(64*1024)
+    view = memoryview(barray)
+    with open(filename, 'rb', buffering=0) as f:
+        for n in iter(lambda : f.readinto(view), 0):
+            sha1.update(view[:n])
+    return sha1.hexdigest()

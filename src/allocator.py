@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 
+from src.artifact import ArchiveArtifact, GitArtifact
 import src.globalvars
 from src.util import print_status, print_debug, print_error, print_info2
 
@@ -76,7 +77,10 @@ class Allocator:
             return
 
         print_status("Preparing", self.name, "...")
-        self.sources.provide(self.version, self.srcdir)
+        if type(self.sources) == GitArtifact:
+            self.sources.provide(self.version, self.srcdir)
+        elif type(self.sources) == ArchiveArtifact:
+            self.sources.provide(self.srcdir)
 
         if self.patches:
             stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
