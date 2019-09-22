@@ -24,7 +24,7 @@ from src.artifact import GitArtifact
 class TBBMalloc(Allocator):
     """tbbmalloc allocator"""
 
-    source = GitArtifact("tbb", "https://github.com/intel/tbb.git"),
+    sources = GitArtifact("tbb", "https://github.com/intel/tbb.git")
 
     def __init__(self, name, **kwargs):
         self.LD_PRELOAD = "{dir}/libtbbmalloc.so"
