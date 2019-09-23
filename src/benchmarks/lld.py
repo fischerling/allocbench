@@ -24,9 +24,9 @@ import sys
 
 import matplotlib.pyplot as plt
 
+from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
 import src.facter
-from src.util import download_reporthook
 
 
 class BenchmarkLld(Benchmark):
@@ -38,7 +38,7 @@ class BenchmarkLld(Benchmark):
     def __init__(self):
         name = "lld"
 
-        self.run_dir = "lld-speed-test/{test}"
+        self.run_dir = "{build_dir}/lld-speed-test/{test}"
         # TODO: don't hardcode ld.lld location
         self.cmd = "/usr/bin/ld.lld @response.txt"
 
@@ -55,35 +55,17 @@ class BenchmarkLld(Benchmark):
         # save lld version
         self.results["facts"]["versions"]["lld"] = src.facter.exe_version("ld.lld", "-v")
 
-        test_dir = "lld-speed-test"
-        test_archive = f"{test_dir}.tar.xz"
-        if not os.path.isdir(test_dir):
-            if not os.path.isfile(test_archive):
-                choice = input("Download missing test archive (1.1GB) [Y/n/x] ")
-                if not choice in ['', 'Y', 'y']:
-                    return
-
-                url = f"https://s3-us-west-2.amazonaws.com/linker-tests/{test_archive}"
-                urlretrieve(url, test_archive, download_reporthook)
-                sys.stderr.write("\n")
-
-            # Extract tests
-            proc = subprocess.run(["tar", "xf", test_archive], stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE, universal_newlines=True)
-
-            # delete archive
-            if proc.returncode == 0:
-                os.remove(test_archive)
-
-        self.args["test"] = os.listdir(test_dir)
-
+        tests = ArchiveArtifact("lld-speed-test",
+                                "https://s3-us-west-2.amazonaws.com/linker-tests/lld-speed-test.tar.xz",
+                                "tar",
+                                "2d449a11109c7363f67fd45513b42270f5ba2a92")
+        tests.provide(self.build_dir)
 
     def cleanup(self):
         for perm in self.iterate_args():
             a_out = os.path.join("lld-speed-test", perm.test, "a.out")
             if os.path.isfile(a_out):
                 os.remove(a_out)
-
 
     def summary(self):
         args = self.results["args"]

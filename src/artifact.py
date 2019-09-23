@@ -124,6 +124,10 @@ class ArchiveArtifact(Artifact):
         if not location:
             location = os.path.join(self.basedir, "content")
 
+        # Check if we already provided the archive at location
+        if os.path.exists(location):
+            return
+
         os.makedirs(location, exist_ok=True)
 
         # Extract archive

@@ -25,8 +25,9 @@ from urllib.request import urlretrieve
 import matplotlib.pyplot as plt
 import numpy as np
 
+from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
-from src.util import print_status, download_reporthook
+from src.util import print_status
 
 
 COMMA_SEP_NUMBER_RE = "(?:\\d*(?:,\\d*)?)*"
@@ -57,7 +58,7 @@ class BenchmarkDJTrace(Benchmark):
     def __init__(self):
         name = "dj_trace"
 
-        self.cmd = "trace_run{binary_suffix} dj_workloads/{workload}.wl"
+        self.cmd = "trace_run{binary_suffix} {build_dir}/dj_workloads/{workload}.wl"
         self.measure_cmd = ""
 
         self.args = {"workload": ["389-ds-2",
@@ -106,29 +107,11 @@ class BenchmarkDJTrace(Benchmark):
     def prepare(self):
         super().prepare()
 
-        workload_dir = "dj_workloads"
-        workload_archive = f"{workload_dir}.tar.xz"
-
-        if not os.path.isdir(workload_dir):
-            if not os.path.isfile(workload_archive):
-                choice = input("Download missing workloads (367M / ~6GB unpacked) [Y/n] ")
-                if not choice in ['', 'Y', 'y']:
-                    return
-
-                url = f"https://www4.cs.fau.de/~flow/allocbench/{workload_archive}"
-                urlretrieve(url, workload_archive, download_reporthook)
-                sys.stderr.write("\n")
-
-            # Extract workloads
-            proc = subprocess.run(["tar", "xf", workload_archive], stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE, universal_newlines=True)
-
-            # delete archive
-            if proc.returncode == 0:
-                os.remove(workload_archive)
-
-        for workload in os.listdir(workload_dir):
-            self.args["workload"].append(os.path.splitext(workload)[0])
+        workloads = ArchiveArtifact("dj_workloads",
+                                    "https://www4.cs.fau.de/~flow/allocbench/dj_workloads.tar.xz",
+                                    "tar",
+                                    "c9bc499eeba8023bca28a755fffbaf9200a335ad")
+        workloads.provide(self.build_dir)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):

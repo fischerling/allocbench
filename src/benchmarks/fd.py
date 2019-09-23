@@ -23,13 +23,9 @@ import subprocess
 import sys
 from urllib.request import urlretrieve
 
-from src.artifact import GitArtifact
+from src.artifact import ArchiveArtifact, GitArtifact
 from src.benchmark import Benchmark
-from src.util import print_info, download_reporthook
-
-
-LINUX_ARTIFACT = GitArtifact("linux", "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
-LINUX_VERSION = "v5.3"
+from src.util import print_info
 
 
 class BenchmarkFd(Benchmark):
@@ -38,7 +34,6 @@ class BenchmarkFd(Benchmark):
 
     def __init__(self):
         name = "fd"
-
         super().__init__(name)
         
         self.cmd = "fd -HI -e c '.*[0-9].*' {build_dir}/linux"
@@ -46,42 +41,26 @@ class BenchmarkFd(Benchmark):
     def prepare(self):
         super().prepare()
 
-        fd_tag = "v7.4.0"
-        fd_release =  f"fd-{fd_tag}-x86_64-unknown-linux-gnu"
-        fd_archive = f"{fd_release}.tar.gz"
-        fd_url = f"https://github.com/sharkdp/fd/releases/latest/download/{fd_archive}"
-        fd_dir = os.path.join(self.build_dir, fd_release)
+        fd_version = "v7.4.0"
+        self.results["facts"]["versions"]["fd"] = fd_version
+        fd_url = ("https://github.com/sharkdp/fd/releases/latest/download/"
+                  f"fd-{fd_version}-x86_64-unknown-linux-gnu.tar.gz")
 
-        self.results["facts"]["versions"]["fd"] = fd_tag
+        fd = ArchiveArtifact("fd", fd_url, "tar", "a5d8e7c8484449aa324a46abfdfaf026d7de77ee")
 
-        # Create builddir
-        os.makedirs(self.build_dir, exist_ok=True)
+        fd_dir = os.path.join(self.build_dir, "fd_sources")
+        fd.provide(fd_dir)
 
-        if not os.path.isdir(fd_dir):
-            if not os.path.isfile(fd_archive):
-                print(f"Downloading fd {fd_tag}...")
-                urlretrieve(fd_url, fd_archive, download_reporthook)
-                sys.stderr.write("\n")
-            
-            
-            # Extract redis
-            proc = subprocess.run(["tar", "Cxf", self.build_dir, fd_archive],
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
-            
-            # delete archive
-            if proc.returncode == 0:
-                os.remove(fd_archive)
-
-            
-            # create symlinks
-            for exe in ["fd"]:
-                src = os.path.join(fd_dir, exe)
-                dest = os.path.join(self.build_dir, exe)
-                os.link(src, dest)
+        # create symlinks
+        for exe in ["fd"]:
+            src = os.path.join(fd_dir, f"fd-{fd_version}-x86_64-unknown-linux-gnu", exe)
+            dest = os.path.join(self.build_dir, exe)
+            os.link(src, dest)
         
 
-        LINUX_ARTIFACT.provide(LINUX_VERSION, os.path.join(self.build_dir, "linux"))
+        linux = GitArtifact("linux", "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
+        linux_version = "v5.3"
+        linux.provide(linux_version, os.path.join(self.build_dir, "linux"))
 
     def summary(self):
         self.barplot_single_arg("{task-clock}",
