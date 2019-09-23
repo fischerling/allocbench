@@ -41,6 +41,9 @@ class BenchmarkFd(Benchmark):
     def prepare(self):
         super().prepare()
 
+        if os.path.exists(self.build_dir):
+            return
+
         fd_version = "v7.4.0"
         self.results["facts"]["versions"]["fd"] = fd_version
         fd_url = ("https://github.com/sharkdp/fd/releases/latest/download/"
