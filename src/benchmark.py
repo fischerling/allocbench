@@ -345,7 +345,7 @@ class Benchmark:
                 env = dict(os.environ)
                 env["LD_PRELOAD"] = env.get("LD_PRELOAD", "")
                 env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/print_status_on_exit.so"
-                env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/abort_handler.so"
+                env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/sig_handlers.so"
                 env["LD_PRELOAD"] += " " + alloc["LD_PRELOAD"]
 
                 if "LD_LIBRARY_PATH" in alloc:
@@ -407,10 +407,7 @@ class Benchmark:
 
                     result = {}
 
-                    if any([res.returncode != 0,
-                            "ERROR: ld.so" in res.stderr,
-                            "Segmentation fault" in res.stderr,
-                            os.path.exists("aborted")]):
+                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr:
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
@@ -418,8 +415,6 @@ class Benchmark:
                             print_error("{} failed with exit code {} for {}".format(argv, res.returncode, alloc_name))
                         elif "ERROR: ld.so" in res.stderr:
                             print_error("Preloading of {} failed for {}".format(alloc["LD_PRELOAD"], alloc_name))
-                        elif os.path.exists("aborted"):
-                            os.remove("aborted")
 
                     # parse and store results
                     else:

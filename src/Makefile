@@ -13,7 +13,7 @@ LDFLAGS ?= -pthread -static-libgcc
 MEMSIZE_KB=$(shell free -t | tail -1 | tr -s ' ' | cut -d ' ' -f 2)
 MEMSIZE=$(shell echo $(MEMSIZE_KB)"* 1024" | bc)
 
-TOOLS = print_status_on_exit.so exec abort_handler.so
+TOOLS = print_status_on_exit.so exec sig_handlers.so
 ALLOCS = chattymalloc.so bumpptr_alloc.so speedymalloc.so
 TARGETS = $(addprefix $(OBJDIR)/allocators/,$(ALLOCS)) $(addprefix $(OBJDIR)/,$(TOOLS))
 
@@ -37,7 +37,7 @@ $(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $<
 
-$(OBJDIR)/abort_handler.so: abort_handler.c Makefile
+$(OBJDIR)/sig_handlers.so: sig_handlers.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $<
 
