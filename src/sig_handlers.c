@@ -4,6 +4,7 @@
 #include <string.h>
 
 static void abnormal_termination_handler(int signo) {
+	psignal(signo, "");
 	exit(signo);
 }
 
