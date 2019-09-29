@@ -31,5 +31,5 @@ from src.allocators.snmalloc import snmalloc
 
 
 allocators = [*src.allocators.glibcs.allocators, tcmalloc, tcmalloc_nofs,
-              jemalloc, hoard, mesh, supermalloc, scalloc, llalloc, tbbmalloc,
+              jemalloc, hoard, mesh, supermalloc, scalloc, tbbmalloc, llalloc, # streamflow,
               mimalloc, snmalloc]

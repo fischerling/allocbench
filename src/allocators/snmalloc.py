@@ -17,28 +17,23 @@
 
 """Snmalloc definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-VERSION = "master"
-
-SNMALLOC_SRC = AllocatorSources("snmalloc",
-                         ["git clone https://github.com/microsoft/snmalloc"],
-                         [f"git checkout {VERSION}"],
-                         ["git reset --hard"])
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class Snmalloc(Allocator):
     """snmalloc allocator"""
-    def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = SNMALLOC_SRC
-        kwargs["LD_PRELOAD"] = "{dir}/libsnmallocshim.so"
-        kwargs["build_cmds"] = ["mkdir -p {dir}",
-                                "cd {dir}; cmake -G Ninja {srcdir} -DCMAKE_BUILD_TYPE=Release",
-                                "cd {dir}; ninja"]
-        kwargs["requirements"] = ["cmake", "ninja", "clang"]
+    sources = GitArtifact("snmalloc", "https://github.com/microsoft/snmalloc")
+
+    def __init__(self, name, **kwargs):
+        self.LD_PRELOAD = "{dir}/libsnmallocshim.so"
+        self.build_cmds = ["mkdir -p {dir}",
+                           "cd {dir}; cmake -G Ninja {srcdir} -DCMAKE_BUILD_TYPE=Release",
+                           "cd {dir}; ninja"]
+        self.requirements = ["cmake", "ninja", "clang"]
 
         super().__init__(name, **kwargs)
 
 
-snmalloc = Snmalloc("snmalloc")
+snmalloc = Snmalloc("snmalloc", version="0.2")

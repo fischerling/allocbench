@@ -25,6 +25,7 @@ import shutil
 import subprocess
 import sys
 
+from src.artifact import ArchiveArtifact, GitArtifact
 import src.globalvars
 from src.util import print_status, print_debug, print_error, print_info2
 
@@ -37,99 +38,30 @@ for line in subprocess.run(["ldconfig", "-v"], stdout=subprocess.PIPE,
     if not line.startswith('\t'):
         LIBRARY_PATH += line
 
-BUILDDIR = os.path.join(src.globalvars.builddir, "allocators")
+BUILDDIR = src.globalvars.allocbuilddir
 SRCDIR = os.path.join(src.globalvars.allocbuilddir, "src")
 
 if not os.path.isdir(SRCDIR):
     os.makedirs(SRCDIR)
 
 
-class AllocatorSources:
-    """Class representing sources an allocator is build from
-
-    AllocatorSources can retrieve, prepare and reset their managed sources
-    """
-    def __init__(self, name, retrieve_cmds=None, prepare_cmds=None, reset_cmds=None):
-        self.name = name
-        self.dir = os.path.join(SRCDIR, self.name)
-        self.patchdir = os.path.join(src.globalvars.allocsrcdir, self.name)
-        self.retrieve_cmds = retrieve_cmds or []
-        self.prepare_cmds = prepare_cmds or []
-        self.reset_cmds = reset_cmds or []
-
-    def run_cmds(self, function, cwd=SRCDIR):
-        """Helper to run retrieve, prepare or reset commands"""
-        print_status(function, self.name, "...")
-
-        cmds = getattr(self, function+"_cmds")
-
-        stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
-
-        for cmd in cmds:
-            proc = subprocess.run(cmd, shell=True, cwd=cwd,
-                                  stderr=subprocess.PIPE, stdout=stdout,
-                                  universal_newlines=True)
-
-            if proc.returncode:
-                print_error(function, self.name, "failed with", proc.returncode,
-                            file=sys.stderr)
-                print_debug(proc.stderr, file=sys.stderr)
-                return False
-        return True
-
-    def prepare(self):
-        """Prepare the managed sources for building
-
-        If the sources aren't available yet they are retrieved.
-        Otherwise they are reset.
-        """
-        if not os.path.isdir(self.dir):
-            if (not self.run_cmds("retrieve") or
-                    not self.run_cmds("prepare", cwd=self.dir)):
-
-                shutil.rmtree(self.dir, ignore_errors=True)
-                exit(1)
-        else:
-            self.reset()
-
-    def reset(self):
-        """Reset the managed sources"""
-        if not self.run_cmds("reset", cwd=self.dir):
-            exit(1)
-
-    def patch(self, patches):
-        """Patch the managed sources using patch(1)"""
-        if not patches:
-            return
-
-        stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
-        cwd = os.path.join(SRCDIR, self.name)
-
-        print_status("Patching", self.name, "...")
-        for patch in patches:
-            with open(patch.format(patchdir=self.patchdir), "rb") as patch_file:
-                proc = subprocess.run("patch -p1", shell=True, cwd=cwd,
-                                      stderr=subprocess.PIPE, stdout=stdout,
-                                      input=patch_file.read())
-
-                if proc.returncode:
-                    print_error("Patching of", self.name, "failed.",
-                                file=sys.stderr)
-                    print_debug(proc.stderr, file=sys.stderr)
-                    exit(1)
-
-
 class Allocator:
     """Allocator base class
 
-    It builds the allocator and produces a for allocbench usable allocator dict"""
-    allowed_attributes = ["binary_suffix", "version", "sources", "build_cmds",
-                          "LD_PRELOAD", "cmd_prefix", "color", "patches",
-                          "LD_LIBRARY_PATH"]
+    An Allocator can contain an Artifact which provides the allocator sources,
+    patches, and instructions to build the allocator.
+    Allocator.build will compile the allocator and produce a for allocbench usable
+    allocator dict"""
+    allowed_attributes = ["binary_suffix", "cmd_prefix", "LD_PRELOAD", "LD_LIBRARY_PATH", "color",
+                          "sources", "version", "patches", "prepare_cmds",
+                          "build_cmds"]
 
     def __init__(self, name, **kwargs):
+        self.class_file = inspect.getfile(self.__class__)
         self.name = name
+        self.srcdir = os.path.join(SRCDIR, self.name)
         self.dir = os.path.join(BUILDDIR, self.name)
+        self.patchdir = os.path.join(os.path.splitext(self.class_file)[0])
         # Update attributes
         self.__dict__.update((k, v) for k, v in kwargs.items()
                              if k in self.allowed_attributes)
@@ -139,51 +71,82 @@ class Allocator:
             if not hasattr(self, attr):
                 setattr(self, attr, None)
 
+    def prepare(self):
+        """Prepare the allocators sources"""
+        if not self.sources and os.path.exists(self.srcdir):
+            return
+
+        print_status("Preparing", self.name, "...")
+        if type(self.sources) == GitArtifact:
+            self.sources.provide(self.version, self.srcdir)
+        elif type(self.sources) == ArchiveArtifact:
+            self.sources.provide(self.srcdir)
+
+        if self.patches:
+            stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
+            cwd = os.path.join(SRCDIR, self.name)
+
+            print_status("Patching", self.name, "...")
+            for patch in self.patches:
+                with open(patch.format(patchdir=self.patchdir), "rb") as patch_file:
+                    proc = subprocess.run("patch -p1", shell=True, cwd=cwd,
+                                          stderr=subprocess.PIPE, stdout=stdout,
+                                          input=patch_file.read())
+
+                    if proc.returncode:
+                        print_debug(proc.stderr, file=sys.stderr)
+                        raise Exception(f"Patching of {self.name} failed.")
+
+        if self.prepare_cmds:
+            print_status("Run prepare commands", self.name, "...")
+            stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
+
+            for cmd in self.prepare_cmds:
+                proc = subprocess.run(cmd, shell=True, cwd=self.srcdir,
+                                      stderr=subprocess.PIPE, stdout=stdout,
+                                      universal_newlines=True)
+
+                if proc.returncode:
+                    print_debug(proc.stderr, file=sys.stderr)
+                    raise Exception(f'Prepare command "{cmd}" failed with exitcode: {proc.returncode}.')
+
     def build(self):
-        """Build the allocator if needed and produce allocator dict"""
+        """Build the allocator if needed and produce an allocator dict"""
         build_needed = not os.path.isdir(self.dir)
         buildtimestamp_path = os.path.join(self.dir, ".buildtime")
 
-        print_info2(f"Building {self.name}...")
+        print_status("Building", self.name, "...")
         if not build_needed:
             print_info2("Old build found. Comparing build time with mtime")
 
             with open(buildtimestamp_path, "r") as buildtimestamp_file:
                 timestamp = datetime.fromtimestamp(float(buildtimestamp_file.read()))
 
-            modtime = os.stat(inspect.getfile(self.__class__)).st_mtime
+            modtime = os.stat(self.class_file).st_mtime
             modtime = datetime.fromtimestamp(modtime)
 
             build_needed = timestamp < modtime
 
             print_debug("Time of last build:", timestamp.isoformat())
-            print_debug("Last modification of allocators file:",
-                        modtime.isoformat())
+            print_debug("Last modification of allocators file:", modtime.isoformat())
             print_info2("" if build_needed else "No " + "build needed")
 
         if build_needed:
-            if self.sources:
-                self.sources.prepare()
-                self.sources.patch(self.patches)
+            self.prepare()
 
             if self.build_cmds:
-                print_status("Building", self.name, "...")
-
                 stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
 
                 for cmd in self.build_cmds:
-                    cmd = cmd.format(**{"dir": self.dir,
-                                        "srcdir": self.sources.dir})
+                    cmd = cmd.format(dir=self.dir, srcdir=self.srcdir)
 
                     proc = subprocess.run(cmd, cwd=BUILDDIR, shell=True,
                                           stderr=subprocess.PIPE, stdout=stdout,
                                           universal_newlines=True)
                     if proc.returncode:
-                        print_error(cmd, "failed with:", proc.returncode)
                         print_debug(proc.stderr, file=sys.stderr)
-                        print_error("Building", self.name, "failed ...")
                         shutil.rmtree(self.dir, ignore_errors=True)
-                        exit(2)
+                        raise Exception(f'Build command "{cmd}" failed with exitcode: {proc.returncode}')
 
                 with open(buildtimestamp_path, "w") as buildtimestamp_file:
                     print_info2("Save build time to:", buildtimestamp_path)
@@ -196,13 +159,10 @@ class Allocator:
                     "LD_LIBRARY_PATH": self.LD_LIBRARY_PATH or "",
                     "color": self.color}
 
-        paths = {"dir": self.dir}
-        paths["srcdir"] = self.sources.dir if self.sources is not None else ""
-
         for attr in ["LD_PRELOAD", "LD_LIBRARY_PATH", "cmd_prefix"]:
             value = getattr(self, attr, "") or ""
             if value != "":
-                value = value.format(**paths)
+                value = value.format(dir=self.dir, srcdir=self.srcdir)
                 res_dict[attr] = value
 
         print_debug("Resulting dictionary:", res_dict)

@@ -17,32 +17,25 @@
 
 """Scalloc definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-from src.util import print_error
-
-
-VERSION = "v1.0.0"
-
-SCALLOC_SRC = AllocatorSources("scalloc",
-                      retrieve_cmds=["git clone https://github.com/cksystemsgroup/scalloc"],
-                      prepare_cmds=[f"git checkout {VERSION}",
-                                    "cd {srcdir}; tools/make_deps.sh",
-                                    "cd {srcdir}; build/gyp/gyp --depth=. scalloc.gyp"],
-                      reset_cmds=["git reset --hard"])
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class Scalloc(Allocator):
     """Scalloc allocator"""
+
+    sources = GitArtifact("scalloc", "https://github.com/cksystemsgroup/scalloc")
+
     def __init__(self, name, **kwargs):
+        self.prepare_cmds = ["tools/make_deps.sh",
+                             "build/gyp/gyp --depth=. scalloc.gyp"]
 
-        kwargs["sources"] = SCALLOC_SRC
+        self.build_cmds = ["cd {srcdir}; BUILDTYPE=Release make",
+                           "mkdir -p {dir}"]
 
-        kwargs["build_cmds"] = ["cd {srcdir}; BUILDTYPE=Release make",
-                                "mkdir -p {dir}"]
+        self.LD_PRELOAD = "{srcdir}/out/Release/lib.target/libscalloc.so"
 
-        kwargs["LD_PRELOAD"] = "{srcdir}/out/Release/lib.target/libscalloc.so"
-
-        kwargs["patches"] = ["{patchdir}/scalloc_fix_log.patch"]
+        self.patches = ["{patchdir}/scalloc_fix_log.patch"]
 
         super().__init__(name, **kwargs)
 
@@ -57,4 +50,4 @@ sysctl vm.overcommit_memory=1
         return super().build()
 
 
-scalloc = Scalloc("scalloc", color="xkcd:magenta")
+scalloc = Scalloc("scalloc", color="xkcd:magenta", version="v1.0.0")

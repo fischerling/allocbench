@@ -17,26 +17,24 @@
 
 """jemalloc definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-VERSION = "5.1.0"
-
-sources = AllocatorSources("jemalloc",
-            retrieve_cmds=["git clone https://github.com/jemalloc/jemalloc.git"],
-            prepare_cmds=[f"git checkout {VERSION}", "./autogen.sh"])
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class Jemalloc(Allocator):
     """jemalloc allocator"""
-    def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = sources
-        kwargs["LD_PRELOAD"] = "{srcdir}/lib/libjemalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; ./configure --prefix={dir}",
-                                "cd {srcdir}; make -j4",
-                                "mkdir -p {dir}"]
+    sources = GitArtifact("jemalloc", "https://github.com/jemalloc/jemalloc.git")
+
+    def __init__(self, name, **kwargs):
+        self.LD_PRELOAD = "{dir}/libjemalloc.so"
+        self.prepare_cmds = ["./autogen.sh"]
+        self.build_cmds = ["cd {srcdir}; ./configure --prefix={dir}",
+                           "cd {srcdir}; make -j4",
+                           "mkdir -p {dir}",
+                           "ln -f -s {srcdir}/lib/libjemalloc.so {dir}/libjemalloc.so"]
 
         super().__init__(name, **kwargs)
 
 
-jemalloc = Jemalloc("jemalloc", color="xkcd:yellow")
+jemalloc = Jemalloc("jemalloc", version="5.1.0", color="xkcd:yellow")

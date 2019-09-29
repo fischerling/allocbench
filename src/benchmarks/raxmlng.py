@@ -23,8 +23,9 @@ import subprocess
 import sys
 from urllib.request import urlretrieve
 
+from src.artifact import GitArtifact
 from src.benchmark import Benchmark
-from src.util import print_info, download_reporthook
+from src.util import print_info
 
 
 RUNTIME_RE = re.compile("Elapsed time: (?P<runtime>(\\d*.\\d*)) seconds")
@@ -39,63 +40,50 @@ class BenchmarkRaxmlng(Benchmark):
 
         super().__init__(name)
         
-        self.cmd = (f"raxml-ng --msa {self.build_dir}/ng-tutorial/prim.phy --model GTR+G"
+        self.cmd = (f"raxml-ng --msa {self.build_dir}/data/prim.phy --model GTR+G"
                     " --redo --threads 2 --seed 2")
 
     def prepare(self):
         super().prepare()
 
-        # git clone --recursive 
-        # cd raxml-ng
-        # mkdir build && cd build
-        # cmake ..
-        # make
+        if os.path.exists(self.build_dir):
+            return
 
-        version = "0.9"
-        
-        url = "https://github.com/amkozlov/raxml-ng"
-        data_url = "https://github.com/amkozlov/ng-tutorial"
+        raxmlng_sources = GitArtifact("raxml-ng", "https://github.com/amkozlov/raxml-ng")
+        raxmlng_version = "0.9.0"
         raxmlng_dir = os.path.join(self.build_dir, "raxml-ng-git")
         raxmlng_builddir = os.path.join(raxmlng_dir, "build")
-
-        self.results["facts"]["versions"]["raxml-ng"] = version
-
-        if not os.path.isdir(raxmlng_dir):
-            proc = subprocess.run(["git", "clone", "--recursive", url, raxmlng_dir],
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
+        self.results["facts"]["versions"]["raxml-ng"] = raxmlng_version
+        raxmlng_sources.provide(raxmlng_version, raxmlng_dir)
             
-            # Create builddir
-            os.makedirs(raxmlng_builddir, exist_ok=True)
+        # Create builddir
+        os.makedirs(raxmlng_builddir, exist_ok=True)
 
-            # building raxml-ng
-            proc = subprocess.run(["cmake", ".."],
-                                  cwd=raxmlng_builddir,
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
+        # building raxml-ng
+        proc = subprocess.run(["cmake", ".."],
+                              cwd=raxmlng_builddir,
+                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              universal_newlines=True)
 
-            proc = subprocess.run(["make"],
-                                  cwd=raxmlng_builddir,
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
-            
-            # create symlinks
-            for exe in ["raxml-ng"]:
-                src = os.path.join(raxmlng_dir, "bin", exe)
-                dest = os.path.join(self.build_dir,exe)
-                os.link(src, dest)
+        proc = subprocess.run(["make"],
+                              cwd=raxmlng_builddir,
+                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              universal_newlines=True)
 
-            # clone test data
-            proc = subprocess.run(["git", "clone", data_url],
-                                  cwd=self.build_dir,
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
+        # create symlinks
+        for exe in ["raxml-ng"]:
+            src = os.path.join(raxmlng_dir, "bin", exe)
+            dest = os.path.join(self.build_dir,exe)
+            os.link(src, dest)
+
+        raxmlng_data = GitArtifact("raxml-ng-data", "https://github.com/amkozlov/ng-tutorial")
+        raxmlng_data_dir = os.path.join(self.build_dir, "data")
+        raxmlng_data.provide("f8f0b6a057a11397b4dad308440746e3436db8b4", raxmlng_data_dir)
 
     def cleanup(self):
         for direntry in os.listdir():
             if direntry.startswith("prim.raxml"):
                 os.remove(direntry)
-
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):

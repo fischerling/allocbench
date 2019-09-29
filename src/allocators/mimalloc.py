@@ -17,28 +17,23 @@
 
 """mimalloc definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-VERSION = "master"
-
-MIMALLOC_SRC = AllocatorSources("mimalloc",
-                         ["git clone https://github.com/microsoft/mimalloc"],
-                         [f"git checkout {VERSION}"],
-                         ["git reset --hard"])
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class Mimalloc(Allocator):
     """mimalloc allocator"""
-    def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = MIMALLOC_SRC
-        kwargs["LD_PRELOAD"] = "{dir}/libmimalloc.so"
-        kwargs["build_cmds"] = ["mkdir -p {dir}",
-                                "cd {dir}; cmake {srcdir}",
-                                "cd {dir}; make"]
-        kwargs["requirements"] = ["cmake"]
+    sources = GitArtifact("mimalloc", "https://github.com/microsoft/mimalloc")
+
+    def __init__(self, name, **kwargs):
+        self.LD_PRELOAD = "{dir}/libmimalloc.so"
+        self.build_cmds = ["mkdir -p {dir}",
+                           "cd {dir}; cmake {srcdir}",
+                           "cd {dir}; make"]
+        self.requirements = ["cmake"]
 
         super().__init__(name, **kwargs)
 
 
-mimalloc = Mimalloc("mimalloc")
+mimalloc = Mimalloc("mimalloc", version="v1.0.8")

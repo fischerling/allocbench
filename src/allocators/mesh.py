@@ -17,29 +17,23 @@
 
 """Mesh definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-sources = AllocatorSources("Mesh",
-            retrieve_cmds=["git clone https://github.com/plasma-umass/Mesh"],
-            reset_cmds=["git reset --hard"])
-
-# sources = src.allocator.GitAllocatorSources("Mesh",
-#             "https://github.com/plasma-umass/Mesh",
-#             "adsf0982345")
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class Mesh(Allocator):
     """Mesh allocator"""
-    def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = sources
-        kwargs["LD_PRELOAD"] = "{srcdir}/libmesh.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; git submodule update --init",
-                                "cd {srcdir}; ./configure",
-                                "cd {srcdir}; make -j 4",
-                                "mkdir -p {dir}"]
+    sources = GitArtifact("Mesh", "https://github.com/plasma-umass/Mesh")
+
+    def __init__(self, name, **kwargs):
+        self.LD_PRELOAD = "{dir}/libmesh.so"
+        self.build_cmds = ["cd {srcdir}; ./configure",
+                           "cd {srcdir}; make -j 4",
+                           "mkdir -p {dir}",
+                           "ln -f -s {srcdir}/libmesh.so {dir}/libmesh.so"]
 
         super().__init__(name, **kwargs)
 
 
-mesh = Mesh("Mesh", color="xkcd:mint")
+mesh = Mesh("Mesh", version="4a1012cee990cb98cc1ea0294a836f467b29be02", color="xkcd:mint")

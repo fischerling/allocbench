@@ -17,23 +17,12 @@
 
 """Helper functions for allocbench"""
 
+import hashlib
 import os
 import subprocess
 import sys
 
 import src.globalvars
-
-def download_reporthook(blocknum, blocksize, totalsize):
-    """Status report hook for urlretrieve"""
-    readsofar = blocknum * blocksize
-    if totalsize > 0:
-        percent = readsofar * 100 / totalsize
-        status = "\r%5.1f%% %*d / %d" % (
-                  percent, len(str(totalsize)), readsofar, totalsize)
-        sys.stderr.write(status)
-    else:  # total size is unknown
-        sys.stderr.write(f"\rdownloaded {readsofar}")
-
 
 def is_exe(fpath):
     """Check if the given path is an exexutable file"""
@@ -173,3 +162,13 @@ def print_version_and_exit():
 
     print(f"{commit}{dirty}")
     exit(0)
+
+def sha1sum(filename):
+    """Return sha1sum of a file"""
+    sha1  = hashlib.sha1()
+    barray  = bytearray(64*1024)
+    view = memoryview(barray)
+    with open(filename, 'rb', buffering=0) as f:
+        for n in iter(lambda : f.readinto(view), 0):
+            sha1.update(view[:n])
+    return sha1.hexdigest()

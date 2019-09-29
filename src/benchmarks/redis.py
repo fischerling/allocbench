@@ -23,8 +23,9 @@ import subprocess
 import sys
 from urllib.request import urlretrieve
 
+from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
-from src.util import print_info, download_reporthook
+from src.util import print_info
 
 
 REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
@@ -51,40 +52,26 @@ class BenchmarkRedis(Benchmark):
         super().prepare()
 
         redis_version = "5.0.5"
-        redis_archive = f"redis-{redis_version}.tar.gz"
-        redis_url = f"http://download.redis.io/releases/{redis_archive}"
+        self.results["facts"]["versions"]["redis"] = redis_version
+        redis = ArchiveArtifact("redis",
+                                f"http://download.redis.io/releases/redis-{redis_version}.tar.gz",
+                                "tar",
+                                "71e38ae09ac70012b5bc326522b976bcb8e269d6")
+
         redis_dir = os.path.join(self.build_dir, f"redis-{redis_version}")
 
-        self.results["facts"]["versions"]["redis"] = redis_version
+        redis.provide(redis_dir)
 
-        if not os.path.isdir(redis_dir):
-            if not os.path.isfile(redis_archive):
-                print(f"Downloading redis-{redis_version}...")
-                urlretrieve(redis_url, redis_archive, download_reporthook)
-                sys.stderr.write("\n")
+        # building redis
+        proc = subprocess.run(["make", "-C", redis_dir],
+                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              universal_newlines=True)
 
-            # Create build_dir
-            os.mkdir(self.build_dir)
-
-            # Extract redis
-            proc = subprocess.run(["tar", "Cxf", self.build_dir, redis_archive],
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
-
-            # delete archive
-            if proc.returncode == 0:
-                os.remove(redis_archive)
-
-            # building redis
-            proc = subprocess.run(["make", "-C", redis_dir],
-                                  # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                  universal_newlines=True)
-
-            # create symlinks
-            for exe in ["redis-cli", "redis-server", "redis-benchmark"]:
-                src = os.path.join(redis_dir, "src", exe)
-                dest = os.path.join(self.build_dir, exe)
-                os.link(src, dest)
+        # create symlinks
+        for exe in ["redis-cli", "redis-server", "redis-benchmark"]:
+            src = os.path.join(redis_dir, "src", exe)
+            dest = os.path.join(self.build_dir, exe)
+            os.link(src, dest)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):

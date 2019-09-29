@@ -26,4 +26,4 @@ import os
 from src.allocator import Allocator, BUILDDIR
 
 speedymalloc = Allocator("speedymalloc", LD_PRELOAD=os.path.join(BUILDDIR, "speedymalloc.so"),
-                    color="xkcd:dark")
+                         color="xkcd:dark")

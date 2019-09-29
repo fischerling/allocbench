@@ -17,30 +17,28 @@
 
 """TCMalloc definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-VERSION = 2.7
-
-TCMALLOC_SRC = AllocatorSources("tcmalloc",
-                         ["git clone https://github.com/gperftools/gperftools.git tcmalloc"],
-                         [f"git checkout gperftools-{VERSION}", "./autogen.sh"],
-                         ["git reset --hard"])
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class TCMalloc(Allocator):
     """TCMalloc allocator"""
+
+    sources = GitArtifact("tcmalloc", "https://github.com/gperftools/gperftools.git")
+
     def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = TCMALLOC_SRC
-        kwargs["LD_PRELOAD"] = "{dir}/lib/libtcmalloc.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; ./configure --prefix={dir}",
-                                "cd {srcdir}; make install -j4"]
+        self.LD_PRELOAD = "{dir}/lib/libtcmalloc.so"
+        self.prepare_cmds = ["./autogen.sh"]
+        self.build_cmds = ["cd {srcdir}; ./configure --prefix={dir}",
+                           "cd {srcdir}; make install -j4"]
 
         super().__init__(name, **kwargs)
 
 
-tcmalloc = TCMalloc("TCMalloc", color="xkcd:blue")
+tcmalloc = TCMalloc("TCMalloc", color="xkcd:blue", version="gperftools-2.7")
 
 tcmalloc_nofs = TCMalloc("TCMalloc-NoFalsesharing",
                          patches=["{patchdir}/tcmalloc_2.7_no_active_falsesharing.patch"],
+                         version="gperftools-2.7",
                          color="xkcd:navy")

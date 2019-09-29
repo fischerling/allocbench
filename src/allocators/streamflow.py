@@ -17,25 +17,24 @@
 
 """Streamflow allocator definition for allocbench"""
 
-from src.allocator import Allocator, AllocatorSources
-
-
-sources = AllocatorSources("streamflow",
-            retrieve_cmds=["git clone https://github.com/scotts/streamflow"],
-            reset_cmds=["git reset --hard"])
+from src.allocator import Allocator
+from src.artifact import GitArtifact
 
 
 class Streamflow(Allocator):
     """Streamflow allocator"""
+
+    sources = GitArtifact("streamflow", "https://github.com/scotts/streamflow")
+
     def __init__(self, name, **kwargs):
 
-        kwargs["sources"] = sources
-        kwargs["LD_PRELOAD"] = "{dir}/libstreamflow.so"
-        kwargs["build_cmds"] = ["cd {srcdir}; make",
-                                "mkdir -p {dir}",
-                                "ln -f -s {srcdir}/libstreamflow.so {dir}/libstreamflow.so"]
+        self.LD_PRELOAD = "{dir}/libstreamflow.so"
+        self.build_cmds = ["cd {srcdir}; make",
+                           "mkdir -p {dir}",
+                           "ln -f -s {srcdir}/libstreamflow.so {dir}/libstreamflow.so"]
 
         super().__init__(name, **kwargs)
 
 
-streamflow = Streamflow("Streamflow", color="xkcd:light brown")
+streamflow = Streamflow("Streamflow", version="8ac345c0f69ec9e7af02f3555c2c97eaa07a442e",
+                        color="xkcd:light brown")
