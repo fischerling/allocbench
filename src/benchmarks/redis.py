@@ -44,7 +44,7 @@ class BenchmarkRedis(Benchmark):
         self.cmd = "redis-benchmark 1000000 -n 1000000 -P 8 -q lpush a 1 2 3 4 5 6 7 8 9 10 lrange a 1 10"
         self.servers = [{"name": "redis",
                          "cmd": "redis-server",
-                         "shutdown_cmds": ["redis-cli shutdown"]}]
+                         "shutdown_cmds": ["{build_dir}/redis-cli shutdown"]}]
 
         super().__init__(name)
 
@@ -71,7 +71,8 @@ class BenchmarkRedis(Benchmark):
         for exe in ["redis-cli", "redis-server", "redis-benchmark"]:
             src = os.path.join(redis_dir, "src", exe)
             dest = os.path.join(self.build_dir, exe)
-            os.link(src, dest)
+            if not os.path.exists(dest):
+                os.link(src, dest)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
