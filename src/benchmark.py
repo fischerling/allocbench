@@ -345,6 +345,7 @@ class Benchmark:
                 env = dict(os.environ)
                 env["LD_PRELOAD"] = env.get("LD_PRELOAD", "")
                 env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/print_status_on_exit.so"
+                env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/sig_handlers.so"
                 env["LD_PRELOAD"] += " " + alloc["LD_PRELOAD"]
 
                 if "LD_LIBRARY_PATH" in alloc:
@@ -406,7 +407,7 @@ class Benchmark:
 
                     result = {}
 
-                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr or "Segmentation fault" in res.stderr:
+                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr:
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)

@@ -26,7 +26,6 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-
 	// Run cmd.
 	execvp(argv[i], &argv[i]);
 
