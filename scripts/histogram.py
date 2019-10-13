@@ -48,6 +48,9 @@ def main():
             for size, amount in hist.items():
                 print(size, amount, file=csv_file)
 
+    if not args.no_ascii:
+        src.chattyparser.plot_hist_ascii(f"{fpath}.hist.txt", hist, calls)
+
     if args.interactive:
         sizes = []
         sizes_smaller_4K = []
@@ -80,9 +83,6 @@ def main():
         plt.hist(sizes, 200)
         plt.title("All sizes")
         plt.show()
-
-    if not args.no_ascii:
-        src.chattyparser.plot_hist_ascii(f"{fpath}.hist.txt", hist, calls)
 
 if __name__ == "__main__":
     main()
