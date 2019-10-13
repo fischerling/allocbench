@@ -1,7 +1,7 @@
-diff --git a/src/thread_cache.cc b/src/thread_cache.cc
+diff --git src/thread_cache.cc src/thread_cache.cc
 index 6d2f832..2074f4a 100644
---- a/src/thread_cache.cc
-+++ b/src/thread_cache.cc
+--- src/thread_cache.cc
++++ src/thread_cache.cc
 @@ -120,7 +120,11 @@ void* ThreadCache::FetchFromCentralCache(uint32 cl, int32_t byte_size,
    ASSERT(list->empty());
    const int batch_size = Static::sizemap()->num_objects_to_move(cl);

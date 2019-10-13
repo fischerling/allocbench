@@ -1,7 +1,7 @@
-diff --git a/Makefile.include b/Makefile.include
+diff --git Makefile.include Makefile.include
 index bb3cef3..09ee7eb 100644
---- a/Makefile.include
-+++ b/Makefile.include
+--- Makefile.include
++++ Makefile.include
 @@ -37,7 +37,7 @@ default: tests
  #lib: $(LIB)/libsupermalloc.so
  #.PHONY: lib

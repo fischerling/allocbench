@@ -1,7 +1,7 @@
-diff --git a/malloc/malloc.c b/malloc/malloc.c
+diff --git malloc/malloc.c malloc/malloc.c
 index 0abd653be2..eaefd3bd7c 100644
---- a/malloc/malloc.c
-+++ b/malloc/malloc.c
+--- malloc/malloc.c
++++ malloc/malloc.c
 @@ -4194,6 +4194,9 @@ _int_free (mstate av, mchunkptr p, int have_lock)
  
  #if USE_TCACHE

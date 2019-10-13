@@ -1,7 +1,7 @@
-diff --git a/src/log.h b/src/log.h
+diff --git src/log.h src/log.h
 index 3edc36d..e1d181c 100644
---- a/src/log.h
-+++ b/src/log.h
+--- src/log.h
++++ src/log.h
 @@ -46,13 +46,13 @@ inline void LogPrintf(
  
    snprintf(line_buffer, sizeof(line_buffer), "%d", line);

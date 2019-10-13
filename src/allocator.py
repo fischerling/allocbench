@@ -89,9 +89,17 @@ class Allocator:
             print_status("Patching", self.name, "...")
             for patch in self.patches:
                 with open(patch.format(patchdir=self.patchdir), "rb") as patch_file:
-                    proc = subprocess.run("patch -p1", shell=True, cwd=cwd,
+                    patch_content = patch_file.read()
+
+                # check if patch is already applied
+                proc = subprocess.run(["patch", "-R", "-p0", "-s", "-f", "--dry-run"],
+                                      cwd=cwd, stderr=None, stdout=None,
+                                      input=patch_content)
+
+                if proc.returncode != 0:
+                    proc = subprocess.run(["patch", "-p0"], cwd=cwd,
                                           stderr=subprocess.PIPE, stdout=stdout,
-                                          input=patch_file.read())
+                                          input=patch_content)
 
                     if proc.returncode:
                         print_debug(proc.stderr, file=sys.stderr)
@@ -115,7 +123,6 @@ class Allocator:
         build_needed = not os.path.isdir(self.dir)
         buildtimestamp_path = os.path.join(self.dir, ".buildtime")
 
-        print_status("Building", self.name, "...")
         if not build_needed:
             print_info2("Old build found. Comparing build time with mtime")
 
@@ -133,6 +140,7 @@ class Allocator:
 
         if build_needed:
             self.prepare()
+            print_status("Building", self.name, "...")
 
             if self.build_cmds:
                 stdout = subprocess.PIPE if src.globalvars.verbosity < 2 else None
