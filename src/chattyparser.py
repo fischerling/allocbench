@@ -177,17 +177,21 @@ def plot_profile(total_sizes, trace_path, plot_path, sizes):
 
 def plot_hist_ascii(path, hist, calls):
     """Plot an ascii histogram"""
+    # make sure all sizes are stored as ints
+    for nonint_key in [key for key in hist.keys() if type(key) is not int]:
+        hist[int(nonint_key)] = hist[nonint_key]
+        del hist[nonint_key]
+
     bins = {}
     for size in sorted(hist):
-        size_class = int(size / 16)
+        size_class = size / 16
         bins[size_class] = bins.get(size_class, 0) + hist[size]
 
 
-    total = sum(calls.values()) - calls["free"]
     with open(path, "w") as hist_file:
-        print("Total function calls:", total, file=hist_file)
-        for func in TRACE_REGEX:
-            print(func, calls[func], file=hist_file)
+        print("Total function calls:", sum(calls.values()), file=hist_file)
+        for func, func_calls in calls.items():
+            print(func, func_calls, file=hist_file)
 
         print(file=hist_file)
 
@@ -201,6 +205,7 @@ def plot_hist_ascii(path, hist, calls):
         print(file=hist_file)
 
         print("Histogram of sizes:", file=hist_file)
+        total = sum(hist.values())
         sbins = sorted(bins)
         binmaxlength = str(len(str(sbins[-1])) + 1)
         amountmaxlength = str(len(str(sorted(bins.values())[-1])))
@@ -220,7 +225,7 @@ if __name__ == "__main__":
         print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
         exit(0)
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) != 2 or sys.argv[1] in ["-h", "--help"]:
         print("chattyparser: parse chattymalloc output and",
               "create size histogram and memory profile", file=sys.stderr)
         print(f"Usage: {sys.argv[0]} chattymalloc-file", file=sys.stderr)
