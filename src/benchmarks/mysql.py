@@ -31,18 +31,17 @@ from src.benchmark import Benchmark
 import src.facter
 from src.util import print_status, print_debug, print_info2
 
-TESTDIR = os.path.join(os.getcwd(), "mysql_test")
 MYSQL_USER = "root"
 RUN_TIME = 300
 TABLES = 5
 
 PREPARE_CMD = (f"sysbench oltp_read_only --db-driver=mysql --mysql-user={MYSQL_USER} "
-               f"--mysql-socket={TESTDIR}/socket --tables={TABLES} --table-size=1000000 prepare")
+               f"--mysql-socket={{build_dir}}/socket --tables={TABLES} --table-size=1000000 prepare")
 
 CMD = (f"sysbench oltp_read_only --threads={{nthreads}} --time={RUN_TIME} --tables={TABLES} "
-       f"--db-driver=mysql --mysql-user={MYSQL_USER} --mysql-socket={TESTDIR}/socket run")
+       f"--db-driver=mysql --mysql-user={MYSQL_USER} --mysql-socket={{build_dir}}/socket run")
 
-SERVER_CMD = (f"mysqld --no-defaults -h {TESTDIR} --socket={TESTDIR}/socket --port=123456 "
+SERVER_CMD = ("mysqld --no-defaults -h {build_dir} --socket={build_dir}/socket --port=123456 "
               f"--max-connections={multiprocessing.cpu_count()} --secure-file-priv=")
 
 
@@ -78,21 +77,16 @@ class BenchmarkMYSQL(Benchmark):
             self.results["facts"]["versions"][exe] = src.facter.exe_version(exe, "--version")
 
         # Setup Test Environment
-        if not os.path.exists("mysql_test"):
+        if not os.path.exists(self.build_dir):
             print_status("Prepare mysqld directory and database")
-            os.makedirs("mysql_test")
+            os.makedirs(self.build_dir)
 
             # Init database
-            self.results["facts"]["mysqld"] = subprocess.run(["mysqld", "--version"],
-                                                             stdout=PIPE,
-                                                             universal_newlines=True).stdout[:-1]
-            if "MariaDB" in self.results["facts"]["mysqld"]:
-                init_db_cmd = ["mysql_install_db", "--basedir=/usr",
-                               f"--datadir={TESTDIR}"]
+            if "MariaDB" in self.results["facts"]["versions"]["mysqld"]:
+                init_db_cmd = ["mysql_install_db", "--basedir=/usr", f"--datadir={self.build_dir}"]
                 print_info2("MariaDB detected")
             else:
-                init_db_cmd = ["mysqld", "-h", f"{TESTDIR}",
-                               "--initialize-insecure"]
+                init_db_cmd = ["mysqld", "-h", self.build_dir, "--initialize-insecure"]
                 print_info2("Oracle MySQL detected")
 
             p = subprocess.run(init_db_cmd, stdout=PIPE, stderr=PIPE)
@@ -106,28 +100,24 @@ class BenchmarkMYSQL(Benchmark):
             self.start_servers()
 
             # Create sbtest TABLE
-            p = subprocess.run(f"mysql -u {MYSQL_USER} -S {TESTDIR}/socket".split(),
+            p = subprocess.run(f"mysql -u {MYSQL_USER} -S {self.build_dir}/socket".split(),
                                input=b"CREATE DATABASE sbtest;\n",
-                               stdout=PIPE, stderr=PIPE)
+                               stdout=PIPE, stderr=PIPE, cwd=self.build_dir)
 
             if p.returncode != 0:
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
                 raise Exception("Creating test tables failed with:", p.returncode)
 
             print_status("Prepare test tables ...")
-            p = subprocess.run(PREPARE_CMD.split(), stdout=PIPE, stderr=PIPE)
+            prepare_cmd = PREPARE_CMD.format(build_dir=self.build_dir)
+            p = subprocess.run(prepare_cmd.split(), stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
+                print_debug(f"Cmd: {prepare_cmd} failed with {p.returncode}", file=sys.stderr)
                 print_debug("Stdout:", p.stdout, file=sys.stderr)
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
                 raise Exception("Preparing test tables failed with:", p.returncode)
 
             self.shutdown_servers()
-
-    @staticmethod
-    def cleanup():
-        if os.path.exists("mysql_test"):
-            print_status("Delete mysqld directory")
-            shutil.rmtree("mysql_test", ignore_errors=True)
 
     def process_output(self, result, stdout, stderr, allocator, perm):
         result["transactions"] = re.search("transactions:\\s*(\\d*)", stdout).group(1)

@@ -1,3 +1,5 @@
+- fix mysqld termination with malt
+
 - check dependencies
 - log facilities
 
