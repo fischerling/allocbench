@@ -263,7 +263,7 @@ class Benchmark:
                 raise Exception(f"Starting {server_name} failed with exit code: {ret}")
             server["popen"] = proc
             # Register termination of the server
-            atexit.register(Benchmark.shutdown_server, server=server)
+            atexit.register(Benchmark.shutdown_server, self=self, server=server)
 
             if not "prepare_cmds" in server:
                 continue
@@ -280,17 +280,21 @@ class Benchmark:
                 print_debug("Stderr:", proc.stderr)
 
 
-    @staticmethod
-    def shutdown_server(server):
+    def shutdown_server(self, server):
         """Terminate a started server running its shutdown_cmds in advance"""
-        server_name = server.get("name", "Server")
-        print_info(f"Shutting down {server_name}")
-
         if server["popen"].poll():
             return
 
+        server_name = server.get("name", "Server")
+        print_info(f"Shutting down {server_name}")
+
+        substitutions = {}
+        substitutions.update(self.__dict__)
+        substitutions.update(server)
+
         if "shutdown_cmds" in server:
             for shutdown_cmd in server["shutdown_cmds"]:
+                shutdown_cmd = shutdown_cmd.format(**substitutions)
                 print_debug(shutdown_cmd)
 
                 proc = subprocess.run(shutdown_cmd.split(), universal_newlines=True,
@@ -305,7 +309,7 @@ class Benchmark:
         """Terminate all started servers"""
         print_info("Shutting down servers")
         for server in self.servers:
-            Benchmark.shutdown_server(server)
+            self.shutdown_server(server)
 
     def run(self, runs=3):
         """generic run implementation"""
