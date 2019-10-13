@@ -1,9 +1,6 @@
 build/*
 cache/*
 results/*
-allocators/*.so
-dj_workloads/*
-lld-speed-test*
 *.png
 *__pycache__*
 .gdb_history
