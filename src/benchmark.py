@@ -282,7 +282,7 @@ class Benchmark:
 
     def shutdown_server(self, server):
         """Terminate a started server running its shutdown_cmds in advance"""
-        if server["popen"].poll():
+        if server["popen"].poll() != None:
             return
 
         server_name = server.get("name", "Server")
