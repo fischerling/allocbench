@@ -28,8 +28,9 @@ from src.allocators.llalloc import llalloc
 from src.allocators.tbbmalloc import tbbmalloc
 from src.allocators.mimalloc import mimalloc
 from src.allocators.snmalloc import snmalloc
+from src.allocators.rpmalloc import rpmalloc
 
 
 allocators = [*src.allocators.glibcs.allocators, tcmalloc, tcmalloc_nofs,
               jemalloc, hoard, mesh, supermalloc, scalloc, tbbmalloc, llalloc, # streamflow,
-              mimalloc, snmalloc]
+              mimalloc, snmalloc, rpmalloc]
