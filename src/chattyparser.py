@@ -184,7 +184,7 @@ def plot_hist_ascii(path, hist, calls):
 
     bins = {}
     for size in sorted(hist):
-        size_class = size / 16
+        size_class = size // 16
         bins[size_class] = bins.get(size_class, 0) + hist[size]
 
 
@@ -195,9 +195,14 @@ def plot_hist_ascii(path, hist, calls):
 
         print(file=hist_file)
 
-        print("Top 10 allocation sizes", file=hist_file)
-        for i, size in enumerate([t[1] for t in sorted([(n, s) for s, n in hist.items()])[-10:]]):
-            print(f"{i}. {size} B occurred {hist[size]} times", file=hist_file)
+        total = sum(hist.values())
+        top10 = [t[1] for t in sorted([(n, s) for s, n in hist.items()])[-10:]]
+        top10_total = sum([hist[size] for size in top10])
+
+        print(f"Top 10 allocation sizes {top10_total / total:.2f}% of all allocations", file=hist_file)
+        for i, size in enumerate(reversed(top10)):
+            print(f"{i+1}. {size} B occurred {hist[size]} times", file=hist_file)
+        print(file=hist_file)
 
         print("allocations <= 64", sum([n for s, n in hist.items() if s <= 64]), file=hist_file)
         print("allocations <= 1024", sum([n for s, n in hist.items() if s <= 1024]), file=hist_file)
@@ -205,14 +210,13 @@ def plot_hist_ascii(path, hist, calls):
         print(file=hist_file)
 
         print("Histogram of sizes:", file=hist_file)
-        total = sum(hist.values())
         sbins = sorted(bins)
-        binmaxlength = str(len(str(sbins[-1])) + 1)
+        binmaxlength = len(str(sbins[-1])) + 1
         amountmaxlength = str(len(str(sorted(bins.values())[-1])))
         for current_bin in sbins:
             perc = bins[current_bin]/total*100
-            binsize = "{:<" + binmaxlength + "} - {:>" + binmaxlength + "}"
-            print(binsize.format((current_bin)*16, (current_bin+1)*16-1), end=" ", file=hist_file)
+            binsize = f"{{:<{binmaxlength}}} - {{:>{binmaxlength}}}"
+            print(binsize.format(current_bin*16, (current_bin+1)*16-1), end=" ", file=hist_file)
             amount = "{:<" + amountmaxlength + "} {:.2f}% {}"
             print(amount.format(bins[current_bin], perc, '*'*int(perc/2)), file=hist_file)
 
