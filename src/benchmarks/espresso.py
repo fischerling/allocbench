@@ -15,7 +15,32 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Definition of the espresso benchmark"""
+"""espresso is a single threaded programmable logic array analyzer, described by Grunwald, Zorn,
+and Henderson in their paper "Improving the cache locality of memory allocation".
+
+The file "largest.espresso" shipped with mimalloc-bench and allocbench generates
+a workload with 3367364 allocator calls (malloc: 1659385, free: 1691851, realloc: 16128).
+About 87% of all allocations are smaller than 64 Byte, the common cache line size.
+
+Top 10 allocation sizes 0.91% of all allocations
+1. 48 B occurred 615622 times
+2. 16 B occurred 533267 times
+3. 56 B occurred 235944 times
+4. 72 B occurred 27318 times
+5. 88 B occurred 23640 times
+6. 64 B occurred 22498 times
+7. 80 B occurred 17779 times
+8. 8 B occurred 16336 times
+9. 272 B occurred 14644 times
+10. 96 B occurred 13175 times
+
+allocations <= 64 1442648
+allocations <= 1024 1657509
+allocations <= 4096 1667112
+
+The relevant non functional allocator properties are the raw speed of the
+API function as well as memory placement strategies with good data locality.
+"""
 
 import os
 
@@ -23,7 +48,7 @@ from src.benchmark import Benchmark
 import src.globalvars
 
 class BenchmarkEspresso(Benchmark):
-    """TODO"""
+    """Definition of the espresso benchmark for allocbench"""
     def __init__(self):
         name = "espresso"
 

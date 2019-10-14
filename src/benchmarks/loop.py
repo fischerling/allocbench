@@ -15,7 +15,25 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Definition of the loop micro benchmark"""
+"""Definition of the loop micro benchmark
+
+This benchmark allocates and immediately deallocates a pseudo random sized allocation
+N times in T threads. The acquired memory is neither read nor written. Not using the
+allocations at all maybe seems odd but this micro benchmark should only measure
+the allocators fast paths, scalability and management overhead.
+Using the allocations will add cache effects to our results which are
+measured for example in the false sharing or larson benchmarks.
+
+Observations:
+* Glibc's factor two faster for allocations <= 1024B
+* TCMalloc suffers when allocating only small chunks
+
+Interpretation:
+* A significant higher cache miss rate than other allocators could mean that
+  internals suffer from false sharing (TCMalloc).
+* Speed changes with constant threads but changing sizes may show performance
+  differences in differing strategies for seperate sizes (glibc thread caches < 1032B)
+"""
 
 from src.benchmark import Benchmark
 
@@ -29,7 +47,7 @@ class BenchmarkLoop(Benchmark):
     def __init__(self):
         name = "loop"
 
-        self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
+        self.cmd = "loop{binary_suffix} {nthreads} 1000001 {maxsize}"
 
         self.args = {"maxsize":  [2 ** x for x in range(6, 16)],
                      "nthreads": Benchmark.scale_threads_for_cpus(2)}

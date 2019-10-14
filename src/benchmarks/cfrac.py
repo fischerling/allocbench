@@ -15,12 +15,38 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-""" Definition of the cfrac benchmark"""
+"""cfrac is a single threaded implementation of the continued fraction factorization algorithm.
+It uses many small short-lived allocations. Factorizing 175451865205073170563711388363274837927895
+results in 43044885 allocator calls (malloc: 21522444, free: 21522441).
+
+Top 10 allocation sizes 1.00% of all allocations
+1. 18 B occurred 8172763 times
+2. 28 B occurred 3781894 times
+3. 10 B occurred 2989673 times
+4. 26 B occurred 2566937 times
+5. 20 B occurred 2420915 times
+6. 16 B occurred 1168569 times
+7. 12 B occurred 203177 times
+8. 14 B occurred 170914 times
+9. 30 B occurred 21149 times
+10. 44 B occurred 15922 times
+allocations <= 64 21522432
+allocations <= 1024 21522436
+allocations <= 4096 21522443
+
+Histogram of sizes:
+0     -    15 3363764  15.63% *******
+16    -    31 18132778 84.25% ******************************************
+32    -    47 25888    0.12%
+
+The relevant non functional allocator properties are the raw speed of the
+API function as well as memory placement strategies with good data locality.
+"""
 
 from src.benchmark import Benchmark
 
 class BenchmarkCfrac(Benchmark):
-    """TODO"""
+    """Definition of the cfrac benchmark"""
     def __init__(self):
         name = "cfrac"
 
