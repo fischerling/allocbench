@@ -42,7 +42,7 @@ class BenchmarkBlowup(Benchmark):
     def summary(self):
         # hack ideal rss in data set
         allocators = self.results["allocators"]
-        allocators["Ideal_RSS"] = {"color": "C" + str(len(allocators) + 1)}
+        allocators["Ideal_RSS"] = {"color": "xkcd:gold"}
         self.results["stats"]["Ideal_RSS"] = {}
         for perm in self.iterate_args(args=self.results["args"]):
             self.results["stats"]["Ideal_RSS"][perm] = {"mean": {"VmHWM": 1024 * 100}, 
@@ -50,7 +50,7 @@ class BenchmarkBlowup(Benchmark):
 
         self.barplot_single_arg("{VmHWM}",
                                 ylabel='"VmHWM in KB"',
-                                title='"realloc micro benchmark"',
+                                title='"blowup test"',
                                 filepostfix="vmhwm")
 
         del allocators["Ideal_RSS"]
