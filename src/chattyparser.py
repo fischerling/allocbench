@@ -199,14 +199,14 @@ def plot_hist_ascii(path, hist, calls):
         top10 = [t[1] for t in sorted([(n, s) for s, n in hist.items()])[-10:]]
         top10_total = sum([hist[size] for size in top10])
 
-        print(f"Top 10 allocation sizes {top10_total / total:.2f}% of all allocations", file=hist_file)
+        print(f"Top 10 allocation sizes {(top10_total/total)*100:.2f}% of all allocations", file=hist_file)
         for i, size in enumerate(reversed(top10)):
             print(f"{i+1}. {size} B occurred {hist[size]} times", file=hist_file)
         print(file=hist_file)
 
-        print("allocations <= 64", sum([n for s, n in hist.items() if s <= 64]), file=hist_file)
-        print("allocations <= 1024", sum([n for s, n in hist.items() if s <= 1024]), file=hist_file)
-        print("allocations <= 4096", sum([n for s, n in hist.items() if s <= 4096]), file=hist_file)
+        for i in [64, 1024, 4096]:
+            allocations = sum([n for s, n in hist.items() if s <= i])
+            print(f"allocations <= {i}: {allocations} {(allocations/total)*100:.2f}%", file=hist_file)
         print(file=hist_file)
 
         print("Histogram of sizes:", file=hist_file)
