@@ -1,5 +1,5 @@
 build/*
-cache/*
+cache*
 results/*
 *.png
 *__pycache__*
@@ -11,4 +11,4 @@ results/*
 status
 tags
 **/chattymalloc.txt
-src/obj
+**/obj
