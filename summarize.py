@@ -49,7 +49,7 @@ def specific_summary(bench, sum_dir, allocators):
                        if v["color"] is not None]
     print_debug("Explicit colors:", explicit_colors)
 
-    cycle_list = ["C" + str(i) for i in range(0, 16)]
+    cycle_list = ["C" + str(i) for i in range(0, 10)]
     avail_colors = [color for color in cycle_list
                     if color not in explicit_colors]
     print_debug("available colors:", avail_colors)
