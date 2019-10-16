@@ -100,7 +100,7 @@ def main():
     parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
     parser.add_argument("--license", help="print license info and exit", action='store_true')
-    parser.add_argument("--versiob", help="print version info and exit", action='store_true')
+    parser.add_argument("--version", help="print version info and exit", action='store_true')
     parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
     parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
 
