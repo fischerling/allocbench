@@ -1,5 +1,11 @@
 - fix mysqld termination with malt
 
+- rethink colors
+
+- rethink scale_thread_for_cpus
+	- hit interesting thread_counts: numa domains
+	- scale equaly
+
 - check dependencies
 - log facilities
 
@@ -8,10 +14,6 @@
 - convert cmake build systems to make: espresso, cfrac
 
 - merge measurements if facts match
-
-- Implement external sources store
-	- verify (commit id, checksum) remote sources
-	- git recursive clone
 
 - implement verbosity aware system() wrapper
 
