@@ -1,14 +1,8 @@
-build/*
+build*
 cache*
 results/*
-*.png
 *__pycache__*
 .gdb_history
-*.save
-*.data
-*.log
-*.hist
 status
 tags
-**/chattymalloc.txt
 **/obj
