@@ -3,8 +3,8 @@ OBJDIR ?= obj
 CXX ?= g++
 
 WARNFLAGS ?= -Wall -Wextra
-COMMONFLAGS ?= -fno-builtin -fPIC -DPIC -pthread
-OPTFLAGS ?= -O3 -DNDEBUG
+COMMONFLAGS ?= -fno-builtin -fPIC -DPIC -pthread -g
+OPTFLAGS ?= -O0
 
 CXXFLAGS ?= $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 

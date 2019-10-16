@@ -38,10 +38,10 @@ class BenchmarkFalsesharing(Benchmark):
     def __init__(self):
         name = "falsesharing"
 
-        self.cmd = "cache-{bench}{binary_suffix} {threads} 100 8 1000000"
+        self.cmd = "cache-{bench}{binary_suffix} {threads} 100 8 10000000"
 
         self.args = {"bench": ["thrash", "scratch"],
-                     "threads": Benchmark.scale_threads_for_cpus(2)}
+                     "threads": Benchmark.scale_threads_for_cpus(1)}
 
         self.requirements = ["cache-thrash", "cache-scratch"]
         super().__init__(name)
@@ -84,12 +84,14 @@ class BenchmarkFalsesharing(Benchmark):
                             ylabel="'l1 cache misses in %'",
                             title="'cache misses: ' + arg + ' ' + str(arg_value)",
                             filepostfix="l1-misses",
+                            autoticks=False,
                             fixed=["bench"])
 
         self.plot_fixed_arg("({LLC-load-misses}/{LLC-loads})*100",
                             ylabel="'llc cache misses in %'",
                             title="'LLC misses: ' + arg + ' ' + str(arg_value)",
                             filepostfix="llc-misses",
+                            autoticks=False,
                             fixed=["bench"])
 
 
