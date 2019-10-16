@@ -195,7 +195,7 @@ class BenchmarkDJTrace(Benchmark):
 
         # Memusage
         # hack ideal rss in data set
-        allocators["Ideal_RSS"] = {"color": "C" + str(len(allocators) + 1)}
+        allocators["Ideal_RSS"] = {"color": "xkcd:gold")}
         self.results["stats"]["Ideal_RSS"] = {}
         for perm in self.iterate_args(args=args):
             ideal_rss = self.results[list(allocators.keys())[0]][perm][0]["Ideal_RSS"]/1000
