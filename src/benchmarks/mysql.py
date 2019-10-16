@@ -65,9 +65,6 @@ class BenchmarkMYSQL(Benchmark):
         super().__init__(name)
 
         self.results["facts"]["runtime [s]"] = RUN_TIME
-        self.results["facts"]["sysbench"] = subprocess.run(["sysbench", "--version"],
-                                                           stdout=PIPE,
-                                                           universal_newlines=True).stdout[:-1]
 
     def prepare(self):
         super().prepare()
