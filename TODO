@@ -3,10 +3,6 @@
 
 - rethink colors
 
-- rethink scale_thread_for_cpus
-	- hit interesting thread_counts: numa domains
-	- scale equaly
-
 - check dependencies
 - log facilities
 

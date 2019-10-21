@@ -55,26 +55,26 @@ class Benchmark:
         print_debug("Server Err:", errs)
 
     @staticmethod
-    def scale_threads_for_cpus(factor, steps=None):
-        """Simple helper to scale thread count to execution units"""
-        cpus = multiprocessing.cpu_count()
-        max_threads = cpus * factor
-        if not steps:
-            steps = 1
-            if max_threads >= 20 and max_threads < 50:
-                steps = 2
-            if max_threads >= 50 and max_threads < 100:
-                steps = 5
-            if max_threads >= 100:
-                steps = 10
+    def scale_threads_for_cpus(factor=1, min_threads=1, steps=10):
+        """Helper to scale thread count to execution units
 
-        # Special thread counts
-        nthreads = set([1, int(cpus/2), cpus, cpus*factor])
-        nthreads.update(range(steps, cpus * factor + 1, steps))
-        nthreads = list(nthreads)
-        nthreads.sort()
+        Return a list of numbers between start and multiprocessing.cpu_count() * factor
+        with len <= steps."""
+        max_threads = multiprocessing.cpu_count() * factor
 
-        return nthreads
+        if steps > max_threads - min_threads + 1:
+            return list(range(min_threads, max_threads + 1))
+
+        nthreads = []
+        divider = 2
+        while True:
+            factor = max_threads // divider
+            entries = max_threads // factor
+            if entries > steps - 1:
+                return sorted(list(set([min_threads] + nthreads + [max_threads])))
+
+            nthreads = [(i + 1) * factor for i in range(entries)]
+            divider *= 2
 
     def __str__(self):
         return self.name
@@ -90,7 +90,7 @@ class Benchmark:
 
         # Set result_dir
         if not hasattr(self, "result_dir"):
-            self.result_dir = os.path.abspath(os.path.join(src.globalvars.resdir,
+            self.result_dir = os.path.abspath(os.path.join(src.globalvars.resdir or "",
                                                            self.name))
         # Set build_dir
         if not hasattr(self, "build_dir"):
