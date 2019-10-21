@@ -15,7 +15,36 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Definition of the larson benchmark"""
+"""Larson server benchmark
+
+This benchmark was build by Paul Larson at Microsoft Research. It
+simulates a server: each thread has a set of allocations. From which it selects
+a random slot. The allocation in this slot is freed, a new one with a random size
+allocated, written to and stored in the selected slot. When a thread finished its
+allocations it will pass its objects to a new thread.
+
+Larson benchmark usage: ./larson sleep min-size max-size chunks malloc_frees seed threads
+
+In the paper "Memory Allocation for Long-Running Server Applications" the authors
+use 1000 chunks per thread and 50000 malloc and free pairs per thread which
+correspond to a "bleeding rate" of 2% which they observed in real world systems.
+The allocations are uniformly distributed between min-size and max-size.
+
+allocbench runs larson with different distributions and thread counts.
+The other arguments are the same as the original authors used in their paper.
+
+mimalloc-bench uses 1000 chunks per thread and 10000 malloc and free pairs
+simulating 10% bleeding. I don't know why they use different values than the
+original paper.
+
+
+Interpretation:
+
+This benchmark is intended to model a real world server workload.
+But the use of a uniformly distribution of allocation sizes clearly differs from
+real applications. Although the results can be a metric of scalability and
+false sharing because it uses multiple threads, which pass memory around.
+"""
 
 import re
 
@@ -25,12 +54,7 @@ THROUGHPUT_RE = re.compile("^Throughput =\\s*(?P<throughput>\\d+) operations per
 
 
 class BenchmarkLarson(Benchmark):
-    """Larson server benchmark
-
-    This benchmark is courtesy of Paul Larson at Microsoft Research. It
-    simulates a server: each thread allocates and deallocates objects, and then
-    transfers some objects (randomly selected) to other threads to be freed.
-    """
+    """Definition of the larson benchmark"""
 
     def __init__(self):
         name = "larson"
