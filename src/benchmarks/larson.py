@@ -61,7 +61,7 @@ class BenchmarkLarson(Benchmark):
 
         # Parameters taken from the paper "Memory Allocation for Long-Running Server
         # Applications" from Larson and Krishnan
-        self.cmd = "larson{binary_suffix} 1 8 {maxsize} 1000 50000 1 {threads}"
+        self.cmd = "larson{binary_suffix} 5 8 {maxsize} 1000 50000 1 {threads}"
 
         self.args = {"maxsize": [64, 512, 1024],
                      "threads": Benchmark.scale_threads_for_cpus(2)}
