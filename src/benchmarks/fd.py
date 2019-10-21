@@ -67,7 +67,7 @@ class BenchmarkFd(Benchmark):
 
     def summary(self):
         self.barplot_single_arg("{task-clock}",
-                                ylabel='"runtime in s"',
+                                ylabel='"runtime in ms"',
                                 title='"fd runtime"',
                                 filepostfix="runtime")
 
