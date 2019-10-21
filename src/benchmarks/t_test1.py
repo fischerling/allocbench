@@ -47,14 +47,6 @@ class BenchmarkTTest1(Benchmark):
                             filepostfix="time",
                             autoticks=False)
 
-        scale = list(self.results["allocators"].keys())[0]
-        self.plot_fixed_arg(yval,
-                            ylabel='"Mops / CPU second scaled at {}"'.format(scale),
-                            title='"T-Test1: " + arg + " " + str(arg_value) + " normalized {}"'.format(scale),
-                            filepostfix="time.norm",
-                            scale=scale,
-                            autoticks=False)
-
         # L1 cache misses
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                             ylabel='"L1 misses in %"',

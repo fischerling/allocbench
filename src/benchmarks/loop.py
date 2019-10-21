@@ -47,7 +47,7 @@ class BenchmarkLoop(Benchmark):
     def __init__(self):
         name = "loop"
 
-        self.cmd = "loop{binary_suffix} {nthreads} 1000001 {maxsize}"
+        self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
         self.args = {"maxsize":  [2 ** x for x in range(6, 16)],
                      "nthreads": Benchmark.scale_threads_for_cpus(2)}
@@ -61,14 +61,6 @@ class BenchmarkLoop(Benchmark):
                             ylabel='"MOPS/cpu-second"',
                             title='"Loop: " + arg + " " + str(arg_value)',
                             filepostfix="time",
-                            autoticks=False)
-
-        scale = list(self.results["allocators"].keys())[0]
-        self.plot_fixed_arg("perm.nthreads / ({task-clock}/1000)",
-                            ylabel='"MOPS/cpu-second normalized {}"'.format(scale),
-                            title=f'"Loop: " + arg + " " + str(arg_value) + " normalized {scale}"',
-                            filepostfix="time.norm",
-                            scale=scale,
                             autoticks=False)
 
         # L1 cache misses
