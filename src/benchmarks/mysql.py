@@ -15,7 +15,62 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Definition of the mysql read only benchmark using sysbench"""
+"""sysbench SQL read-only benchmark
+
+This benchmark is heavily inspired by a blog post from Alexey Stroganov from Percona:
+https://web.archive.org/web/20190706104404/https://www.percona.com/blog/2012/07/05/impact-of-memory-allocators-on-mysql-performance/
+
+It uses the read-only database benchmark from sysbench, a commonly used system
+benchmarking tool to measure the performance of mysqld per allocator.
+The read-only benchmark on a relatively small database (~1GB) is used to omit
+I/O latency and be cpu-bound, maximizing the allocators influence on performance.
+
+Behavior per allocator:
+* Start mysqld using the allocator
+* Run sysbench oltp_read_only once per thread count
+* Shutdown mysqld
+
+40 Thread workload:
+
+* allocator calls: 1519226
+    * malloc:       722421 (47.55%)
+    * free:         795231 (52.34%)
+    * calloc:         1501 (0.10%)
+    * realloc:          73 (0.004%)
+* Approximate allocator ratios:
+    * malloc:  0.69%
+    * free:    0.36%
+    * calloc:  0.04%
+
+* Top 10 allocation sizes 71.36% of all allocations
+  1. 288 B occurred 112556 times
+  2. 4064 B occurred 112552 times
+  3. 9 B occurred 61978 times
+  4. 328 B occurred 56275 times
+  5. 64 B occurred 48498 times
+  6. 1040 B occurred 28174 times
+  7. 360 B occurred 28140 times
+  8. 65544 B occurred 28136 times
+  9. 104 B occurred 25794 times
+  10. 992 B occurred 14521 times
+
+  allocations <= 64:   131723 18.19%
+  allocations <= 1024: 423315 58.47%
+  allocations <= 4096: 622732 86.01%
+
+mysqld starts one thread per connection, which produce roughly the same
+allocator workload (checked with a malt trace).
+
+Interpretation:
+
+The mysql benchmark tries to be as near as possible to a real world workload.
+So all non-functional characteristics of an allocator are measured.
+This means the results can give hints on how each allocator performs
+for a similar workload.
+But the results don't directly explain why an allocator performs
+this way. To obtain a more complete understanding deeper analysis of the
+allocators algorithm, host system and workload is needed.
+"""
 
 import multiprocessing
 import os
@@ -36,6 +91,7 @@ RUN_TIME = 300
 TABLES = 5
 
 PREPARE_CMD = (f"sysbench oltp_read_only --db-driver=mysql --mysql-user={MYSQL_USER} "
+               f"--threads={multiprocessing.cpu_count()} "
                f"--mysql-socket={{build_dir}}/socket --tables={TABLES} --table-size=1000000 prepare")
 
 CMD = (f"sysbench oltp_read_only --threads={{nthreads}} --time={RUN_TIME} --tables={TABLES} "
@@ -46,10 +102,7 @@ SERVER_CMD = ("mysqld --no-defaults -h {build_dir} --socket={build_dir}/socket -
 
 
 class BenchmarkMYSQL(Benchmark):
-    """Mysql bechmark definition
-
-    See sysbench documentation for more details about the oltp_read_only benchmark
-    """
+    """Mysql bechmark definition"""
 
     def __init__(self):
         name = "mysql"

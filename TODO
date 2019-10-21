@@ -1,4 +1,5 @@
 - fix mysqld termination with malt
+- add mysql warmup in preallocator_hook
 
 - rethink colors
 
