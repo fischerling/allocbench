@@ -15,7 +15,12 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Definition of the redis benchmark"""
+"""Definition of the redis benchmark
+
+
+This benchmark uses the redis benchmark tool included in the redis release
+archive. The used parameters are inspired by the ones used in mimalloc-bench."
+"""
 
 import os
 import re
@@ -32,11 +37,7 @@ REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
 
 
 class BenchmarkRedis(Benchmark):
-    """Redis benchmark
-
-    This benchmark uses the redis benchmark tool included in the redis release
-    archive. The used parameters are inspired by the ones used in mimalloc-bench."
-    """
+    """Definition of the redis benchmark"""
 
     def __init__(self):
         name = "redis"
@@ -60,7 +61,7 @@ class BenchmarkRedis(Benchmark):
 
         redis_dir = os.path.join(self.build_dir, f"redis-{redis_version}")
 
-        redis.provide(redis_dir)
+        redis.provide(self.build_dir)
 
         # building redis
         proc = subprocess.run(["make", "-C", redis_dir],
