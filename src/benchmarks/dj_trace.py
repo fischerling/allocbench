@@ -111,7 +111,7 @@ class BenchmarkDJTrace(Benchmark):
                                     "https://www4.cs.fau.de/~flow/allocbench/dj_workloads.tar.xz",
                                     "tar",
                                     "c9bc499eeba8023bca28a755fffbaf9200a335ad")
-        workloads.provide(self.build_dir)
+        workloads.provide(os.path.join(self.build_dir, "dj_trace"))
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
