@@ -21,7 +21,7 @@ This benchmark runs the lld speed benchmark provided by the llvm project.
 The archive contains compiled object files and linker instructions
 for prominent software projects.
 The benchmark starts lld in each project and measures lld's execution time.
-Lld uses 5-6 threads to link the projects.
+Lld uses all available execution units.
 
 Included workloads are (allocator functions with call count < 100 are neglected):
 Checksum: 2d449a11109c7363f67fd45513b42270f5ba2a92
@@ -193,10 +193,9 @@ Checksum: 2d449a11109c7363f67fd45513b42270f5ba2a92
 
 Interpretation:
 
-Because lld uses at most 5 threads the allocators scalability is not a big concern.
 The raw speed of the allocator likewise is not a huge factor because of the small
 small portion of the total execution time (around 1% except scylla and linux).
-So the data locality should be the most important factor for those workloads.
+So data locality and scalability should be the most important factor for those workloads.
 """
 
 import os
