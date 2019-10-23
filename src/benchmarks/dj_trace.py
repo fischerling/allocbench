@@ -58,7 +58,7 @@ class BenchmarkDJTrace(Benchmark):
     def __init__(self):
         name = "dj_trace"
 
-        self.cmd = "trace_run{binary_suffix} {build_dir}/dj_workloads/{workload}.wl"
+        self.cmd = "trace_run{binary_suffix} {build_dir}/dj_workloads/dj_workloads/{workload}.wl"
         self.measure_cmd = ""
 
         self.args = {"workload": ["389-ds-2",
@@ -111,7 +111,7 @@ class BenchmarkDJTrace(Benchmark):
                                     "https://www4.cs.fau.de/~flow/allocbench/dj_workloads.tar.xz",
                                     "tar",
                                     "c9bc499eeba8023bca28a755fffbaf9200a335ad")
-        workloads.provide(os.path.join(self.build_dir, "dj_trace"))
+        workloads.provide(os.path.join(self.build_dir, "dj_workloads"))
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
