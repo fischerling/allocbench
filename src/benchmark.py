@@ -855,6 +855,7 @@ class Benchmark:
             print("\\usepackage{xcolor}", file=f)
             print("\\begin{document}", file=f)
             print("\\begin{tabular}{|", f"{'c|'*nperm_fields}", f"{'c'*nentries}|"*nallocators, "}", file=f)
+            print("\\toprule", file=f)
 
             print(alloc_header_line, file=f)
             print("\\hline", file=f)
