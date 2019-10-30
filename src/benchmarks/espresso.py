@@ -83,6 +83,14 @@ class BenchmarkEspresso(Benchmark):
                                 title='"Espresso VmHWM"',
                                 filepostfix="vmhwm")
 
+        self.write_tex_table([{"label": "Runtime [ms]",
+                               "expression": "{task-clock}",
+                               "sort": "<"},
+                              {"label": "Memusage [KB]",
+                               "expression": "{VmHWM}",
+                               "sort": "<"}],
+                             filepostfix="table")
+
         self.export_stats_to_dataref("task-clock")
 
         self.export_stats_to_dataref("VmHWM")
