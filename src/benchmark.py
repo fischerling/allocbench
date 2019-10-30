@@ -852,6 +852,7 @@ class Benchmark:
         fname = os.path.join(sumdir, ".".join([self.name, filepostfix, "tex"]))
         with open(fname, "w") as f:
             print("\\documentclass{standalone}", file=f)
+            print("\\usepackage{booktabs}", file=f)
             print("\\usepackage{xcolor}", file=f)
             print("\\begin{document}", file=f)
             print("\\begin{tabular}{|", f"{'c|'*nperm_fields}", f"{'c'*nentries}|"*nallocators, "}", file=f)
