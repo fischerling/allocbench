@@ -274,5 +274,10 @@ class BenchmarkLld(Benchmark):
         # self.export_stats_to_dataref("VmHWM")
         self.export_stats_to_dataref("task-clock")
 
+        self.write_tex_table([{"label": "Runtime [ms]",
+                               "expression": "{task-clock}",
+                               "sort": "<"}],
+                            filepostfix="table")
+
 
 lld = BenchmarkLld()

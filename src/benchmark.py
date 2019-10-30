@@ -809,3 +809,104 @@ class Benchmark:
                 print(row[-1], "\\\\", file=f)
             print("\\end{tabular}", file=f)
             print("\\end{document}", file=f)
+
+    def write_tex_table(self, entries, sort=">",
+                        filepostfix="", sumdir="", std=False):
+        """generate a latex standalone table from an list of entries dictionaries
+
+        Entries must have at least the two keys: "label" and "expression".
+        The optional "sort" key specifies the direction of the order:
+            ">" : bigger is better.
+            "<" : smaller is better.
+
+        Table layout:
+
+        |    alloc1     |    alloc2    | ....
+        ---------------------------------------
+        | name1  name2  | ...
+        ---------------------------------------
+        perm1 | eavl1  eval2  | ...
+        perm2 | eval1  eval2  | ...
+        """
+        args = self.results["args"]
+        allocators = self.results["allocators"]
+        nallocators = len(allocators)
+        nentries = len(entries)
+        perm_fields = self.Perm._fields
+        nperm_fields = len(perm_fields)
+
+        alloc_header_line =  f"\\multicolumn{{{nperm_fields}}}{{c|}}{{}} &"
+        for alloc in allocators:
+            alloc_header_line += f"\\multicolumn{{{nentries}}}{{c|}}{{{alloc}}} &"
+        alloc_header_line = alloc_header_line[:-1] + "\\\\"
+
+        perm_fields_header = ""
+        for field in self.Perm._fields:
+            perm_fields_header += f'{field} &'
+        entry_header_line = ""
+        for entry in entries:
+            entry_header_line += f'{entry["label"]} &'
+        entry_header_line = perm_fields_header + entry_header_line * nallocators
+        entry_header_line = entry_header_line[:-1] + "\\\\"
+
+        fname = os.path.join(sumdir, ".".join([self.name, filepostfix, "tex"]))
+        with open(fname, "w") as f:
+            print("\\documentclass{standalone}", file=f)
+            print("\\usepackage{xcolor}", file=f)
+            print("\\begin{document}", file=f)
+            print("\\begin{tabular}{|", f"{'c|'*nperm_fields}", f"{'c'*nentries}|"*nallocators, "}", file=f)
+
+            print(alloc_header_line, file=f)
+            print("\\hline", file=f)
+            print(entry_header_line, file=f)
+            print("\\hline", file=f)
+
+            for perm in self.iterate_args(args=args):
+                values = [[] for _ in entries]
+                maxs = [None for _ in entries]
+                mins = [None for _ in entries]
+                for allocator in allocators:
+                    for i, entry in enumerate(entries):
+                        expr = entry["expression"]
+                        values[i].append(eval(expr.format(**self.results["stats"][allocator][perm]["mean"])))
+
+                # get max and min for each entry
+                for i, entry in enumerate(entries):
+                    if not "sort" in entry:
+                        continue
+                    # bigger is better
+                    elif entry["sort"] == ">":
+                        maxs[i] = max(values[i])
+                        mins[i] = min(values[i])
+                    # smaller is better
+                    elif entry["sort"] == "<":
+                        mins[i] = max(values[i])
+                        maxs[i] = min(values[i])
+
+                # build row
+                row = ""
+                perm_dict = perm._asdict()
+                for field in perm_fields:
+                    row += str(perm_dict[field]) + "&"
+
+                for i, _ in enumerate(allocators):
+                    for y, entry_vals in enumerate(values):
+                        val = entry_vals[i]
+
+                        # format
+                        val_str = str(val)
+                        if type(val) == float:
+                            val_str = f"{val:.2f}"
+
+                        # colorize
+                        if val == maxs[y]:
+                            val_str = f"\\textcolor{{green}}{{{val_str}}}"
+                        elif val == mins[y]:
+                            val_str = f"\\textcolor{{red}}{{{val_str}}}"
+                        row += f"{val_str} &"
+                #escape _ for latex
+                row = row.replace("_", "\_")
+                print(row[:-1], "\\\\", file=f)
+
+            print("\\end{tabular}", file=f)
+            print("\\end{document}", file=f)

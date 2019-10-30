@@ -70,7 +70,9 @@ class BenchmarkFalsesharing(Benchmark):
 
                     data = [float(m["time"]) for m in self.results[allocator][perm]]
 
-                    y_vals.append(single_threaded / np.mean(data))
+                    speedup = single_threaded / np.mean(data)
+                    self.results["stats"][allocator][perm]["mean"]["speedup"] = speedup
+                    y_vals.append(speedup)
 
                 plt.plot(nthreads, y_vals, marker='.', linestyle='-',
                          label=allocator, color=allocators[allocator]["color"])
@@ -95,6 +97,11 @@ class BenchmarkFalsesharing(Benchmark):
                             filepostfix="llc-misses",
                             autoticks=False,
                             fixed=["bench"])
+
+        self.write_tex_table([{"label": "Speedup",
+                               "expression": "{speedup}",
+                               "sort":">"}],
+                             filepostfix="speedup.table")
 
 
 falsesharing = BenchmarkFalsesharing()

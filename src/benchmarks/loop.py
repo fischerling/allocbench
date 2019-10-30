@@ -74,6 +74,11 @@ class BenchmarkLoop(Benchmark):
         self.write_best_doublearg_tex_table("perm.nthreads / ({task-clock}/1000)",
                                             filepostfix="time.matrix")
 
+        self.write_tex_table([{"label":  "MOPS/s",
+                               "expression": "perm.nthreads / ({task-clock}/1000)",
+                               "sort":">"}],
+                             filepostfix="mops.table")
+
         self.export_stats_to_csv("task-clock")
         self.export_stats_to_dataref("task-clock")
 

@@ -209,6 +209,11 @@ class BenchmarkDJTrace(Benchmark):
                                 title='"Highwatermark of Vm (VmHWM)"',
                                 filepostfix="newrss")
 
+        # self.barplot_fixed_arg("{Max_RSS}/1000",
+                                # ylabel='"Max RSS in MB"',
+                                # title='"Highwatermark of Vm (VmHWM)"',
+                                # filepostfix="newrss")
+
         del allocators["Ideal_RSS"]
         del self.results["stats"]["Ideal_RSS"]
 
@@ -237,6 +242,15 @@ class BenchmarkDJTrace(Benchmark):
 
         self.export_stats_to_dataref("Max_RSS")
         self.export_stats_to_dataref("cputime")
+
+        # Big table
+        self.write_tex_table([{"label": "Runtime [ms]",
+                               "expression": "{cputime}/1000",
+                               "sort": "<"},
+                               {"label": "Max RSS [MB]",
+                                "expression": "{Max_RSS}/1000",
+                                "sort":"<"}],
+                             filepostfix="table")
 
         # Tables
         for perm in self.iterate_args(args=args):

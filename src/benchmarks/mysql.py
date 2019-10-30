@@ -225,6 +225,14 @@ class BenchmarkMYSQL(Benchmark):
                                 title='"Memusage sysbench oltp read only"',
                                 filepostfix="mem")
 
+        self.write_tex_table([{"label": "Transactions",
+                               "expression": "{transactions}",
+                               "sort": ">"},
+                              {"label": "Memusage [KB]",
+                               "expression": "{rssmax}",
+                               "sort": "<"}],
+                             filepostfix="table")
+
         # Colored latex table showing transactions count
         d = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):

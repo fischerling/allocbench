@@ -55,8 +55,12 @@ class BenchmarkTTest1(Benchmark):
                             autoticks=False)
 
         # Speed Matrix
-        self.write_best_doublearg_tex_table(yval,
-                                            filepostfix="memusage.matrix")
+        self.write_best_doublearg_tex_table(yval, filepostfix="mops.matrix")
+
+        self.write_tex_table([{"label": "MOPS/s",
+                               "expression": yval,
+                               "sort": ">"}],
+                             filepostfix="mops.table")
 
         self.export_stats_to_csv("task-clock")
 
