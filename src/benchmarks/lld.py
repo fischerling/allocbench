@@ -205,6 +205,7 @@ import matplotlib.pyplot as plt
 from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
 import src.facter
+from src.globalvars import summary_file_ext
 
 
 class BenchmarkLld(Benchmark):
@@ -257,7 +258,7 @@ class BenchmarkLld(Benchmark):
             plt.legend(loc="best")
             plt.ylabel("Zeit in ms")
             plt.title(f"Gesamte Laufzeit {perm.test}")
-            plt.savefig(".".join([self.name, perm.test, "runtime", "png"]))
+            plt.savefig(".".join([self.name, perm.test, "runtime", summary_file_ext]))
             plt.clf()
 
         # TODO: get memusage

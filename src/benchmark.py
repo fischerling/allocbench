@@ -533,7 +533,7 @@ class Benchmark:
     ###### Summary helpers ######
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                         autoticks=True, title="'default title'", filepostfix="",
-                        sumdir="", arg="", scale=None, file_ext="png"):
+                        sumdir="", arg="", scale=None, file_ext=src.globalvars.summary_file_ext):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
@@ -572,7 +572,7 @@ class Benchmark:
 
     def barplot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                            title="'default title'", filepostfix="", sumdir="",
-                           arg="", scale=None, file_ext="png", yerr=True):
+                           arg="", scale=None, file_ext=src.globalvars.summary_file_ext, yerr=True):
 
         args = self.results["args"]
         allocators = self.results["allocators"]
@@ -621,7 +621,7 @@ class Benchmark:
 
     def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
                        autoticks=True, title="'default title'", filepostfix="",
-                       sumdir="", fixed=[], file_ext="png", scale=None):
+                       sumdir="", fixed=[], file_ext=src.globalvars.summary_file_ext, scale=None):
 
         args = self.results["args"]
         allocators = self.results["allocators"]

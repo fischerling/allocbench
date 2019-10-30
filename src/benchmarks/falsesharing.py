@@ -23,6 +23,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from src.benchmark import Benchmark
+from src.globalvars import summary_file_ext
+
 
 TIME_RE = re.compile("^Time elapsed = (?P<time>\\d*\\.\\d*) seconds.$")
 
@@ -77,7 +79,7 @@ class BenchmarkFalsesharing(Benchmark):
             plt.xlabel("threads")
             plt.ylabel("speedup")
             plt.title(bench + " speedup")
-            plt.savefig(self.name + "." + bench + ".png")
+            plt.savefig(f"{self.name}.{bench}.{summary_file_ext}")
             plt.clf()
 
         self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",

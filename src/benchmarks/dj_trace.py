@@ -25,6 +25,8 @@ from urllib.request import urlretrieve
 import matplotlib.pyplot as plt
 import numpy as np
 
+from src.globalvars import summary_file_ext
+
 from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
 from src.util import print_status
@@ -156,7 +158,7 @@ class BenchmarkDJTrace(Benchmark):
             plt.legend(loc="best")
             plt.ylabel("Zeit in ms")
             plt.title("Gesamte Laufzeit")
-            plt.savefig(".".join([self.name, perm.workload, "runtime", "png"]))
+            plt.savefig(".".join([self.name, perm.workload, "runtime", summary_file_ext]))
             plt.clf()
 
         self.barplot_single_arg("{cputime}/1000",
@@ -190,7 +192,7 @@ class BenchmarkDJTrace(Benchmark):
                         "free\n" + str(self.results[perm.workload]["free"]) + "\ncalls"])
             plt.ylabel("Durchschnittliche Zeit in cycles")
             plt.title("Durchscnittliche Laufzeiten der API Funktionen")
-            plt.savefig(".".join([self.name, perm.workload, "apitimes", "png"]))
+            plt.savefig(".".join([self.name, perm.workload, "apitimes", summary_file_ext]))
             plt.clf()
 
         # Memusage
@@ -227,7 +229,7 @@ class BenchmarkDJTrace(Benchmark):
             plt.legend(loc="best")
             plt.ylabel("Max RSS in MB")
             plt.title("Maximal benötigter Speicher (VmHWM)")
-            plt.savefig(".".join([self.name, perm.workload, "rss", "png"]))
+            plt.savefig(".".join([self.name, perm.workload, "rss", summary_file_ext]))
             plt.clf()
 
         self.export_stats_to_csv("Max_RSS")
@@ -245,12 +247,12 @@ class BenchmarkDJTrace(Benchmark):
                 d[allocator]["rss"] = [x["Max_RSS"] for x in self.results[allocator][perm]]
 
             times = {allocator: np.mean(d[allocator]["time"]) for allocator in allocators}
-            tmin = min(times)
-            tmax = max(times)
+            tmin = min(times.values())
+            tmax = max(times.values())
 
             rss = {allocator: np.mean(d[allocator]["rss"]) for allocator in allocators}
-            rssmin = min(rss)
-            rssmax = max(rss)
+            rssmin = min(rss.values())
+            rssmax = max(rss.values())
 
             fname = ".".join([self.name, perm.workload, "table.tex"])
             with open(fname, "w") as f:
@@ -264,7 +266,7 @@ class BenchmarkDJTrace(Benchmark):
                 for allocator in allocators:
                     print(allocator.replace("_", "\\_"), end=" & ", file=f)
 
-                    s = "\\textcolor{{{}}}{{{}}} / {}"
+                    s = "\\textcolor{{{}}}{{{:.2f}}} / {:.4f}"
 
                     t = d[allocator]["time"]
                     m = times[allocator]
