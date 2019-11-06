@@ -30,7 +30,6 @@ import sys
 import traceback
 
 from src.allocator import collect_allocators
-import src.chattyparser
 import src.facter
 import src.globalvars
 from src.util import find_cmd
