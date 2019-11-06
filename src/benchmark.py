@@ -364,7 +364,6 @@ class Benchmark:
                     print_error(e)
                     print_error("Skipping", alloc_name)
                     skip=True
-                    continue
 
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
