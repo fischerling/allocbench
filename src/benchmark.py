@@ -437,7 +437,6 @@ class Benchmark:
                         else:
                             result["server_status"] = []
                             for server in self.servers:
-                                print(server)
                                 with open("/proc/{}/status".format(server["popen"].pid), "r") as f:
                                     result["server_status"].append(f.read())
 
