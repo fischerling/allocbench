@@ -64,7 +64,7 @@ class BenchmarkRedis(Benchmark):
         redis.provide(self.build_dir)
 
         # building redis
-        proc = subprocess.run(["make", "-C", redis_dir],
+        proc = subprocess.run(["make", "-C", redis_dir, "MALLOC=libc", "USE_JEMALLOC=no"],
                               # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               universal_newlines=True)
 
