@@ -360,7 +360,7 @@ class Benchmark:
 
                 try:
                     self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
-                except: Exception as e:
+                except Exception as e:
                     print_error(e)
                     print_error("Skipping", alloc_name)
                     skip=True
