@@ -346,6 +346,8 @@ class Benchmark:
                 if alloc_name not in self.results:
                     self.results[alloc_name] = {}
 
+                skip = False
+
                 env = dict(os.environ)
                 env["LD_PRELOAD"] = env.get("LD_PRELOAD", "")
                 env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/print_status_on_exit.so"
@@ -356,7 +358,13 @@ class Benchmark:
                     env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "")
                     env["LD_LIBRARY_PATH"] += ":" + alloc["LD_LIBRARY_PATH"]
 
-                self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
+                try:
+                    self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
+                except: Exception as e:
+                    print_error(e)
+                    print_error("Skipping", alloc_name)
+                    skip=True
+                    continue
 
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
@@ -365,6 +373,14 @@ class Benchmark:
                 # Run benchmark for alloc
                 for perm in self.iterate_args():
                     i += 1
+
+                    if perm not in self.results[alloc_name]:
+                        self.results[alloc_name][perm] = []
+
+                    if skip:
+                        self.results[alloc_name][perm].append({})
+                        continue
+
                     print_info0(i, "of", n, "\r", end='')
 
                     # Available substitutions in cmd
@@ -460,8 +476,6 @@ class Benchmark:
                         if valid_result is not None:
                             valid_result = result
 
-                    if perm not in self.results[alloc_name]:
-                        self.results[alloc_name][perm] = []
                     self.results[alloc_name][perm].append(result)
 
                     if os.getcwd() != cwd:
