@@ -8,7 +8,7 @@ export CXX = g++
 
 export WARNFLAGS = -Wall -Wextra
 export COMMONFLAGS = -fno-builtin -fPIC -DPIC -pthread
-export OPTFLAGS = -O3 -DNDEBUG
+export OPTFLAGS = -O3 -DNDEBUG -fomit-frame-pointer
 
 export CFLAGS = -I. $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 export CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
