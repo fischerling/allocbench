@@ -1,47 +1,20 @@
-#include <errno.h>
+#include <errno.h>  /* TODO: set errno */
 #include <stddef.h> /* NULL, size_t */
 #include <stdint.h> /* uintptr_t */
-#include <stdio.h> /* uintptr_t */
+#include <stdio.h>  /* fprintf */
 #include <unistd.h> /* sysconf(_SC_PAGESIZE) */
 #include <string.h> /* memset */
-#include <sys/mman.h> /* memset */
+
+#include "bump_alloc.h"
 
 #define MIN_ALIGNMENT 16
-
-#ifndef MEMSIZE
-#define MEMSIZE 1024*4*1024*1024l
-#endif
-
-#define unlikely(x)     __builtin_expect((x),0)
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-__thread void* mem_start = NULL;
-__thread void* mem_end = NULL;
-
-__thread uintptr_t ptr = 0;
-
 void* malloc(size_t size) {
-	if (unlikely(mem_start == NULL)) {
-		mem_start = mmap(NULL, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-		if(mem_start == MAP_FAILED) {
-			perror("mmap");
-			return NULL;
-		}
-		ptr = (uintptr_t)mem_start;
-	}
-
-	// align ptr;
-	if (ptr % MIN_ALIGNMENT != 0) {
-		size_t mask = MIN_ALIGNMENT -1;
-		ptr = (ptr + mask) & ~mask;
-	}
-
-	void* ret = (void*)ptr;
-	ptr += size;
-	return ret;
+	return bump_up(size, MIN_ALIGNMENT);
 }
 
 void free(__attribute__ ((unused)) void* ptr) {
@@ -51,20 +24,14 @@ void* realloc(void* ptr, size_t size) {
 	if(ptr == NULL)
 		return malloc(size);
 
-	if(size == 0)
-		return NULL;
-
-	void* new_ptr = malloc(size);
+	void* new_ptr = bump_up(size, MIN_ALIGNMENT);
 	// this may copies to much
 	memcpy(new_ptr, ptr, size);
 	return new_ptr;
 }
 
 void* memalign(size_t alignment, size_t size) {
-	// align ptr to alignment and malloc
-	size_t mask = alignment - 1;
-	ptr = (ptr + mask) & ~mask;
-	return malloc(size);
+	return bump_up(size, alignment);
 }
 
 int posix_memalign(void **memptr, size_t alignment, size_t size)
@@ -89,7 +56,7 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 		return 0;
 	}
 
-	out = memalign(alignment, size);
+	out = bump_up(size, alignment);
 	if(out == NULL) {
 		return 12;
 	}
@@ -107,7 +74,7 @@ void* calloc(size_t nmemb, size_t size)
 		return NULL;
 	}
 	
-	out = malloc(fullsize);
+	out = bump_up(fullsize, MIN_ALIGNMENT);
 	if(out == NULL) {
 		return NULL;
 	}
@@ -160,7 +127,7 @@ void* aligned_alloc(size_t alignment, size_t size)
 
 int malloc_stats() {
 	fprintf(stderr, "Bump pointer allocator by muhq\n");
-	fprintf(stderr, "Memsize: %zu, start address: %p, bump pointer %p\n", MEMSIZE, mem_start, ptr);
+	fprintf(stderr, "Memsize: %zu, start address: %p, bump pointer %p\n", MEMSIZE, tsd, tsd->ptr);
 	return 0;
 }
 
