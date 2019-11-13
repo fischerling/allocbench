@@ -52,6 +52,10 @@ def epilog():
             with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as facts_file:
                 pickle.dump(src.globalvars.facts, facts_file)
 
+    # remove a left over status file if some is present
+    if os.path.exists("status"):
+        os.remove("status")
+
 
 def check_dependencies():
     """Check if known requirements of allocbench are met"""
