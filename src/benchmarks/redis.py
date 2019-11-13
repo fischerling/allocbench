@@ -79,6 +79,11 @@ class BenchmarkRedis(Benchmark):
     def process_output(result, stdout, stderr, allocator, perm):
         result["requests"] = REQUESTS_RE.search(stdout).group("requests")
 
+    @staticmethod
+    def cleanup():
+        if os.path.exists("dump.rdb"):
+            os.remove("dump.rdb")
+
     def summary(self):
         self.barplot_single_arg("{requests}",
                                 ylabel='"requests per s"',
