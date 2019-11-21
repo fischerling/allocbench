@@ -214,7 +214,7 @@ class BenchmarkLld(Benchmark):
     def __init__(self):
         name = "lld"
 
-        self.run_dir = "{build_dir}/lld-speed-test/{test}"
+        self.run_dir = "{test_dir}/lld-speed-test/{test}"
         # TODO: don't hardcode ld.lld location
         self.cmd = "/usr/bin/ld.lld @response.txt"
 
@@ -235,11 +235,11 @@ class BenchmarkLld(Benchmark):
                                 "https://s3-us-west-2.amazonaws.com/linker-tests/lld-speed-test.tar.xz",
                                 "tar",
                                 "2d449a11109c7363f67fd45513b42270f5ba2a92")
-        tests.provide(self.build_dir)
+        self.test_dir = tests.provide()
 
     def cleanup(self):
         for perm in self.iterate_args():
-            a_out = os.path.join(self.build_dir, "lld-speed-test", perm.test, "a.out")
+            a_out = os.path.join(self.test_dir, "lld-speed-test", perm.test, "a.out")
             if os.path.isfile(a_out):
                 os.remove(a_out)
 

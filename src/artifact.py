@@ -74,7 +74,7 @@ class GitArtifact(Artifact):
 
         # check if we have already provided this checkout
         if os.path.exists(location):
-            return
+            return location
 
         # check if we have already retrieved the repo
         if not os.path.exists(self.repo):
@@ -93,6 +93,7 @@ class GitArtifact(Artifact):
         proc = subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=location,
                               # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               universal_newlines=True)
+        return location
 
 class ArchiveArtifact(Artifact):
     """External archive"""
@@ -126,7 +127,7 @@ class ArchiveArtifact(Artifact):
 
         # Check if we already provided the archive at location
         if os.path.exists(location):
-            return
+            return location
 
         os.makedirs(location, exist_ok=True)
 
@@ -140,3 +141,5 @@ class ArchiveArtifact(Artifact):
                               universal_newlines=True)
         if proc.returncode != 0:
             raise Exception(f"Failed to extract {self.name}")
+
+        return location

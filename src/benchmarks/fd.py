@@ -36,7 +36,7 @@ class BenchmarkFd(Benchmark):
         name = "fd"
         super().__init__(name)
         
-        self.cmd = "fd -HI -e c '.*[0-9].*' {build_dir}/linux"
+        self.cmd = "fd -HI -e c '.*[0-9].*' {linux_files}"
 
     def prepare(self):
         super().prepare()
@@ -63,7 +63,7 @@ class BenchmarkFd(Benchmark):
 
         linux = GitArtifact("linux", "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
         linux_version = "v5.3"
-        linux.provide(linux_version, os.path.join(self.build_dir, "linux"))
+        self.linux_files = linux.provide(linux_version)
 
     def summary(self):
         self.barplot_single_arg("{task-clock}",
