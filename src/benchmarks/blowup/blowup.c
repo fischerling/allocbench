@@ -1,42 +1,67 @@
+#include <malloc.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #define NUM_THREADS 10
-#define ALLOCATIONS 1024 * 100
-#define SIZE 1024
+#define LIFE_DATA (1024l * 1024 * 100) // 100 MiB
+#define ALLOCATIONS 100000l // 100000
+#define MAX_SIZE (1024l * 16) // 16KiB
+
+typedef struct chunk {
+	struct chunk* next;
+	char data[];
+} chunk_t;
+
+static inline size_t rand_size()
+{
+	return (rand() % MAX_SIZE) + sizeof(chunk_t);
+}
 
 static void do_work()
 {
-	void** ptrs;
+	chunk_t* head = NULL;
+	chunk_t* tail = NULL;
+	size_t to_allocate = LIFE_DATA;
 
-	ptrs = malloc(sizeof(void*) * ALLOCATIONS);
-	if (ptrs == NULL) {
-		perror("malloc");
-		return;
+	// allocate life data
+	while(to_allocate > 0) {
+		size_t size = rand_size();
+		if (size > to_allocate)
+			size = to_allocate;
+
+		to_allocate -= size;
+		chunk_t* cur = (chunk_t*) malloc(size);
+		// touch memory
+		memset(&cur->data, 0, size - sizeof(struct chunk*));
+
+		if(!head) {
+			head = tail = cur;
+		}
+		else {
+			tail->next = cur;
+			tail = cur;
+		}
 	}
 
+	// Do some random allocations to change the allocators state
 	for(int i = 0; i < ALLOCATIONS; i++)
 	{
-		ptrs[i] = malloc(SIZE);
-		memset(ptrs[i], 0, SIZE);
+		free(malloc(rand_size()));
 	}
 
-	for(int i = 0; i < ALLOCATIONS; i++)
-	{
-		free(malloc(SIZE));
-	}
+	// free life data
+	do {
+		chunk_t* next = head->next;
+		free(head);
+		head = next;
+	} while(head != tail);
 
+	// Do some random allocations to change the allocators state
 	for(int i = 0; i < ALLOCATIONS; i++)
 	{
-		/* memset(ptrs[i], 0, SIZE); */
-		free(ptrs[i]);
-	}
-
-	for(int i = 0; i < ALLOCATIONS; i++)
-	{
-		free(malloc(SIZE));
+		free(malloc(rand_size()));
 	}
 
 	return;
