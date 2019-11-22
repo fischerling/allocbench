@@ -269,9 +269,9 @@ class Benchmark:
             print_debug(server_cmd)
 
             proc = subprocess.Popen(server_cmd.split(), env=env,
-                                      stdout=subprocess.PIPE,
-                                      stderr=subprocess.PIPE,
-                                      universal_newlines=True)
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    universal_newlines=True)
 
             # TODO: check if server is up
             sleep(5)
@@ -369,7 +369,7 @@ class Benchmark:
                 except Exception as e:
                     print_error(e)
                     print_error("Skipping", alloc_name)
-                    skip=True
+                    skip = True
 
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
@@ -471,7 +471,7 @@ class Benchmark:
                                     result[row[2].split(":")[0]] = row[0]
                                 except Exception as e:
                                     print_warn("Exception", e, "occured on", row, "for",
-                                          alloc_name, "and", perm)
+                                               alloc_name, "and", perm)
 
                         if hasattr(self, "process_output"):
                             self.process_output(result, res.stdout, res.stderr,
@@ -677,8 +677,8 @@ class Benchmark:
                 plt.xlabel(eval(xlabel))
                 plt.ylabel(eval(ylabel))
                 plt.title(eval(title))
-                plt.savefig(os.path.join(sumdir, ".".join([self.name, arg,
-                            str(arg_value), filepostfix, file_ext])))
+                plt.savefig(os.path.join(sumdir,
+                                         f"{self.name}.{arg}.{arg_value}.{filepostfix}.{file_ext}"))
                 plt.clf()
 
     def export_facts_to_file(self, comment_symbol, f):
@@ -853,7 +853,7 @@ class Benchmark:
         perm_fields = self.Perm._fields
         nperm_fields = len(perm_fields)
 
-        alloc_header_line =  f"\\multicolumn{{{nperm_fields}}}{{c|}}{{}} &"
+        alloc_header_line = f"\\multicolumn{{{nperm_fields}}}{{c|}}{{}} &"
         for alloc in allocators:
             alloc_header_line += f"\\multicolumn{{{nentries}}}{{c|}}{{{alloc}}} &"
         alloc_header_line = alloc_header_line[:-1] + "\\\\"
@@ -925,7 +925,7 @@ class Benchmark:
                             val_str = f"\\textcolor{{red}}{{{val_str}}}"
                         row += f"{val_str} &"
                 #escape _ for latex
-                row = row.replace("_", "\_")
+                row = row.replace("_", "\\_")
                 print(row[:-1], "\\\\", file=f)
 
             print("\\end{tabular}", file=f)
