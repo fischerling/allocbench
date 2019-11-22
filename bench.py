@@ -24,7 +24,6 @@ import atexit
 import datetime
 import importlib
 import os
-import pickle
 import subprocess
 import sys
 import traceback
@@ -49,8 +48,7 @@ def epilog():
             endtime = datetime.datetime.now().isoformat()
             endtime = endtime[:endtime.rfind(':')]
             src.globalvars.facts["endtime"] = endtime
-            with open(os.path.join(src.globalvars.resdir, "facts.save"), "wb") as facts_file:
-                pickle.dump(src.globalvars.facts, facts_file)
+            src.facter.store_facts(src.globalvars.resdir)
 
     # remove a left over status file if some is present
     if os.path.exists("status"):

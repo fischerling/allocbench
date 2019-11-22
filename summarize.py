@@ -22,9 +22,9 @@
 import argparse
 import importlib
 import os
-import pickle
 import sys
 
+import src.facter
 import src.globalvars
 from src.util import print_status, print_debug, print_error
 from src.util import print_license_and_exit, print_version_and_exit
@@ -118,8 +118,7 @@ def main():
     os.chdir(args.results)
 
     # Load facts
-    with open("facts.save", "rb") as f:
-        src.globalvars.facts = pickle.load(f)
+    src.facter.load_facts()
 
     for benchmark in src.globalvars.benchmarks:
         if args.benchmarks and not benchmark in args.benchmarks:

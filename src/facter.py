@@ -19,13 +19,14 @@
 
 import ctypes
 import datetime
+import json
 import multiprocessing
 import os
 import platform
 import subprocess
 
 import src.globalvars as gv
-from src.util import print_error
+from src.util import print_error, print_info
 
 
 def collect_facts():
@@ -51,6 +52,42 @@ def collect_facts():
     starttime = starttime[:starttime.rfind(':')]
     gv.facts["starttime"] = starttime
 
+def store_facts(path=None):
+    """Store facts to file"""
+    if not path:
+        filename = "facts.json"
+    elif os.path.isdir(path):
+        filename = os.path.join(path, "facts.json")
+    else:
+        filename = path
+
+    print_info(f"Saving facts to: {filename}")
+    with open(filename, "w") as f:
+        json.dump(gv.facts, f)
+
+def load_facts(path=None):
+    """Load facts from file"""
+    if not path:
+        filename = self.name
+    else:
+        if os.path.isdir(path):
+            filename = os.path.join(path, self.name)
+        else:
+            filename = os.path.splitext(path)
+
+    if os.path.exists(filename + ".json"):
+        filename += ".json"
+        with open(filename, "w") as f:
+            gv.facts = json.load(f)
+    if os.path.exists(filename + ".save"):
+        import pickle
+        filename += ".save"
+        with open(filename, "wb") as f:
+            gv.facts = pickle.load(f)
+    else:
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+
+    print_info(f"Loading facts from: {filename}")
 
 # Copied from pip.
 # https://github.com/pypa/pip/blob/master/src/pip/_internal/utils/glibc.py
