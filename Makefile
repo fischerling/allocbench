@@ -44,4 +44,4 @@ clean:
 	rm -rf $(OBJDIR)
 
 pylint:
-	pylint $(shell find $(PWD) -name "*.py" -not -path "$(OBJDIR)/*")
+	pylint $(shell find src/ -name "*.py")
