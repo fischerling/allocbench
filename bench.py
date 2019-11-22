@@ -137,7 +137,7 @@ def main():
                                              src.globalvars.facts["hostname"],
                                              src.globalvars.facts["starttime"])
 
-    print_info2("Creating result dir:", src.globalvars.resdir)
+    print_status("Writing results to:", src.globalvars.resdir)
     os.makedirs(src.globalvars.resdir, exist_ok=True)
 
     cwd = os.getcwd()
