@@ -41,6 +41,10 @@ class BenchmarkFd(Benchmark):
     def prepare(self):
         super().prepare()
 
+        linux = GitArtifact("linux", "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
+        linux_version = "v5.3"
+        self.linux_files = linux.provide(linux_version)
+
         if os.path.exists(self.build_dir):
             return
 
@@ -61,9 +65,6 @@ class BenchmarkFd(Benchmark):
             os.link(src, dest)
         
 
-        linux = GitArtifact("linux", "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
-        linux_version = "v5.3"
-        self.linux_files = linux.provide(linux_version)
 
     def summary(self):
         self.barplot_single_arg("{task-clock}",
