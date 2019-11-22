@@ -76,6 +76,26 @@ class Benchmark:
             nthreads = [(i + 1) * factor for i in range(entries)]
             divider *= 2
 
+    @staticmethod
+    def is_perf_allowed():
+        """raise an exception if perf is not allowed on this system"""
+        if Benchmark.perf_allowed is None:
+            print_info("Check if you are allowed to use perf ...")
+            res = subprocess.run(["perf", "stat", "ls"],
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE,
+                                 universal_newlines=True)
+
+            if res.returncode != 0:
+                print_error(f"Test perf run failed with exit status: {res.returncode}")
+                print_debug(res.stderr)
+                Benchmark.perf_allowed = False
+            else:
+                Benchmark.perf_allowed = True
+
+        if not Benchmark.perf_allowed:
+            raise Exception("You don't have the needed permissions to use perf")
+
     def __str__(self):
         return self.name
 
@@ -313,24 +333,10 @@ class Benchmark:
 
     def run(self, runs=3):
         """generic run implementation"""
-        # check if perf is allowed on this system
-        if self.measure_cmd == self.defaults["measure_cmd"]:
-            if Benchmark.perf_allowed is None:
-                print_info("Check if you are allowed to use perf ...")
-                res = subprocess.run(["perf", "stat", "ls"],
-                                     stdout=subprocess.PIPE,
-                                     stderr=subprocess.PIPE,
-                                     universal_newlines=True)
 
-                if res.returncode != 0:
-                    print_error("Test perf run failed with:")
-                    print_debug(res.stderr)
-                    Benchmark.perf_allowed = False
-                else:
-                    Benchmark.perf_allowed = True
-
-            if not Benchmark.perf_allowed:
-                raise Exception("You don't have the needed permissions to use perf")
+        # check if we are allowed to use perf
+        if self.measure_cmd.startswith("perf"):
+            Benchmark.is_perf_allowed()
 
         # save one valid result to expand invalid results
         valid_result = {}
