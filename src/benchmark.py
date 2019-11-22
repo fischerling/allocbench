@@ -549,6 +549,16 @@ class Benchmark:
                 self.results["stats"][alloc][perm] = stats
 
     ###### Summary helpers ######
+    def _eval_with_stat(self, evaluation, alloc, perm, stat):
+        try:
+            s = evaluation.format(**self.results["stats"][alloc][perm][stat])
+        except KeyError as e:
+            import traceback
+            print_warn(traceback.format_exc())
+            print_warn(f"For {alloc} in {perm}")
+            return nan
+        return eval(s)
+
     def plot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
                         autoticks=True, title="'default title'", filepostfix="",
                         sumdir="", arg="", scale=None, file_ext=src.globalvars.summary_file_ext):
@@ -570,11 +580,11 @@ class Benchmark:
                     if scale == allocator:
                         y_vals = [1] * len(x_vals)
                     else:
-                        mean = eval(yval.format(**self.results["stats"][allocator][perm]["mean"]))
-                        norm_mean = eval(yval.format(**self.results["stats"][scale][perm]["mean"]))
+                        mean = self._eval_with_stat(yval, allocator, perm, "mean")
+                        norm_mean = self._eval_with_stat(yval, scale, perm, "mean")
                         y_vals.append(mean / norm_mean)
                 else:
-                    y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
+                    y_vals.append(self._eval_with_stat(yval, allocator, perm, "mean"))
 
             plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                      label=allocator, color=allocators[allocator]["color"])
@@ -617,14 +627,14 @@ class Benchmark:
                     if scale == allocator:
                         y_vals = [1] * len(x_vals)
                     else:
-                        mean = eval(yval.format(**self.results["stats"][allocator][perm]["mean"]))
-                        norm_mean = eval(yval.format(**self.results["stats"][scale][perm]["mean"]))
+                        mean = self._eval_with_stat(yval, allocator, perm, "mean")
+                        norm_mean = self._eval_with_stat(yval, scale, perm, "mean")
                         y_vals.append(mean / norm_mean)
                 else:
-                    y_vals.append(eval(yval.format(**self.results["stats"][allocator][perm]["mean"])))
+                    y_vals.append(self._eval_with_stat(yval, allocator, perm, "mean"))
 
                 if yerr:
-                    y_errs.append(eval(yval.format(**self.results["stats"][allocator][perm]["std"])))
+                    y_errs.append(self._eval_with_stat(yval, allocator, perm, "std"))
 
             plt.bar(x_vals, y_vals, width=1, label=allocator, yerr=y_errs,
                     color=allocators[allocator]["color"])
@@ -660,13 +670,11 @@ class Benchmark:
                             if scale == allocator:
                                 y_vals = [1] * len(x_vals)
                             else:
-                                mean = eval(yval.format(**self.results["stats"][allocator][perm]["mean"]))
-                                norm_mean = eval(yval.format(**self.results["stats"][scale][perm]["mean"]))
+                                mean = self._eval_with_stat(yval, allocator, perm, "mean")
+                                norm_mean = self._eval_with_stat(yval, scale, perm, "mean")
                                 y_vals.append(mean / norm_mean)
                         else:
-                            eval_dict = self.results["stats"][allocator][perm]["mean"]
-                            eval_str = yval.format(**eval_dict)
-                            y_vals.append(eval(eval_str))
+                            y_vals.append(self._eval_with_stat(yval, allocator, perm, "mean"))
 
                     plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                              label=allocator, color=allocators[allocator]["color"])
