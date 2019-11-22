@@ -1,11 +1,11 @@
 import atexit
 from collections import namedtuple
+import errno
 import copy
 import csv
 import itertools
 import multiprocessing
 import os
-import pickle
 import subprocess
 from time import sleep
 
@@ -145,10 +145,15 @@ class Benchmark:
         print_debug("Results directory:", self.result_dir)
 
     def save(self, path=None):
-        """Save benchmark results to a pickle file"""
-        f = path if path else self.name + ".save"
-        print_info("Saving results to:", f)
-        # Pickle can't handle namedtuples so convert the dicts of namedtuples
+        """Save benchmark results to a json file"""
+        import json
+        if not path:
+            path = self.name + ".json"
+        elif os.path.isdir(path):
+            path = os.path.join(path, self.name + ".json")
+
+        print_info(f"Saving results to: {path}")
+        # JSON can't handle namedtuples so convert the dicts of namedtuples
         # into lists of dicts.
         save_data = {}
         save_data.update(self.results)
@@ -172,22 +177,34 @@ class Benchmark:
             if "stats" in self.results:
                 save_data["stats"][allocator] = stats
 
-        with open(f, "wb") as f:
-            pickle.dump(save_data, f)
+        with open(path, "w") as f:
+            json.dump(save_data, f)
 
     def load(self, path=None):
-        """Load benchmark results from a pickle file"""
+        """Load benchmark results from file"""
         if not path:
-            f = self.name + ".save"
+            filename = self.name
         else:
             if os.path.isdir(path):
-                f = os.path.join(path, self.name + ".save")
+                filename = os.path.join(path, self.name)
             else:
-                f = path
+                filename = os.path.splitext(path)
 
-        print_info("Loading results from:", f)
-        with open(f, "rb") as f:
-            self.results = pickle.load(f)
+        if os.path.exists(filename + ".json"):
+            import json
+            filename += ".json"
+            with open(filename, "w") as f:
+                self.results = json.load(f)
+        if os.path.exists(filename + ".save"):
+            import pickle
+            filename += ".save"
+            with open(filename, "wb") as f:
+                self.results = pickle.load(f)
+        else:
+            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+
+        print_info(f"Loading results from: {filename}")
+
         # Build new named tuples
         for allocator in self.results["allocators"]:
             d = {}

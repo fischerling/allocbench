@@ -221,10 +221,10 @@ def main():
                 continue
             end_time = datetime.datetime.now()
             bench.results['facts']['end-time'] = end_time.isoformat()
-            bench.results['facts']['duration'] = end_time - start_time
+            bench.results['facts']['duration'] = (end_time - start_time).total_seconds()
 
         # Save results in resultdir
-        bench.save(os.path.join(src.globalvars.resdir, f"{bench.name}.save"))
+        bench.save(src.globalvars.resdir)
 
         if hasattr(bench, "cleanup"):
             print_status("Cleaning up", bench.name, "...")

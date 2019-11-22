@@ -20,11 +20,20 @@
 """Merge two compatible results of an allocbench run"""
 
 import argparse
+import json
 import os
 import pickle
 import sys
 
 from src.util import print_license_and_exit, print_version_and_exit
+
+def load_file(filename):
+    if filename.endswith("json"):
+        with open(filename, "r") as f:
+            return json.load(f)
+    else:
+        with open(filename, "rb") as f:
+            return pickle.load(f)
 
 
 def main():
@@ -61,11 +70,9 @@ def main():
             print(f"Can't merge {src_save} because {os.path.basename(src_save)} not in {args.dest}")
             continue
 
-        with open(src_save, "rb") as src_file:
-            src_results = pickle.load(src_file)
+        src_results = load_file(src_file)
 
-        with open(dest_save, "rb") as dest_file:
-            dest_results = pickle.load(dest_file)
+        dest_results = load_file(dest_file)
 
         for alloc in src_results["allocators"]:
             if alloc in dest_results["allocators"]:
@@ -77,8 +84,8 @@ def main():
             dest_results[alloc] = src_results[alloc]
             dest_results["stats"][alloc] = src_results["stats"][alloc]
 
-        with open(dest_save, "wb") as result_file:
-            pickle.dump(dest_results, result_file)
+        with open(os.path.splitext(dest_save)[0] + ".json", "w") as result_file:
+            json.dump(dest_results, result_file)
 
 
 if __name__ == "__main__":
