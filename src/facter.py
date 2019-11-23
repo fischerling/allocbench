@@ -19,6 +19,7 @@
 
 import ctypes
 import datetime
+import errno
 import json
 import multiprocessing
 import os
@@ -68,21 +69,21 @@ def store_facts(path=None):
 def load_facts(path=None):
     """Load facts from file"""
     if not path:
-        filename = self.name
+        filename = "facts"
     else:
         if os.path.isdir(path):
             filename = os.path.join(path, self.name)
         else:
-            filename = os.path.splitext(path)
+            filename = os.path.splitext(path)[0]
 
     if os.path.exists(filename + ".json"):
         filename += ".json"
-        with open(filename, "w") as f:
+        with open(filename, "r") as f:
             gv.facts = json.load(f)
-    if os.path.exists(filename + ".save"):
+    elif os.path.exists(filename + ".save"):
         import pickle
         filename += ".save"
-        with open(filename, "wb") as f:
+        with open(filename, "rb") as f:
             gv.facts = pickle.load(f)
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)

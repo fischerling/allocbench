@@ -193,12 +193,12 @@ class Benchmark:
         if os.path.exists(filename + ".json"):
             import json
             filename += ".json"
-            with open(filename, "w") as f:
+            with open(filename, "r") as f:
                 self.results = json.load(f)
-        if os.path.exists(filename + ".save"):
+        elif os.path.exists(filename + ".save"):
             import pickle
             filename += ".save"
-            with open(filename, "wb") as f:
+            with open(filename, "rb") as f:
                 self.results = pickle.load(f)
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
