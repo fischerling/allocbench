@@ -110,10 +110,6 @@ def main():
         print_error(f"{args.results} is no directory")
         exit(1)
 
-    if not os.path.isfile(os.path.join(args.results, "facts.save")):
-        print_error(f"{args.results} is no valid allocbench result it misses facts.save")
-        exit(1)
-
     src.globalvars.resdir = args.results
     os.chdir(args.results)
 
