@@ -54,9 +54,9 @@ def main():
     args = parser.parse_args()
 
     for src_save in os.listdir(args.src):
-        if not src_save.endswith(".save"):
+        if not os.path.splitext(src_save)[1] in [".json", ".save"]:
             continue
-        if src_save == "facts.save":
+        if src_save == "facts.save" or src_save == "facts.json":
             continue
         if args.benchmarks and not src_save[:-5] in args.benchmarks:
             continue
@@ -70,9 +70,9 @@ def main():
             print(f"Can't merge {src_save} because {os.path.basename(src_save)} not in {args.dest}")
             continue
 
-        src_results = load_file(src_file)
+        src_results = load_file(src_save)
 
-        dest_results = load_file(dest_file)
+        dest_results = load_file(dest_save)
 
         for alloc in src_results["allocators"]:
             if alloc in dest_results["allocators"]:
