@@ -15,8 +15,18 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-"""espresso is a single threaded programmable logic array analyzer, described by Grunwald, Zorn,
-and Henderson in their paper "Improving the cache locality of memory allocation".
+"""espresso is a single threaded programmable logic array analyzer, described by Zorn and Grunwald
+their paper "Empirical Measurements of Six Allocation-intensive C Programs" in 1992.
+
+It is mentioned in:
+* Dirk Grunwald et al. - 1992 - CustoMalloc: Efficient Synthesized Memory Allocators
+* Dirk Grunwald et al. - 1993 - Improving the Cache Locality of Memory Allocation
+* Paul Wilson et al. - 1995 - Dynamic Storage Allocation: A Survey and Critical Review
+* Emery Berger et al. - 2000 - Hoard: A Scalable Memory Allocator for Multithreaded Applications
+* Emery Berger et al. - 2001 - Composing High-Performance Memory Allocators
+* Emery Berger et al. - 2002 - Reconsidering Custom Memory Allocation
+* Periklis Akritidis - 2010 - Cling: A Memory Allocator to Mitigate Dangling Pointers
+* Daan Leijen et al. - 2019 - Mimalloc: Free List Sharding in Action
 
 The file "largest.espresso" shipped with mimalloc-bench and allocbench generates
 a workload with 3367364 allocator calls (malloc: 1659385, free: 1691851, realloc: 16128).

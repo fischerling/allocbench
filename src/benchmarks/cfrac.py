@@ -15,7 +15,16 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
-"""cfrac is a single threaded implementation of the continued fraction factorization algorithm.
+"""cfrac is a single threaded implementation of the continued fraction factorization algorithm,
+described by Zorn and Grunwald in their paper "Empirical Measurements of Six Allocation-intensive C Programs" in 1992.
+
+It is mentioned in:
+* Dirk Grunwald et al. - 1992 - CustoMalloc: Efficient Synthesized Memory Allocators
+* Emery Berger et al. - 2001 - Composing High-Performance Memory Allocators
+* Emery Berger et al. - 2002 - Reconsidering Custom Memory Allocation
+* Jason Evans - 2006 - A Scalable Concurrent malloc(3) Implementation for FreeBSD
+* Daan Leijen et al. - 2019 - Mimalloc: Free List Sharding in Action
+
 It uses many small short-lived allocations.
 Factorizing 175451865205073170563711388363274837927895 results in
 43044885 allocator calls (malloc: 21522444, free: 21522441).
