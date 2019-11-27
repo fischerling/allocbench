@@ -42,19 +42,19 @@ class BenchmarkBlowup(Benchmark):
     def summary(self):
         # hack ideal rss in data set
         allocators = self.results["allocators"]
-        allocators["Ideal_RSS"] = {"color": "xkcd:gold"}
-        self.results["stats"]["Ideal_RSS"] = {}
+        allocators["Ideal-RSS"] = {"color": "xkcd:gold"}
+        self.results["stats"]["Ideal-RSS"] = {}
         for perm in self.iterate_args(args=self.results["args"]):
-            self.results["stats"]["Ideal_RSS"][perm] = {"mean": {"VmHWM": 1024 * 100}, 
+            self.results["stats"]["Ideal-RSS"][perm] = {"mean": {"VmHWM": 1024 * 100}, 
                                                         "std" : {"VmHWM": 0}}
 
-        self.barplot_single_arg("{VmHWM}",
-                                ylabel='"VmHWM in KB"',
+        self.barplot_single_arg("{VmHWM}/1000",
+                                ylabel='"VmHWM in MB"',
                                 title='"blowup test"',
                                 filepostfix="vmhwm")
 
-        del allocators["Ideal_RSS"]
-        del self.results["stats"]["Ideal_RSS"]
+        del allocators["Ideal-RSS"]
+        del self.results["stats"]["Ideal-RSS"]
 
         self.export_stats_to_dataref("VmHWM")
 
