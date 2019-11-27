@@ -1,6 +1,8 @@
 # allocbench - benchmark tool for POSIX memory allocators
 
-To download allocbench run
+allocbench is a POSIX memory allocator benchmarking framework and tooling.
+
+To obtain allocbench run
 
 ```shell
 git clone https://muhq.space/software/allocbench.git
@@ -8,58 +10,100 @@ git clone https://muhq.space/software/allocbench.git
 
 ## Requirements
 
-* python3
+* python >= 3.6
 * make, find, gcc (build dependencies)
 * perf (`perf stat -d` is the default command to measure benchmark results)
 * util-linux (`whereis` is used to find system installed allocators)
-* (git to clone allocators in `src/allocators/*.py`)
+* git, tar to handle external artifacts
+* numpy and matplotlib to summarize results and generate plots
 
 
 ## Usage
+allocbench consists of three small utilities: `bench.py`, `summarize.py` and `merge.py`.
+`bench.py` is used to prepare, analyze and run benchmarks.
 
-	usage: bench.py [-h] [-ds, --dont-save] [-l LOAD] [--analyse] [-r RUNS] [-v]
-	                [-vdebug] [-b BENCHMARKS [BENCHMARKS ...]]
+	usage: bench.py [-h] [--analyze] [-r RUNS] [-v]
+	                [-b BENCHMARKS [BENCHMARKS ...]]
 	                [-xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]]
-	                [-a ALLOCATORS [ALLOCATORS ...]] [-ns] [-rd RESULTDIR]
-	                [--license]
+	                [-a ALLOCATORS [ALLOCATORS ...]] [-rd RESULTDIR] [--license]
+	                [--version]
 
 	benchmark memory allocators
 
 	optional arguments:
 	  -h, --help            show this help message and exit
-	  -ds, --dont-save      don't save benchmark results in RESULTDIR
-	  -l LOAD, --load LOAD  load benchmark results from directory
-	  --analyse             analyse benchmark behaviour using malt
+	  --analyze             analyze benchmark behavior using malt
 	  -r RUNS, --runs RUNS  how often the benchmarks run
 	  -v, --verbose         more output
-	  -vdebug, --verbose-debug
-	                        debug output
 	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
 	                        benchmarks to run
 	  -xb EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...], --exclude-benchmarks EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]
 	                        explicitly excluded benchmarks
 	  -a ALLOCATORS [ALLOCATORS ...], --allocators ALLOCATORS [ALLOCATORS ...]
 	                        allocators to test
-	  -ns, --nosum          don't produce plots
 	  -rd RESULTDIR, --resultdir RESULTDIR
 	                        directory where all results go
 	  --license             print license info and exit
+	  --version             print version info and exit
+
+`./summarize.py` is used to summarize results created with bench.py.
+It groups the included allocators into categories to produce readable and not extremely noisy plots.
+
+	usage: summarize.py [-h] [--license] [--version]
+	                    [-b BENCHMARKS [BENCHMARKS ...]]
+	                    [-x EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]]
+	                    results
+
+	Summarize allocbench results in allocator sets
+
+	positional arguments:
+	  results               path to results
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  --license             print license info and exit
+	  --version             print version info and exit
+	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
+	                        benchmarks to summarize
+	  -x EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...], --exclude-benchmarks EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]
+	                        benchmarks to exclude
+
+`./merge.py` can combine the results of different benchmark runs.
+
+	usage: merge.py [-h] [--license] [--version] [-b BENCHMARKS [BENCHMARKS ...]]
+	                [-x EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]]
+	                src dest
+
+	Merge to allocbench results
+
+	positional arguments:
+	  src                   results which should be merged into dest
+	  dest                  results in which src should be merged
+
+	optional arguments:
+	  -h, --help            show this help message and exit
+	  --license             print license info and exit
+	  --version             print version info and exit
+	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
+	                        benchmarks to summarize
+	  -x EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...], --exclude-benchmarks EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]
+	                        benchmarks to exclude
 
 ### Examples
 
 	./bench.py -b loop
 
-runs only the loop benchmark for some installed allocators and will put its
-results in `$PWD/results/$HOSTNAME/<time>/loop`
+runs only the loop benchmark for all included allocators and will put its
+results in `$PWD/results/$HOSTNAME/<time>/loop`.
 
 	./bench.py -a BA_allocators
 
 builds all allocators used in Florian Fischer's [BA thesis](https://muhq.space/ba.html)
-and runs all benchmarks
+and runs all benchmarks.
 
-	./bench.py -r 0 -l <path/to/saved/results>
+	./summarize.py <path/to/saved/results>
 
-doesn't run any benchmark just summarizes the loaded results
+summarizes the previously created results.
 
 ## Benchmarks
 
@@ -68,10 +112,11 @@ have a look at [doc/Benchmarks.md](doc/Benchmarks.md).
 
 ## Allocators
 
-By default tcmalloc, jemalloc, Hoard and your libc's allocator will be used
-if found and the `-a` option is not used.
+By default all included allocators will be build and measured. For more precise control
+about used allocators use the `-a` option.
 
-For more control about used allocators have a look at [doc/Allocators.md](doc/Allocators.md).
+For more details about what allocators are available, how they are used and how to
+include new once have a look at [doc/Allocators.md](doc/Allocators.md).
 
 ## License
 
