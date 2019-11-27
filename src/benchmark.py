@@ -63,7 +63,7 @@ class Benchmark:
         max_threads = multiprocessing.cpu_count() * factor
 
         if steps > max_threads - min_threads + 1:
-            return list(range(min_threads, max_threads + 1))
+            return list(range(min_threads, int(max_threads) + 1))
 
         nthreads = []
         divider = 2
