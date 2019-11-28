@@ -60,7 +60,7 @@ class Benchmark:
 
         Return a list of numbers between start and multiprocessing.cpu_count() * factor
         with len <= steps."""
-        max_threads = multiprocessing.cpu_count() * factor
+        max_threads = int(multiprocessing.cpu_count() * factor)
 
         if steps > max_threads - min_threads + 1:
             return list(range(min_threads, int(max_threads) + 1))
@@ -73,7 +73,7 @@ class Benchmark:
             if entries > steps - 1:
                 return sorted(list(set([min_threads] + nthreads + [max_threads])))
 
-            nthreads = [(i + 1) * factor for i in range(entries)]
+            nthreads = [int((i + 1) * factor) for i in range(int(entries))]
             divider *= 2
 
     @staticmethod
