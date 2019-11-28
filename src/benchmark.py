@@ -612,7 +612,12 @@ class Benchmark:
         plt.xlabel(eval(xlabel))
         plt.ylabel(eval(ylabel))
         plt.title(eval(title))
-        plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, file_ext])))
+        figname = os.path.join(sumdir, f"{self.name}.{filepostfix}.{file_ext}")
+        if figname.endswith(".tex"):
+            import tikzplotlib
+            tikzplotlib.save(figname)
+        else:
+            plt.savefig(figname)
         plt.clf()
 
     def barplot_single_arg(self, yval, ylabel="'y-label'", xlabel="'x-label'",
@@ -661,7 +666,12 @@ class Benchmark:
         plt.xlabel(eval(xlabel))
         plt.ylabel(eval(ylabel))
         plt.title(eval(title))
-        plt.savefig(os.path.join(sumdir, ".".join([self.name, filepostfix, file_ext])))
+        figname = os.path.join(sumdir, f"{self.name}.{filepostfix}.{file_ext}")
+        if figname.endswith(".tex"):
+            import tikzplotlib
+            tikzplotlib.save(figname)
+        else:
+            plt.savefig(figname)
         plt.clf()
 
     def plot_fixed_arg(self, yval, ylabel="'y-label'", xlabel="loose_arg",
@@ -702,8 +712,13 @@ class Benchmark:
                 plt.xlabel(eval(xlabel))
                 plt.ylabel(eval(ylabel))
                 plt.title(eval(title))
-                plt.savefig(os.path.join(sumdir,
-                                         f"{self.name}.{arg}.{arg_value}.{filepostfix}.{file_ext}"))
+                figname = os.path.join(sumdir,
+                                       f"{self.name}.{arg}.{arg_value}.{filepostfix}.{file_ext}")
+                if figname.endswith(".tex"):
+                    import tikzplotlib
+                    tikzplotlib.save(figname)
+                else:
+                    plt.savefig(figname)
                 plt.clf()
 
     def export_facts_to_file(self, comment_symbol, f):

@@ -99,6 +99,7 @@ def main():
 
     parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
+    parser.add_argument("-t", "--file-ext", help="file extension used for plots", type=str)
     parser.add_argument("--license", help="print license info and exit", action='store_true')
     parser.add_argument("--version", help="print version info and exit", action='store_true')
     parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
@@ -109,6 +110,9 @@ def main():
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
         exit(1)
+
+    if args.file_ext:
+        src.globalvars.summary_file_ext = args.file_ext
 
     src.globalvars.resdir = args.results
     os.chdir(args.results)
