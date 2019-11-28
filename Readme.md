@@ -49,7 +49,7 @@ allocbench consists of three small utilities: `bench.py`, `summarize.py` and `me
 `./summarize.py` is used to summarize results created with bench.py.
 It groups the included allocators into categories to produce readable and not extremely noisy plots.
 
-	usage: summarize.py [-h] [--license] [--version]
+	usage: summarize.py [-h] [-t FILE_EXT] [--license] [--version]
 	                    [-b BENCHMARKS [BENCHMARKS ...]]
 	                    [-x EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]]
 	                    results
@@ -61,12 +61,15 @@ It groups the included allocators into categories to produce readable and not ex
 
 	optional arguments:
 	  -h, --help            show this help message and exit
+	  -t FILE_EXT, --file-ext FILE_EXT
+	                        file extension used for plots
 	  --license             print license info and exit
 	  --version             print version info and exit
 	  -b BENCHMARKS [BENCHMARKS ...], --benchmarks BENCHMARKS [BENCHMARKS ...]
 	                        benchmarks to summarize
 	  -x EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...], --exclude-benchmarks EXCLUDE_BENCHMARKS [EXCLUDE_BENCHMARKS ...]
 	                        benchmarks to exclude
+
 
 `./merge.py` can combine the results of different benchmark runs.
 
