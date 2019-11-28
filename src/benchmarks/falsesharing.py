@@ -53,38 +53,35 @@ class BenchmarkFalsesharing(Benchmark):
         result["time"] = TIME_RE.match(stdout).group("time")
 
     def summary(self):
-        # Speedup thrash
         args = self.results["args"]
         nthreads = args["threads"]
         allocators = self.results["allocators"]
 
+        # calculate relevant datapoints: speedup, l1-cache-misses
         for bench in self.results["args"]["bench"]:
             for allocator in allocators:
-                y_vals = []
 
-                single_threaded_perm = self.Perm(bench=bench, threads=1)
-                single_threaded = np.mean([float(m["time"])
-                                           for m in self.results[allocator][single_threaded_perm]])
-
+                sequential_perm = self.Perm(bench=bench, threads=1)
                 for perm in self.iterate_args_fixed({"bench": bench}, args=args):
+                    speedup = []
+                    l1chache_misses = []
+                    for i, measure in enumerate(self.results[allocator][perm]):
+                        sequential_time =  float(self.results[allocator][sequential_perm][i]["time"])
+                        measure["speedup"] = sequential_time / float(measure["time"])
+                        measure["l1chache_misses"] = eval("({L1-dcache-load-misses}/{L1-dcache-loads})*100".format(**measure))
 
-                    data = [float(m["time"]) for m in self.results[allocator][perm]]
+        # delete and recalculate stats
+        del self.results["stats"]
+        self.calc_desc_statistics()
 
-                    speedup = single_threaded / np.mean(data)
-                    self.results["stats"][allocator][perm]["mean"]["speedup"] = speedup
-                    y_vals.append(speedup)
+        self.plot_fixed_arg("{speedup}",
+                            ylabel="'Speedup'",
+                            title="'Speedup: ' + arg + ' ' + str(arg_value)",
+                            filepostfix="speedup",
+                            autoticks=False,
+                            fixed=["bench"])
 
-                plt.plot(nthreads, y_vals, marker='.', linestyle='-',
-                         label=allocator, color=allocators[allocator]["color"])
-
-            plt.legend()
-            plt.xlabel("threads")
-            plt.ylabel("speedup")
-            plt.title(bench + " speedup")
-            plt.savefig(f"{self.name}.{bench}.{summary_file_ext}")
-            plt.clf()
-
-        self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+        self.plot_fixed_arg("{l1chache_misses}",
                             ylabel="'l1 cache misses in %'",
                             title="'cache misses: ' + arg + ' ' + str(arg_value)",
                             filepostfix="l1-misses",
@@ -102,6 +99,9 @@ class BenchmarkFalsesharing(Benchmark):
                                "expression": "{speedup}",
                                "sort":">"}],
                              filepostfix="speedup.table")
+
+        self.export_stats_to_csv("speedup", "time")
+        self.export_stats_to_csv("l1chache_misses", "l1-misses")
 
 
 falsesharing = BenchmarkFalsesharing()
