@@ -222,6 +222,8 @@ class BenchmarkLld(Benchmark):
                               "llvm-as-fsds", "scylla", "clang", "clang-gdb-index",
                               "gold-fsds", "llvm-as", "mozilla"]}
 
+        self.measure_cmd = "perf stat -x, -d time -f %M,KB,VmHWM"
+        self.measure_cmd_csv = True
         self.requirements = ["ld.lld"]
         super().__init__(name)
 
@@ -256,17 +258,23 @@ class BenchmarkLld(Benchmark):
                         label=allocator, color=allocators[allocator]["color"])
 
             plt.legend(loc="best")
-            plt.ylabel("Zeit in ms")
-            plt.title(f"Gesamte Laufzeit {perm.test}")
+            plt.ylabel("time in ms")
+            plt.title(f"Runtime {perm.test}")
             plt.savefig(".".join([self.name, perm.test, "runtime", summary_file_ext]))
             plt.clf()
 
-        # TODO: get memusage
-        # Memusage
-        # self.barplot_single_arg("{VmHWM}",
-                                # ylabel='"Max RSS in KB"',
-                                # title='"Highwatermark of Vm (VmHWM)"',
-                                # filepostfix="rss")
+            for i, allocator in enumerate(allocators):
+
+                plt.bar([i],
+                        self.results["stats"][allocator][perm]["mean"]["VmHWM"] / 1000,
+                        yerr=self.results["stats"][allocator][perm]["std"]["VmHWM"] / 1000,
+                        label=allocator, color=allocators[allocator]["color"])
+
+            plt.legend(loc="best")
+            plt.ylabel("Max RSS in MB")
+            plt.title(f"Max RSS {perm.test}")
+            plt.savefig(".".join([self.name, perm.test, "rss", summary_file_ext]))
+            plt.clf()
 
         # self.export_stats_to_csv("VmHWM")
         self.export_stats_to_csv("task-clock")
