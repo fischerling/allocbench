@@ -157,8 +157,8 @@ class BenchmarkDJTrace(Benchmark):
                         color=allocators[allocator]["color"])
 
             plt.legend(loc="best")
-            plt.ylabel("Zeit in ms")
-            plt.title("Gesamte Laufzeit")
+            plt.ylabel("time in ms")
+            plt.title(f"Runtime {perm.workload}")
             plt.savefig(".".join([self.name, perm.workload, "runtime", summary_file_ext]))
             plt.clf()
 
@@ -191,8 +191,8 @@ class BenchmarkDJTrace(Benchmark):
                         "calloc\n" + str(self.results[perm.workload]["calloc"]) + "\ncalls",
                         "realloc\n" + str(self.results[perm.workload]["realloc"]) + "\ncalls",
                         "free\n" + str(self.results[perm.workload]["free"]) + "\ncalls"])
-            plt.ylabel("Durchschnittliche Zeit in cycles")
-            plt.title("Durchscnittliche Laufzeiten der API Funktionen")
+            plt.ylabel("cycles")
+            plt.title(f"Avg. runtime of API functions {perm.workload}")
             plt.savefig(".".join([self.name, perm.workload, "apitimes", summary_file_ext]))
             plt.clf()
 
@@ -207,7 +207,7 @@ class BenchmarkDJTrace(Benchmark):
 
         self.barplot_single_arg("{Max_RSS}/1000",
                                 ylabel='"Max RSS in MB"',
-                                title='"Highwatermark of Vm (VmHWM)"',
+                                title='"Max RSS (VmHWM)"',
                                 filepostfix="newrss")
 
         # self.barplot_fixed_arg("{Max_RSS}/1000",
@@ -234,7 +234,7 @@ class BenchmarkDJTrace(Benchmark):
 
             plt.legend(loc="best")
             plt.ylabel("Max RSS in MB")
-            plt.title("Maximal benötigter Speicher (VmHWM)")
+            plt.title(f"Maximal RSS (VmHWM) {perm.workload}")
             plt.savefig(".".join([self.name, perm.workload, "rss", summary_file_ext]))
             plt.clf()
 
