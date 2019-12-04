@@ -29,6 +29,7 @@ class Benchmark:
 
     defaults = {"cmd": "false",
                 "args": {},
+                "measure_cmd_csv": False,
                 "measure_cmd": "perf stat -x, -d",
                 "servers": [],
                 "allocators": copy.deepcopy(src.globalvars.allocators)}
@@ -479,7 +480,7 @@ class Benchmark:
                                     result["server_status"].append(f.read())
 
                         # parse perf output if available
-                        if self.measure_cmd == self.defaults["measure_cmd"]:
+                        if self.measure_cmd == self.defaults["measure_cmd"] or self.measure_cmd_csv:
                             csvreader = csv.reader(res.stderr.splitlines(),
                                                    delimiter=',')
                             for row in csvreader:
