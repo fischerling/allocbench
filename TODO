@@ -1,5 +1,15 @@
+- randomization
+  - env randomization *easy*
+  - benchmark order *relatively easy* warmup?
+  - heap randomization *not possible* because we want to benchmark different allocators with deterministic workloads
+  - other segments *difficult* temci build?
+
 - fix mysqld termination with malt
 - add mysql warmup in preallocator_hook
+
+- revisit redis benchmark
+  - use KeyDB instead ?
+  - use memtier_benchmark instead of redis-benchmark ?
 
 - rethink colors
 
