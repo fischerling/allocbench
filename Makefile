@@ -1,3 +1,5 @@
+PYTHONFILES = $(shell find src/ -name "*.py")
+
 MAKEFILES = $(shell dirname $(shell find src/ -name Makefile))
 CMAKELISTS = $(shell dirname $(shell find src/ -name CMakeLists.txt))
 
@@ -44,4 +46,7 @@ clean:
 	rm -rf $(OBJDIR)
 
 pylint:
-	pylint $(shell find src/ -name "*.py")
+	pylint $(PYTHONFILES)
+
+yapf:
+	yapf -i $(PYTHONFILES)
