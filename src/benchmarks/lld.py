@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """llvm-lld speed benchmark
 
 This benchmark runs the lld speed benchmark provided by the llvm project.
@@ -210,7 +209,6 @@ from src.globalvars import summary_file_ext
 
 class BenchmarkLld(Benchmark):
     """LLVM-lld speed benchmark definition"""
-
     def __init__(self):
         name = "lld"
 
@@ -218,9 +216,13 @@ class BenchmarkLld(Benchmark):
         # TODO: don't hardcode ld.lld location
         self.cmd = "/usr/bin/ld.lld @response.txt"
 
-        self.args = {"test": ["chrome", "clang-fsds", "gold", "linux-kernel",
-                              "llvm-as-fsds", "scylla", "clang", "clang-gdb-index",
-                              "gold-fsds", "llvm-as", "mozilla"]}
+        self.args = {
+            "test": [
+                "chrome", "clang-fsds", "gold", "linux-kernel", "llvm-as-fsds",
+                "scylla", "clang", "clang-gdb-index", "gold-fsds", "llvm-as",
+                "mozilla"
+            ]
+        }
 
         self.measure_cmd = "perf stat -x, -d time -f %M,KB,VmHWM"
         self.measure_cmd_csv = True
@@ -231,49 +233,53 @@ class BenchmarkLld(Benchmark):
         super().prepare()
 
         # save lld version
-        self.results["facts"]["versions"]["lld"] = src.facter.exe_version("ld.lld", "-v")
+        self.results["facts"]["versions"]["lld"] = src.facter.exe_version(
+            "ld.lld", "-v")
 
-        tests = ArchiveArtifact("lld-speed-test",
-                                "https://s3-us-west-2.amazonaws.com/linker-tests/lld-speed-test.tar.xz",
-                                "tar",
-                                "2d449a11109c7363f67fd45513b42270f5ba2a92")
+        tests = ArchiveArtifact(
+            "lld-speed-test",
+            "https://s3-us-west-2.amazonaws.com/linker-tests/lld-speed-test.tar.xz",
+            "tar", "2d449a11109c7363f67fd45513b42270f5ba2a92")
         self.test_dir = tests.provide()
 
     def cleanup(self):
         for perm in self.iterate_args():
-            a_out = os.path.join(self.test_dir, "lld-speed-test", perm.test, "a.out")
+            a_out = os.path.join(self.test_dir, "lld-speed-test", perm.test,
+                                 "a.out")
             if os.path.isfile(a_out):
                 os.remove(a_out)
 
     def summary(self):
         args = self.results["args"]
         allocators = self.results["allocators"]
+        stats = self.results["stats"]
 
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
 
                 plt.bar([i],
-                        self.results["stats"][allocator][perm]["mean"]["task-clock"],
-                        yerr=self.results["stats"][allocator][perm]["std"]["task-clock"],
-                        label=allocator, color=allocators[allocator]["color"])
+                        stats[allocator][perm]["mean"]["task-clock"],
+                        yerr=stats[allocator][perm]["std"]["task-clock"],
+                        label=allocator,
+                        color=allocators[allocator]["color"])
 
             plt.legend(loc="best")
             plt.ylabel("time in ms")
             plt.title(f"Runtime {perm.test}")
-            plt.savefig(".".join([self.name, perm.test, "runtime", summary_file_ext]))
+            plt.savefig(f"{self.name}.{perm.test}.runtime.{summary_file_ext}")
             plt.clf()
 
-            for i, allocator in enumerate(allocators):
-
+            for i, alloc in enumerate(allocators):
                 plt.bar([i],
-                        self.results["stats"][allocator][perm]["mean"]["VmHWM"] / 1000,
-                        yerr=self.results["stats"][allocator][perm]["std"]["VmHWM"] / 1000,
-                        label=allocator, color=allocators[allocator]["color"])
+                        stats[alloc][perm]["mean"]["VmHWM"] / 1000,
+                        yerr=stats[alloc][perm]["std"]["VmHWM"] / 1000,
+                        label=alloc,
+                        color=allocators[alloc]["color"])
 
             plt.legend(loc="best")
             plt.ylabel("Max RSS in MB")
             plt.title(f"Max RSS {perm.test}")
-            plt.savefig(".".join([self.name, perm.test, "rss", summary_file_ext]))
+            plt.savefig(f"{self.name}.{perm.test}.rss.{summary_file_ext}")
             plt.clf()
 
         # self.export_stats_to_csv("VmHWM")
@@ -282,10 +288,12 @@ class BenchmarkLld(Benchmark):
         # self.export_stats_to_dataref("VmHWM")
         self.export_stats_to_dataref("task-clock")
 
-        self.write_tex_table([{"label": "Runtime [ms]",
-                               "expression": "{task-clock}",
-                               "sort": "<"}],
-                            filepostfix="table")
+        self.write_tex_table([{
+            "label": "Runtime [ms]",
+            "expression": "{task-clock}",
+            "sort": "<"
+        }],
+                             filepostfix="table")
 
 
 lld = BenchmarkLld()

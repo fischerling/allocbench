@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Definition of the fd benchmark"""
 
 import os
@@ -31,17 +30,18 @@ from src.util import print_info
 class BenchmarkFd(Benchmark):
     """fd benchmark
     """
-
     def __init__(self):
         name = "fd"
         super().__init__(name)
-        
+
         self.cmd = "fd -HI -e c '.*[0-9].*' {linux_files}"
 
     def prepare(self):
         super().prepare()
 
-        linux = GitArtifact("linux", "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
+        linux = GitArtifact(
+            "linux",
+            "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
         linux_version = "v5.3"
         self.linux_files = linux.provide(linux_version)
 
@@ -53,18 +53,19 @@ class BenchmarkFd(Benchmark):
         fd_url = ("https://github.com/sharkdp/fd/releases/latest/download/"
                   f"fd-{fd_version}-x86_64-unknown-linux-gnu.tar.gz")
 
-        fd = ArchiveArtifact("fd", fd_url, "tar", "a5d8e7c8484449aa324a46abfdfaf026d7de77ee")
+        fd = ArchiveArtifact("fd", fd_url, "tar",
+                             "a5d8e7c8484449aa324a46abfdfaf026d7de77ee")
 
         fd_dir = os.path.join(self.build_dir, "fd_sources")
         fd.provide(fd_dir)
 
         # create symlinks
         for exe in ["fd"]:
-            src = os.path.join(fd_dir, f"fd-{fd_version}-x86_64-unknown-linux-gnu", exe)
+            src = os.path.join(fd_dir,
+                               f"fd-{fd_version}-x86_64-unknown-linux-gnu",
+                               exe)
             dest = os.path.join(self.build_dir, exe)
             os.link(src, dest)
-        
-
 
     def summary(self):
         self.barplot_single_arg("{task-clock}",

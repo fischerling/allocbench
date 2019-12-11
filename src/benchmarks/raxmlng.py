@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Definition of the RAxML-ng benchmark"""
 
 import os
@@ -27,21 +26,20 @@ from src.artifact import GitArtifact
 from src.benchmark import Benchmark
 from src.util import print_info
 
-
 RUNTIME_RE = re.compile("Elapsed time: (?P<runtime>(\\d*.\\d*)) seconds")
 
 
 class BenchmarkRaxmlng(Benchmark):
     """RAxML-ng benchmark
     """
-
     def __init__(self):
         name = "raxmlng"
 
         super().__init__(name)
-        
-        self.cmd = (f"raxml-ng --msa {self.build_dir}/data/prim.phy --model GTR+G"
-                    " --redo --threads 2 --seed 2")
+
+        self.cmd = (
+            f"raxml-ng --msa {self.build_dir}/data/prim.phy --model GTR+G"
+            " --redo --threads 2 --seed 2")
 
     def prepare(self):
         super().prepare()
@@ -49,36 +47,41 @@ class BenchmarkRaxmlng(Benchmark):
         if os.path.exists(self.build_dir):
             return
 
-        raxmlng_sources = GitArtifact("raxml-ng", "https://github.com/amkozlov/raxml-ng")
+        raxmlng_sources = GitArtifact("raxml-ng",
+                                      "https://github.com/amkozlov/raxml-ng")
         raxmlng_version = "0.9.0"
         raxmlng_dir = os.path.join(self.build_dir, "raxml-ng-git")
         raxmlng_builddir = os.path.join(raxmlng_dir, "build")
         self.results["facts"]["versions"]["raxml-ng"] = raxmlng_version
         raxmlng_sources.provide(raxmlng_version, raxmlng_dir)
-            
+
         # Create builddir
         os.makedirs(raxmlng_builddir, exist_ok=True)
 
         # building raxml-ng
-        proc = subprocess.run(["cmake", ".."],
-                              cwd=raxmlng_builddir,
-                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        proc = subprocess.run(
+            ["cmake", ".."],
+            cwd=raxmlng_builddir,
+            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
 
-        proc = subprocess.run(["make"],
-                              cwd=raxmlng_builddir,
-                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        proc = subprocess.run(
+            ["make"],
+            cwd=raxmlng_builddir,
+            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
 
         # create symlinks
         for exe in ["raxml-ng"]:
             src = os.path.join(raxmlng_dir, "bin", exe)
-            dest = os.path.join(self.build_dir,exe)
+            dest = os.path.join(self.build_dir, exe)
             os.link(src, dest)
 
-        raxmlng_data = GitArtifact("raxml-ng-data", "https://github.com/amkozlov/ng-tutorial")
+        raxmlng_data = GitArtifact("raxml-ng-data",
+                                   "https://github.com/amkozlov/ng-tutorial")
         raxmlng_data_dir = os.path.join(self.build_dir, "data")
-        raxmlng_data.provide("f8f0b6a057a11397b4dad308440746e3436db8b4", raxmlng_data_dir)
+        raxmlng_data.provide("f8f0b6a057a11397b4dad308440746e3436db8b4",
+                             raxmlng_data_dir)
 
     def cleanup(self):
         for direntry in os.listdir():

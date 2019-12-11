@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """sysbench SQL read-only benchmark
 
 This benchmark is heavily inspired by a blog post from Alexey Stroganov from Percona:
@@ -86,31 +85,34 @@ from src.benchmark import Benchmark
 import src.facter
 from src.util import print_status, print_debug, print_info2
 
-MYSQL_USER = "root"
-RUN_TIME = 300
+MYSQL_USER = "fischerling"
+RUN_TIME = 10
 TABLES = 5
 
-PREPARE_CMD = (f"sysbench oltp_read_only --db-driver=mysql --mysql-user={MYSQL_USER} "
-               f"--threads={multiprocessing.cpu_count()} "
-               f"--mysql-socket={{build_dir}}/socket --tables={TABLES} --table-size=1000000 prepare")
+PREPARE_CMD = (
+    f"sysbench oltp_read_only --db-driver=mysql --mysql-user={MYSQL_USER} "
+    f"--threads={multiprocessing.cpu_count()} "
+    f"--mysql-socket={{build_dir}}/socket --tables={TABLES} --table-size=1000000 prepare"
+)
 
-CMD = (f"sysbench oltp_read_only --threads={{nthreads}} --time={RUN_TIME} --tables={TABLES} "
-       f"--db-driver=mysql --mysql-user={MYSQL_USER} --mysql-socket={{build_dir}}/socket run")
+CMD = (
+    f"sysbench oltp_read_only --threads={{nthreads}} --time={RUN_TIME} --tables={TABLES} "
+    f"--db-driver=mysql --mysql-user={MYSQL_USER} --mysql-socket={{build_dir}}/socket run"
+)
 
-SERVER_CMD = ("mysqld --no-defaults -h {build_dir} --socket={build_dir}/socket --port=123456 "
-              f"--max-connections={multiprocessing.cpu_count()} --secure-file-priv=")
+SERVER_CMD = (
+    "mysqld --no-defaults -h {build_dir} --socket={build_dir}/socket --port=123456 "
+    f"--max-connections={multiprocessing.cpu_count()} --secure-file-priv=")
 
 
 class BenchmarkMYSQL(Benchmark):
     """Mysql bechmark definition"""
-
     def __init__(self):
         name = "mysql"
 
         self.args = {"nthreads": Benchmark.scale_threads_for_cpus(1)}
         self.cmd = CMD
-        self.servers = [{"name": "mysqld",
-                         "cmd" : SERVER_CMD}]
+        self.servers = [{"name": "mysqld", "cmd": SERVER_CMD}]
         self.measure_cmd = ""
 
         self.requirements = ["mysqld", "sysbench"]
@@ -124,7 +126,8 @@ class BenchmarkMYSQL(Benchmark):
 
         # save mysqld and sysbench versions
         for exe in self.requirements:
-            self.results["facts"]["versions"][exe] = src.facter.exe_version(exe, "--version")
+            self.results["facts"]["versions"][exe] = src.facter.exe_version(
+                exe, "--version")
 
         # Setup Test Environment
         if not os.path.exists(self.build_dir):
@@ -133,10 +136,15 @@ class BenchmarkMYSQL(Benchmark):
 
             # Init database
             if "MariaDB" in self.results["facts"]["versions"]["mysqld"]:
-                init_db_cmd = ["mysql_install_db", "--basedir=/usr", f"--datadir={self.build_dir}"]
+                init_db_cmd = [
+                    "mysql_install_db", "--basedir=/usr",
+                    f"--datadir={self.build_dir}"
+                ]
                 print_info2("MariaDB detected")
             else:
-                init_db_cmd = ["mysqld", "-h", self.build_dir, "--initialize-insecure"]
+                init_db_cmd = [
+                    "mysqld", "-h", self.build_dir, "--initialize-insecure"
+                ]
                 print_info2("Oracle MySQL detected")
 
             p = subprocess.run(init_db_cmd, stdout=PIPE, stderr=PIPE)
@@ -150,37 +158,45 @@ class BenchmarkMYSQL(Benchmark):
             self.start_servers()
 
             # Create sbtest TABLE
-            p = subprocess.run(f"mysql -u {MYSQL_USER} -S {self.build_dir}/socket".split(),
-                               input=b"CREATE DATABASE sbtest;\n",
-                               stdout=PIPE, stderr=PIPE, cwd=self.build_dir)
+            p = subprocess.run(
+                f"mysql -u {MYSQL_USER} -S {self.build_dir}/socket".split(),
+                input=b"CREATE DATABASE sbtest;\n",
+                stdout=PIPE,
+                stderr=PIPE,
+                cwd=self.build_dir)
 
             if p.returncode != 0:
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
-                raise Exception("Creating test tables failed with:", p.returncode)
+                raise Exception("Creating test tables failed with:",
+                                p.returncode)
 
             print_status("Prepare test tables ...")
             prepare_cmd = PREPARE_CMD.format(build_dir=self.build_dir)
             p = subprocess.run(prepare_cmd.split(), stdout=PIPE, stderr=PIPE)
             if p.returncode != 0:
-                print_debug(f"Cmd: {prepare_cmd} failed with {p.returncode}", file=sys.stderr)
+                print_debug(f"Cmd: {prepare_cmd} failed with {p.returncode}",
+                            file=sys.stderr)
                 print_debug("Stdout:", p.stdout, file=sys.stderr)
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
-                raise Exception("Preparing test tables failed with:", p.returncode)
+                raise Exception("Preparing test tables failed with:",
+                                p.returncode)
 
             self.shutdown_servers()
 
     def process_output(self, result, stdout, stderr, allocator, perm):
-        result["transactions"] = re.search("transactions:\\s*(\\d*)", stdout).group(1)
+        result["transactions"] = re.search("transactions:\\s*(\\d*)",
+                                           stdout).group(1)
         result["queries"] = re.search("queries:\\s*(\\d*)", stdout).group(1)
         # Latency
         result["min"] = re.search("min:\\s*(\\d*.\\d*)", stdout).group(1)
         result["avg"] = re.search("avg:\\s*(\\d*.\\d*)", stdout).group(1)
         result["max"] = re.search("max:\\s*(\\d*.\\d*)", stdout).group(1)
 
-        with open("/proc/"+str(self.servers[0]["popen"].pid)+"/status", "r") as f:
+        with open(f"/proc/{self.servers[0]['popen'].pid}/status", "r") as f:
             for l in f.readlines():
                 if l.startswith("VmHWM:"):
-                    result["rssmax"] = int(l.replace("VmHWM:", "").strip().split()[0])
+                    result["rssmax"] = int(
+                        l.replace("VmHWM:", "").strip().split()[0])
                     break
 
     def summary(self):
@@ -225,22 +241,27 @@ class BenchmarkMYSQL(Benchmark):
                                 title='"Memusage sysbench oltp read only"',
                                 filepostfix="mem")
 
-        self.write_tex_table([{"label": "Transactions",
-                               "expression": "{transactions}",
-                               "sort": ">"},
-                              {"label": "Memusage [KB]",
-                               "expression": "{rssmax}",
-                               "sort": "<"}],
+        self.write_tex_table([{
+            "label": "Transactions",
+            "expression": "{transactions}",
+            "sort": ">"
+        }, {
+            "label": "Memusage [KB]",
+            "expression": "{rssmax}",
+            "sort": "<"
+        }],
                              filepostfix="table")
 
         # Colored latex table showing transactions count
         d = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
             for allocator in allocators:
-                transactions = [float(measure["transactions"])
-                                for measure in self.results[allocator][perm]]
+                transactions = [
+                    float(measure["transactions"])
+                    for measure in self.results[allocator][perm]
+                ]
                 mean = np.mean(transactions)
-                std = np.std(transactions)/mean
+                std = np.std(transactions) / mean
                 d[allocator][perm] = {"mean": mean, "std": std}
 
         mins = {}
@@ -260,7 +281,7 @@ class BenchmarkMYSQL(Benchmark):
         fname = ".".join([self.name, "transactions.tex"])
         headers = [perm.nthreads for perm in self.iterate_args(args=args)]
         with open(fname, "w") as f:
-            print("\\begin{tabular}{| l" + " l"*len(headers) + " |}", file=f)
+            print("\\begin{tabular}{| l" + " l" * len(headers) + " |}", file=f)
             print("Fäden / Allokator ", end=" ", file=f)
             for head in headers:
                 print("& {}".format(head), end=" ", file=f)

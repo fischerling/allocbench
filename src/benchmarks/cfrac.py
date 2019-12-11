@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """cfrac is a single threaded implementation of the continued fraction factorization algorithm,
 described by Zorn and Grunwald in their paper "Empirical Measurements of Six Allocation-intensive C Programs" in 1992.
 
@@ -61,6 +60,7 @@ API function as well as memory placement strategies with good data locality.
 
 from src.benchmark import Benchmark
 
+
 class BenchmarkCfrac(Benchmark):
     """Definition of the cfrac benchmark"""
     def __init__(self):
@@ -81,11 +81,12 @@ class BenchmarkCfrac(Benchmark):
                                 filepostfix="time")
 
         # L1 cache misses
-        self.barplot_single_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-                                ylabel='"L1 misses in %"',
-                                title='"Cfrac l1 cache misses"',
-                                filepostfix="l1misses",
-                                yerr=False)
+        self.barplot_single_arg(
+            "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+            ylabel='"L1 misses in %"',
+            title='"Cfrac l1 cache misses"',
+            filepostfix="l1misses",
+            yerr=False)
 
         # Memusage
         self.barplot_single_arg("{VmHWM}",
@@ -93,12 +94,15 @@ class BenchmarkCfrac(Benchmark):
                                 title='"Cfrac VmHWM"',
                                 filepostfix="vmhwm")
 
-        self.write_tex_table([{"label": "Runtime [ms]",
-                               "expression": "{task-clock}",
-                               "sort": "<"},
-                              {"label": "Memusage [KB]",
-                               "expression": "{VmHWM}",
-                               "sort": "<"}],
+        self.write_tex_table([{
+            "label": "Runtime [ms]",
+            "expression": "{task-clock}",
+            "sort": "<"
+        }, {
+            "label": "Memusage [KB]",
+            "expression": "{VmHWM}",
+            "sort": "<"
+        }],
                              filepostfix="table")
 
         self.export_stats_to_dataref("task-clock")

@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Definition of the loop micro benchmark
 
 This benchmark allocates and immediately deallocates a pseudo random sized allocation
@@ -43,14 +42,15 @@ class BenchmarkLoop(Benchmark):
 
     This benchmark allocates and frees n blocks in t concurrent threads.
     """
-
     def __init__(self):
         name = "loop"
 
         self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
 
-        self.args = {"maxsize":  [2 ** x for x in range(6, 16)],
-                     "nthreads": Benchmark.scale_threads_for_cpus(2)}
+        self.args = {
+            "maxsize": [2**x for x in range(6, 16)],
+            "nthreads": Benchmark.scale_threads_for_cpus(2)
+        }
 
         self.requirements = ["loop"]
         super().__init__(name)
@@ -64,19 +64,22 @@ class BenchmarkLoop(Benchmark):
                             autoticks=False)
 
         # L1 cache misses
-        self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-                            ylabel='"L1 misses in %"',
-                            title='"Loop l1 cache misses: " + arg + " " + str(arg_value)',
-                            filepostfix="l1misses",
-                            autoticks=False)
+        self.plot_fixed_arg(
+            "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+            ylabel='"L1 misses in %"',
+            title='"Loop l1 cache misses: " + arg + " " + str(arg_value)',
+            filepostfix="l1misses",
+            autoticks=False)
 
         # Speed Matrix
-        self.write_best_doublearg_tex_table("perm.nthreads / ({task-clock}/1000)",
-                                            filepostfix="time.matrix")
+        self.write_best_doublearg_tex_table(
+            "perm.nthreads / ({task-clock}/1000)", filepostfix="time.matrix")
 
-        self.write_tex_table([{"label":  "MOPS/s",
-                               "expression": "perm.nthreads / ({task-clock}/1000)",
-                               "sort":">"}],
+        self.write_tex_table([{
+            "label": "MOPS/s",
+            "expression": "perm.nthreads / ({task-clock}/1000)",
+            "sort": ">"
+        }],
                              filepostfix="mops.table")
 
         self.export_stats_to_csv("task-clock")

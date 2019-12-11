@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Definition of the blowup micro benchmark"""
 
 from src.benchmark import Benchmark
@@ -45,8 +44,14 @@ class BenchmarkBlowup(Benchmark):
         allocators["Ideal-RSS"] = {"color": "xkcd:gold"}
         self.results["stats"]["Ideal-RSS"] = {}
         for perm in self.iterate_args(args=self.results["args"]):
-            self.results["stats"]["Ideal-RSS"][perm] = {"mean": {"VmHWM": 1024 * 100}, 
-                                                        "std" : {"VmHWM": 0}}
+            self.results["stats"]["Ideal-RSS"][perm] = {
+                "mean": {
+                    "VmHWM": 1024 * 100
+                },
+                "std": {
+                    "VmHWM": 0
+                }
+            }
 
         self.barplot_single_arg("{VmHWM}/1000",
                                 ylabel='"VmHWM in MB"',

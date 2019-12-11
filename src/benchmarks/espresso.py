@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """espresso is a single threaded programmable logic array analyzer, described by Zorn and Grunwald
 their paper "Empirical Measurements of Six Allocation-intensive C Programs" in 1992.
 
@@ -61,14 +60,19 @@ import os
 from src.benchmark import Benchmark
 import src.globalvars
 
+
 class BenchmarkEspresso(Benchmark):
     """Definition of the espresso benchmark for allocbench"""
     def __init__(self):
         name = "espresso"
 
         self.cmd = "espresso{binary_suffix} {file}"
-        self.args = {"file": [os.path.join(src.globalvars.benchsrcdir, name,
-                                           "largest.espresso")]}
+        self.args = {
+            "file": [
+                os.path.join(src.globalvars.benchsrcdir, name,
+                             "largest.espresso")
+            ]
+        }
 
         self.requirements = ["espresso"]
         super().__init__(name)
@@ -81,11 +85,12 @@ class BenchmarkEspresso(Benchmark):
                                 filepostfix="time")
 
         # L1 cache misses
-        self.barplot_single_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-                                ylabel='"L1 misses in %"',
-                                title='"Espresso l1 cache misses"',
-                                filepostfix="l1misses",
-                                yerr=False)
+        self.barplot_single_arg(
+            "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+            ylabel='"L1 misses in %"',
+            title='"Espresso l1 cache misses"',
+            filepostfix="l1misses",
+            yerr=False)
 
         # Memusage
         self.barplot_single_arg("{VmHWM}",
@@ -93,12 +98,15 @@ class BenchmarkEspresso(Benchmark):
                                 title='"Espresso VmHWM"',
                                 filepostfix="vmhwm")
 
-        self.write_tex_table([{"label": "Runtime [ms]",
-                               "expression": "{task-clock}",
-                               "sort": "<"},
-                              {"label": "Memusage [KB]",
-                               "expression": "{VmHWM}",
-                               "sort": "<"}],
+        self.write_tex_table([{
+            "label": "Runtime [ms]",
+            "expression": "{task-clock}",
+            "sort": "<"
+        }, {
+            "label": "Memusage [KB]",
+            "expression": "{VmHWM}",
+            "sort": "<"
+        }],
                              filepostfix="table")
 
         self.export_stats_to_dataref("task-clock")

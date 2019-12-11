@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Definition of the redis benchmark
 
 
@@ -32,20 +31,20 @@ from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
 from src.util import print_info
 
-
 REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
 
 
 class BenchmarkRedis(Benchmark):
     """Definition of the redis benchmark"""
-
     def __init__(self):
         name = "redis"
 
         self.cmd = "redis-benchmark 1000000 -n 1000000 -P 8 -q lpush a 1 2 3 4 5 6 7 8 9 10 lrange a 1 10"
-        self.servers = [{"name": "redis",
-                         "cmd": "redis-server",
-                         "shutdown_cmds": ["{build_dir}/redis-cli shutdown"]}]
+        self.servers = [{
+            "name": "redis",
+            "cmd": "redis-server",
+            "shutdown_cmds": ["{build_dir}/redis-cli shutdown"]
+        }]
 
         super().__init__(name)
 
@@ -54,19 +53,20 @@ class BenchmarkRedis(Benchmark):
 
         redis_version = "5.0.5"
         self.results["facts"]["versions"]["redis"] = redis_version
-        redis = ArchiveArtifact("redis",
-                                f"http://download.redis.io/releases/redis-{redis_version}.tar.gz",
-                                "tar",
-                                "71e38ae09ac70012b5bc326522b976bcb8e269d6")
+        redis = ArchiveArtifact(
+            "redis",
+            f"http://download.redis.io/releases/redis-{redis_version}.tar.gz",
+            "tar", "71e38ae09ac70012b5bc326522b976bcb8e269d6")
 
         redis_dir = os.path.join(self.build_dir, f"redis-{redis_version}")
 
         redis.provide(self.build_dir)
 
         # building redis
-        proc = subprocess.run(["make", "-C", redis_dir, "MALLOC=libc", "USE_JEMALLOC=no"],
-                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        proc = subprocess.run(
+            ["make", "-C", redis_dir, "MALLOC=libc", "USE_JEMALLOC=no"],
+            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
 
         # create symlinks
         for exe in ["redis-cli", "redis-server", "redis-benchmark"]:

@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Larson server benchmark
 
 This benchmark was build by Paul Larson at Microsoft Research. It
@@ -50,12 +49,12 @@ import re
 
 from src.benchmark import Benchmark
 
-THROUGHPUT_RE = re.compile("^Throughput =\\s*(?P<throughput>\\d+) operations per second.$")
+THROUGHPUT_RE = re.compile(
+    "^Throughput =\\s*(?P<throughput>\\d+) operations per second.$")
 
 
 class BenchmarkLarson(Benchmark):
     """Definition of the larson benchmark"""
-
     def __init__(self):
         name = "larson"
 
@@ -63,8 +62,10 @@ class BenchmarkLarson(Benchmark):
         # Applications" from Larson and Krishnan
         self.cmd = "larson{binary_suffix} 5 8 {maxsize} 1000 50000 1 {threads}"
 
-        self.args = {"maxsize": [64, 512, 1024],
-                     "threads": Benchmark.scale_threads_for_cpus(2)}
+        self.args = {
+            "maxsize": [64, 512, 1024],
+            "threads": Benchmark.scale_threads_for_cpus(2)
+        }
 
         self.requirements = ["larson"]
         super().__init__(name)
@@ -84,10 +85,11 @@ class BenchmarkLarson(Benchmark):
                             title="'Larson: ' + arg + ' ' + str(arg_value)",
                             filepostfix="throughput")
 
-        self.plot_fixed_arg("({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-                            ylabel="'l1 cache misses in %'",
-                            title="'Larson cache misses: ' + arg + ' ' + str(arg_value)",
-                            filepostfix="cachemisses")
+        self.plot_fixed_arg(
+            "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+            ylabel="'l1 cache misses in %'",
+            title="'Larson cache misses: ' + arg + ' ' + str(arg_value)",
+            filepostfix="cachemisses")
 
 
 larson = BenchmarkLarson()
