@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Artifact classes
 
 An Artifact is a external ressource downloaded from the internet.
@@ -30,6 +29,7 @@ import src.globalvars
 from src.util import print_info, print_debug, sha1sum
 
 ARTIFACT_STORE_DIR = os.path.join(src.globalvars.allocbenchdir, "cache")
+
 
 class Artifact:
     """Base class for external ressources"""
@@ -49,9 +49,11 @@ class Artifact:
 
         print_info(f'Retrieving artifact "{self.name}"')
         print_debug(f"By running: {cmd} in {self.basedir}")
-        proc = subprocess.run(cmd, cwd=self.basedir,
-                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        proc = subprocess.run(
+            cmd,
+            cwd=self.basedir,
+            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
         if proc.returncode != 0:
             raise Exception(f"Failed to retrieve {self.name}")
 
@@ -65,7 +67,8 @@ class GitArtifact(Artifact):
 
     def retrieve(self):
         """clone the git repo"""
-        super().retrieve(["git", "clone", "--recursive", "--bare", self.url, "repo"])
+        super().retrieve(
+            ["git", "clone", "--recursive", "--bare", self.url, "repo"])
 
     def provide(self, checkout, location=None):
         """checkout new worktree at location"""
@@ -80,29 +83,42 @@ class GitArtifact(Artifact):
         if not os.path.exists(self.repo):
             self.retrieve()
 
-        print_debug("create new worktree. By running: ",
-                    ["git", "worktree", "add", location, checkout], f"in {self.repo}")
-        proc = subprocess.run(["git", "worktree", "add", location, checkout], cwd=self.repo,
-                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        worktree_cmd = ["git", "worktree", "add", location, checkout]
+        print_debug("create new worktree. By running: ", worktree_cmd,
+                    f"in {self.repo}")
+        proc = subprocess.run(
+            worktree_cmd,
+            cwd=self.repo,
+            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
+
         if proc.returncode != 0:
             raise Exception(f"Failed to provide {self.name}")
 
+        submodule_init_cmd = [
+            "git", "submodule", "update", "--init", "--recursive"
+        ]
         print_debug("update submodules in worktree. By running: ",
-                    ["git", "submodule", "update", "--init", "--recursive"], f"in {self.repo}")
-        proc = subprocess.run(["git", "submodule", "update", "--init", "--recursive"], cwd=location,
-                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+                    f"{submodule_init_cmd} in {self.repo}")
+        proc = subprocess.run(
+            submodule_init_cmd,
+            cwd=location,
+            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
         return location
+
 
 class ArchiveArtifact(Artifact):
     """External archive"""
     supported_formats = ["tar"]
+
     def __init__(self, name, url, format, checksum):
         super().__init__(name)
         self.url = url
         if format not in self.supported_formats:
-            raise Exception(f'Archive format "{format}" not in supported list {self.supported_formats}')
+            raise Exception(
+                f'Archive format "{format}" not in supported list {self.supported_formats}'
+            )
         self.format = format
         self.archive = os.path.join(self.basedir, f"{self.name}.{self.format}")
         self.checksum = checksum
@@ -119,8 +135,10 @@ class ArchiveArtifact(Artifact):
             self.retrieve()
 
         # compare checksums
+        print_info("Verify checksum ...")
         if sha1sum(self.archive) != self.checksum:
-            raise Exception(f"Archive {self.archive} does not match provided checksum")
+            raise Exception(
+                f"Archive {self.archive} does not match provided checksum")
 
         if not location:
             location = os.path.join(self.basedir, "content")
@@ -136,9 +154,11 @@ class ArchiveArtifact(Artifact):
             cmd = ["tar", "Cxf", location, self.archive]
 
         print_debug(f"extract archive by running: {cmd} in {self.basedir}")
-        proc = subprocess.run(cmd, cwd=self.basedir,
-                              # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                              universal_newlines=True)
+        proc = subprocess.run(
+            cmd,
+            cwd=self.basedir,
+            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            universal_newlines=True)
         if proc.returncode != 0:
             raise Exception(f"Failed to extract {self.name}")
 
