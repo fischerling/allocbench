@@ -16,7 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Start an allocbench run"""
 
 import argparse
@@ -75,16 +74,42 @@ def main():
     check_dependencies()
 
     parser = argparse.ArgumentParser(description="benchmark memory allocators")
-    parser.add_argument("--analyze", help="analyze benchmark behavior using malt", action="store_true")
-    parser.add_argument("-r", "--runs", help="how often the benchmarks run", default=3, type=int)
-    parser.add_argument("-v", "--verbose", help="more output", action='count')
-    parser.add_argument("-b", "--benchmarks", help="benchmarks to run", nargs='+')
-    parser.add_argument("-xb", "--exclude-benchmarks", help="explicitly excluded benchmarks", nargs='+')
-    parser.add_argument("-a", "--allocators", help="allocators to test", type=str, nargs='+',
+    parser.add_argument("--analyze",
+                        help="analyze benchmark behavior using malt",
+                        action="store_true")
+    parser.add_argument("-r",
+                        "--runs",
+                        help="how often the benchmarks run",
+                        default=3,
+                        type=int)
+    parser.add_argument("-v",
+                        "--verbose",
+                        help="more output",
+                        action='count')
+    parser.add_argument("-b",
+                        "--benchmarks",
+                        help="benchmarks to run",
+                        nargs='+')
+    parser.add_argument("-xb",
+                        "--exclude-benchmarks",
+                        help="explicitly excluded benchmarks",
+                        nargs='+')
+    parser.add_argument("-a",
+                        "--allocators",
+                        help="allocators to test",
+                        type=str,
+                        nargs='+',
                         default=["all"])
-    parser.add_argument("-rd", "--resultdir", help="directory where all results go", type=str)
-    parser.add_argument("--license", help="print license info and exit", action='store_true')
-    parser.add_argument("--version", help="print version info and exit", action='store_true')
+    parser.add_argument("-rd",
+                        "--resultdir",
+                        help="directory where all results go",
+                        type=str)
+    parser.add_argument("--license",
+                        help="print license info and exit",
+                        action='store_true')
+    parser.add_argument("--version",
+                        help="print version info and exit",
+                        action='store_true')
 
     args = parser.parse_args()
     if args.license:
@@ -100,7 +125,7 @@ def main():
     # default | 0: Only print status and errors
     # 1: Print warnings and some infos
     # 2: Print all infos
-    # 3: Print all awailable infos
+    # 3: Print everything
     if args.verbose:
         src.globalvars.verbosity = args.verbose
 
@@ -111,9 +136,6 @@ def main():
     make_cmd = ["make"]
     if src.globalvars.verbosity < 1:
         make_cmd.append("-s")
-    else:
-        # Flush stdout so the color reset from print_status works
-        print("", end="", flush=True)
     subprocess.run(make_cmd)
 
     # allocators to benchmark
@@ -167,7 +189,6 @@ def main():
             print_error(f"Skipping {bench}! Preparing failed.")
             continue
 
-
         if args.analyze:
             print_status("Analysing {} ...".format(bench))
 
@@ -185,8 +206,12 @@ def main():
             old_allocs = bench.allocators
             old_measure_cmd = bench.measure_cmd
             bench.measure_cmd = ""
-            analyze_alloc_module = importlib.import_module(f"src.allocators.{analyze_alloc}")
-            bench.allocators = {analyze_alloc: getattr(analyze_alloc_module, analyze_alloc).build()}
+            analyze_alloc_module = importlib.import_module(
+                f"src.allocators.{analyze_alloc}")
+            bench.allocators = {
+                analyze_alloc: getattr(analyze_alloc_module,
+                                       analyze_alloc).build()
+            }
 
             try:
                 bench.run(runs=1)
@@ -199,7 +224,8 @@ def main():
             # Remove results for analyze_alloc
             if analyze_alloc in bench.results:
                 del bench.results[analyze_alloc]
-            if "stats" in bench.results and analyze_alloc in bench.results["stats"]:
+            if "stats" in bench.results and analyze_alloc in bench.results[
+                    "stats"]:
                 del bench.results["stats"][analyze_alloc]
 
             # restore allocs
@@ -214,14 +240,14 @@ def main():
             except Exception:
                 # Reset cwd
                 os.chdir(cwd)
-
                 print_error(traceback.format_exc())
                 print_error("Skipping", bench, "!")
-
                 continue
+
             end_time = datetime.datetime.now()
             bench.results['facts']['end-time'] = end_time.isoformat()
-            bench.results['facts']['duration'] = (end_time - start_time).total_seconds()
+            bench.results['facts']['duration'] = (end_time -
+                                                  start_time).total_seconds()
 
         # Save results in resultdir
         bench.save(src.globalvars.resdir)
