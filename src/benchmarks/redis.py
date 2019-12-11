@@ -87,8 +87,13 @@ class BenchmarkRedis(Benchmark):
     def summary(self):
         self.barplot_single_arg("{requests}",
                                 ylabel='"requests per s"',
-                                title='"redis benchmark"',
+                                title='"redis throughput"',
                                 filepostfix="requests")
+
+        self.barplot_single_arg("{redis_vmhwm}",
+                                ylabel='"VmHWM in KB"',
+                                title='"redis memusage"',
+                                filepostfix="vmhwm")
 
         self.export_stats_to_dataref("requests")
 

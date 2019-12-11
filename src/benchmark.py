@@ -471,13 +471,19 @@ class Benchmark:
                                         if l.startswith("VmHWM:"):
                                             result["VmHWM"] = l.split()[1]
                                             break
+
                                 os.remove("status")
-                        # TODO: get VmHWM from servers
                         else:
                             result["server_status"] = []
                             for server in self.servers:
-                                with open("/proc/{}/status".format(server["popen"].pid), "r") as f:
-                                    result["server_status"].append(f.read())
+                                with open(f"/proc/{server['popen'].pid}/status", "r") as f:
+                                    server_status = f.read()
+                                    result["server_status"].append(server_status)
+
+                                    for l in server_status.splitlines():
+                                        if l.startswith("VmHWM:"):
+                                            result[f"{server.get('name', 'Server')}_vmhwm"] = l.split()[1]
+                                            break
 
                         # parse perf output if available
                         if self.measure_cmd == self.defaults["measure_cmd"] or self.measure_cmd_csv:
@@ -494,6 +500,7 @@ class Benchmark:
                         if hasattr(self, "process_output"):
                             self.process_output(result, res.stdout, res.stderr,
                                                 alloc_name, perm)
+
 
                         # save a valid result so we can expand invalid ones
                         if valid_result is not None:

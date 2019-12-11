@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Definition of the httpd benchmark"""
 
 import re
@@ -25,12 +24,13 @@ import src.facter
 
 class BenchmarkHTTPD(Benchmark):
     """TODO"""
-
     def __init__(self):
         name = "httpd"
 
-        self.args = {"nthreads": Benchmark.scale_threads_for_cpus(2),
-                     "site": ["index.html", "index.php"]}
+        self.args = {
+            "nthreads": Benchmark.scale_threads_for_cpus(2),
+            "site": ["index.html", "index.php"]
+        }
         self.cmd = "ab -n 10000 -c {nthreads} localhost:8080/{site}"
         self.measure_cmd = ""
         self.servers = [{"name": "nginx",
@@ -46,49 +46,41 @@ class BenchmarkHTTPD(Benchmark):
     def prepare(self):
         super().prepare()
 
-        self.results["facts"]["versions"]["nginx"] = src.facter.exe_version("nginx", "-v")
-        self.results["facts"]["versions"]["ab"] = src.facter.exe_version("ab", "-V")
+        self.results["facts"]["versions"]["nginx"] = src.facter.exe_version(
+            "nginx", "-v")
+        self.results["facts"]["versions"]["ab"] = src.facter.exe_version(
+            "ab", "-V")
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
-        result["time"] = re.search("Time taken for tests:\\s*(\\d*\\.\\d*) seconds", stdout).group(1)
-        result["requests"] = re.search("Requests per second:\\s*(\\d*\\.\\d*) .*", stdout).group(1)
-
-        # with open("/proc/"+str(self.server.pid)+"/status", "r") as f:
-            # for l in f.readlines():
-                # if l.startswith("VmHWM:"):
-                    # result["rssmax"] = int(l.replace("VmHWM:", "").strip().split()[0])
-                    # break
+        result["time"] = re.search(
+            "Time taken for tests:\\s*(\\d*\\.\\d*) seconds", stdout).group(1)
+        result["requests"] = re.search(
+            "Requests per second:\\s*(\\d*\\.\\d*) .*", stdout).group(1)
 
     def summary(self):
         allocators = self.results["allocators"]
 
-        self.calc_desc_statistics()
-
-        # linear plot
         self.plot_fixed_arg("{requests}",
                             xlabel='"threads"',
                             ylabel='"requests/s"',
                             autoticks=False,
                             filepostfix="requests",
-                            title='"ab -n 10000 -c " + str(perm.nthreads)')
+                            title='perm.site + ": requests/s"')
 
-        # linear plot
-        ref_alloc = list(allocators)[0]
-        self.plot_fixed_arg("{requests}",
+        self.plot_fixed_arg("{nginx_vmhwm}",
                             xlabel='"threads"',
-                            ylabel='"requests/s scaled at " + scale',
-                            title='"ab -n 10000 -c " + str(perm.nthreads) + " (normalized)"',
-                            filepostfix="requests.norm",
-                            autoticks=False,
-                            scale=ref_alloc)
+                            ylabel='"VmHWM in KB"',
+                            title='perm.site + ": nginx memory usage"',
+                            filepostfix="httpd_vmhwm",
+                            autoticks=False)
 
-        # bar plot
-        # self.barplot_fixed_arg("{requests}",
-                               # xlabel='"threads"',
-                               # ylabel='"requests/s"',
-                               # filepostfix="b",
-                               # title='"ab -n 10000 -c threads"')
+        self.plot_fixed_arg("{php-fpm_vmhwm}",
+                            xlabel='"threads"',
+                            ylabel='"VmHWM in KB"',
+                            title='perm.site + ": php-fpm memory usage"',
+                            filepostfix="php-fpm_vmhwm",
+                            autoticks=False)
 
 
 httpd = BenchmarkHTTPD()

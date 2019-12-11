@@ -192,12 +192,6 @@ class BenchmarkMYSQL(Benchmark):
         result["avg"] = re.search("avg:\\s*(\\d*.\\d*)", stdout).group(1)
         result["max"] = re.search("max:\\s*(\\d*.\\d*)", stdout).group(1)
 
-        with open(f"/proc/{self.servers[0]['popen'].pid}/status", "r") as f:
-            for l in f.readlines():
-                if l.startswith("VmHWM:"):
-                    result["rssmax"] = int(
-                        l.replace("VmHWM:", "").strip().split()[0])
-                    break
 
     def summary(self):
         allocators = self.results["allocators"]
@@ -235,7 +229,7 @@ class BenchmarkMYSQL(Benchmark):
                                 scale=ref_alloc)
 
         # Memusage
-        self.barplot_single_arg("{rssmax}",
+        self.barplot_single_arg("{mysqld_vmhwm}",
                                 xlabel='"threads"',
                                 ylabel='"VmHWM in kB"',
                                 title='"Memusage sysbench oltp read only"',
@@ -247,7 +241,7 @@ class BenchmarkMYSQL(Benchmark):
             "sort": ">"
         }, {
             "label": "Memusage [KB]",
-            "expression": "{rssmax}",
+            "expression": "{mysqld_vmhwm}",
             "sort": "<"
         }],
                              filepostfix="table")
