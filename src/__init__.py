@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """A framework linking allocators to applications"""
 
 __author__ = "Florian Fischer"

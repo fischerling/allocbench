@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Collect facts about the benchmark environment"""
 
 import ctypes
@@ -53,6 +52,7 @@ def collect_facts():
     starttime = starttime[:starttime.rfind(':')]
     gv.facts["starttime"] = starttime
 
+
 def store_facts(path=None):
     """Store facts to file"""
     if not path:
@@ -65,6 +65,7 @@ def store_facts(path=None):
     print_info(f"Saving facts to: {filename}")
     with open(filename, "w") as f:
         json.dump(gv.facts, f)
+
 
 def load_facts(path=None):
     """Load facts from file"""
@@ -86,9 +87,11 @@ def load_facts(path=None):
         with open(filename, "rb") as f:
             gv.facts = pickle.load(f)
     else:
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
+                                filename)
 
     print_info(f"Loading facts from: {filename}")
+
 
 # Copied from pip.
 # https://github.com/pypa/pip/blob/master/src/pip/_internal/utils/glibc.py
@@ -148,10 +151,12 @@ def libc_ver(executable=None):
 
     return ("glibc", glibc_version)
 
+
 def exe_version(executable, version_flag="--version"):
     """Return version of executable"""
     proc = subprocess.run([executable, version_flag],
-                          universal_newlines=True, stdout=subprocess.PIPE)
+                          universal_newlines=True,
+                          stdout=subprocess.PIPE)
 
     if proc.returncode != 0:
         print_warning(f"failed to get version of {executable}")

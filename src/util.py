@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Helper functions for allocbench"""
 
 import hashlib
@@ -23,6 +22,7 @@ import subprocess
 import sys
 
 import src.globalvars
+
 
 def is_exe(fpath):
     """Check if the given path is an exexutable file"""
@@ -75,9 +75,11 @@ def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
     if src.globalvars.verbosity < 0:
         return
 
-    color = {"YELLOW": "\x1b[33m",
-             "GREEN": "\x1b[32m",
-             "RED": "\x1b[31m"}[color]
+    color = {
+        "YELLOW": "\x1b[33m",
+        "GREEN": "\x1b[32m",
+        "RED": "\x1b[31m"
+    }[color]
 
     is_atty = sys.stdout.isatty()
     if is_atty:
@@ -137,14 +139,16 @@ def print_error(*objects, sep=' ', end='\n', file=sys.stderr):
 def print_license_and_exit():
     """Print GPL info and Copyright before exit"""
     print("Copyright (C) 2018-2019 Florian Fischer")
-    print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
+    print(
+        "License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
     exit(0)
 
 
 def print_version_and_exit():
     """Print current commit info before exit"""
     proc = subprocess.run(["git", "rev-parse", "HEAD"],
-                          universal_newlines=True, stdout=subprocess.PIPE)
+                          universal_newlines=True,
+                          stdout=subprocess.PIPE)
 
     if proc.returncode != 0:
         print_error("git rev-parse failed")
@@ -152,7 +156,8 @@ def print_version_and_exit():
     commit = proc.stdout[:-1]
 
     proc = subprocess.run(["git", "status", "--porcelain"],
-                          universal_newlines=True, stdout=subprocess.PIPE)
+                          universal_newlines=True,
+                          stdout=subprocess.PIPE)
 
     if proc.returncode != 0:
         print_error("git status --porcelain failed")
@@ -163,12 +168,13 @@ def print_version_and_exit():
     print(f"{commit}{dirty}")
     exit(0)
 
+
 def sha1sum(filename):
     """Return sha1sum of a file"""
-    sha1  = hashlib.sha1()
-    barray  = bytearray(64*1024)
+    sha1 = hashlib.sha1()
+    barray = bytearray(64 * 1024)
     view = memoryview(barray)
     with open(filename, 'rb', buffering=0) as f:
-        for n in iter(lambda : f.readinto(view), 0):
+        for n in iter(lambda: f.readinto(view), 0):
             sha1.update(view[:n])
     return sha1.hexdigest()
