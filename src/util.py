@@ -25,7 +25,7 @@ import src.globalvars
 
 
 def run_cmd(cmd,
-            output_verbosity=3,
+            output_verbosity=2,
             capture=False,
             shell=False,
             check=True,

@@ -58,8 +58,8 @@ class BenchmarkRaxmlng(Benchmark):
         os.makedirs(raxmlng_builddir, exist_ok=True)
 
         # building raxml-ng
-        run_cmd( ["cmake", ".."], cwd=raxmlng_builddir, output_verbosity=2)
-        run_cmd( ["make"], cwd=raxmlng_builddir, output_verbosity=2)
+        run_cmd( ["cmake", ".."], cwd=raxmlng_builddir)
+        run_cmd( ["make"], cwd=raxmlng_builddir)
 
         # create symlinks
         for exe in ["raxml-ng"]:
