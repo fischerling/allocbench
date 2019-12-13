@@ -23,10 +23,10 @@ import json
 import multiprocessing
 import os
 import platform
-import subprocess
+from subprocess import CalledProcessError
 
 import src.globalvars as gv
-from src.util import print_error, print_info, run_cmd
+from src.util import print_debug, print_info, print_warn, run_cmd
 
 FACTS = {}
 
@@ -73,12 +73,13 @@ def load_facts(path=None):
         filename = "facts"
     else:
         if os.path.isdir(path):
-            filename = os.path.join(path, self.name)
+            filename = os.path.join(path, "facts")
         else:
             filename = os.path.splitext(path)[0]
 
     if os.path.exists(filename + ".json"):
         filename += ".json"
+        global FACTS
         with open(filename, "r") as f:
             FACTS = json.load(f)
     elif os.path.exists(filename + ".save"):
@@ -167,12 +168,11 @@ def libc_ver(executable=None):
 
 def exe_version(executable, version_flag="--version"):
     """Return version of executable"""
-    proc = subprocess.run([executable, version_flag],
-                          universal_newlines=True,
-                          stdout=subprocess.PIPE)
-
-    if proc.returncode != 0:
-        print_warning(f"failed to get version of {executable}")
+    try:
+        proc = run_cmd([executable, version_flag], capture=True)
+    except CalledProcessError as e:
+        print_warn(f"failed to get version of {executable}")
+        print_debug(e.stderr)
         return ""
 
     return proc.stdout[:-1]
