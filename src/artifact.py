@@ -23,10 +23,9 @@ with a specific checkout.
 """
 
 import os
-import subprocess
 
 import src.globalvars
-from src.util import print_status, print_info, print_debug, sha1sum
+from src.util import print_status, print_info, print_debug, run_cmd, sha1sum
 
 ARTIFACT_STORE_DIR = os.path.join(src.globalvars.allocbenchdir, "cache")
 
@@ -49,13 +48,7 @@ class Artifact:
 
         print_status(f'Retrieving artifact "{self.name}" ...')
         print_debug(f"By running: {cmd} in {self.basedir}")
-        proc = subprocess.run(
-            cmd,
-            cwd=self.basedir,
-            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
-        if proc.returncode != 0:
-            raise Exception(f"Failed to retrieve {self.name}")
+        run_cmd(cmd, output_verbosity=1, cwd=self.basedir)
 
 
 class GitArtifact(Artifact):
@@ -86,11 +79,7 @@ class GitArtifact(Artifact):
         worktree_cmd = ["git", "worktree", "add", location, checkout]
         print_debug("create new worktree. By running: ", worktree_cmd,
                     f"in {self.repo}")
-        proc = subprocess.run(
-            worktree_cmd,
-            cwd=self.repo,
-            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
+        run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
 
         if proc.returncode != 0:
             raise Exception(f"Failed to provide {self.name}")
@@ -100,11 +89,7 @@ class GitArtifact(Artifact):
         ]
         print_debug("update submodules in worktree. By running: ",
                     f"{submodule_init_cmd} in {self.repo}")
-        proc = subprocess.run(
-            submodule_init_cmd,
-            cwd=location,
-            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
+        run_cmd(submodule_init_cmd, output_verbosity=1, cwd=location)
         return location
 
 
@@ -154,12 +139,5 @@ class ArchiveArtifact(Artifact):
             cmd = ["tar", "Cxf", location, self.archive]
 
         print_debug(f"extract archive by running: {cmd} in {self.basedir}")
-        proc = subprocess.run(
-            cmd,
-            cwd=self.basedir,
-            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
-        if proc.returncode != 0:
-            raise Exception(f"Failed to extract {self.name}")
-
+        run_cmd(cmd, output_verbosity=1, cwd=self.basedir)
         return location
