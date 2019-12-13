@@ -18,8 +18,6 @@
 
 import os
 import re
-import subprocess
-import sys
 from urllib.request import urlretrieve
 
 from src.artifact import ArchiveArtifact, GitArtifact
