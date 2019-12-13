@@ -27,6 +27,7 @@ import src.globalvars
 def run_cmd(cmd,
             output_verbosity=3,
             capture=False,
+            shell=False,
             check=True,
             cwd=None,
             input=None):
@@ -42,12 +43,13 @@ def run_cmd(cmd,
         stderr = stdout
 
     return subprocess.run(cmd,
-                          check=check,
-                          universal_newlines=True,
-                          cwd=None,
                           stdout=stdout,
                           stderr=stderr,
-                          input=input)
+                          shell=shell,
+                          check=check,
+                          input=input,
+                          cwd=cwd,
+                          universal_newlines=True)
 
 
 def is_exe(fpath):
@@ -85,7 +87,7 @@ def prefix_cmd_with_abspath(cmd):
     binary_end = None if binary_end == -1 else binary_end
 
     binary_abspath = run_cmd(["whereis", cmd[0:binary_end]],
-                                    capture=True).stdout
+                             capture=True).stdout
     binary_abspath = binary_abspath.split()[1]
 
     # add arguments of cmd to the abspath
