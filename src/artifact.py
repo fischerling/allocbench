@@ -23,9 +23,10 @@ with a specific checkout.
 """
 
 import os
+from subprocess import CalledProcessError
 
 import src.globalvars
-from src.util import print_status, print_info, print_debug, run_cmd, sha1sum
+from src.util import print_status, print_info, print_debug, print_error, run_cmd, sha1sum
 
 ARTIFACT_STORE_DIR = os.path.join(src.globalvars.allocbenchdir, "cache")
 
@@ -79,10 +80,11 @@ class GitArtifact(Artifact):
         worktree_cmd = ["git", "worktree", "add", location, checkout]
         print_debug("create new worktree. By running: ", worktree_cmd,
                     f"in {self.repo}")
-        run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
-
-        if proc.returncode != 0:
-            raise Exception(f"Failed to provide {self.name}")
+        try:
+            run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
+        except CalledProcessError as e:
+            print_error(f"Failed to provide {self.name}")
+            raise e
 
         submodule_init_cmd = [
             "git", "submodule", "update", "--init", "--recursive"
