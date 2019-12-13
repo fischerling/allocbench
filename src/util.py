@@ -24,6 +24,32 @@ import sys
 import src.globalvars
 
 
+def run_cmd(cmd,
+            output_verbosity=3,
+            capture=False,
+            check=True,
+            cwd=None,
+            input=None):
+    """subprocess.run wrapper which cares about the set verbosity"""
+    if capture:
+        stdout = subprocess.PIPE
+        stderr = stdout
+    elif src.globalvars.verbosity < output_verbosity:
+        stdout = subprocess.DEVNULL
+        stderr = stdout
+    else:
+        stdout = None
+        stderr = stdout
+
+    return subprocess.run(cmd,
+                          check=check,
+                          universal_newlines=True,
+                          cwd=None,
+                          stdout=stdout,
+                          stderr=stderr,
+                          input=input)
+
+
 def is_exe(fpath):
     """Check if the given path is an exexutable file"""
     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)

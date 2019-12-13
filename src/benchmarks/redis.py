@@ -23,13 +23,12 @@ archive. The used parameters are inspired by the ones used in mimalloc-bench."
 
 import os
 import re
-import subprocess
 import sys
 from urllib.request import urlretrieve
 
 from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
-from src.util import print_info
+from src.util import print_info, run_cmd
 
 REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
 
@@ -63,10 +62,7 @@ class BenchmarkRedis(Benchmark):
         redis.provide(self.build_dir)
 
         # building redis
-        proc = subprocess.run(
-            ["make", "-C", redis_dir, "MALLOC=libc", "USE_JEMALLOC=no"],
-            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
+        run_cmd(["make", "-C", redis_dir, "MALLOC=libc", "USE_JEMALLOC=no"])
 
         # create symlinks
         for exe in ["redis-cli", "redis-server", "redis-benchmark"]:

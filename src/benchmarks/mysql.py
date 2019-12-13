@@ -75,15 +75,14 @@ import multiprocessing
 import os
 import re
 import shutil
-import subprocess
-from subprocess import PIPE
+from subprocess import CalledProcessError
 import sys
 
 import numpy as np
 
 from src.benchmark import Benchmark
 import src.facter
-from src.util import print_status, print_debug, print_info2
+from src.util import print_status, print_debug, print_info2, run_cmd
 
 MYSQL_USER = "fischerling"
 RUN_TIME = 10
@@ -147,39 +146,34 @@ class BenchmarkMYSQL(Benchmark):
                 ]
                 print_info2("Oracle MySQL detected")
 
-            p = subprocess.run(init_db_cmd, stdout=PIPE, stderr=PIPE)
-
-            if not p.returncode == 0:
-                print_debug(init_db_cmd)
-                print_debug("Stdout:", p.stdout, file=sys.stdout)
-                print_debug("Stderr:", p.stderr, file=sys.stderr)
-                raise Exception("Creating test DB failed with:", p.returncode)
+            try:
+                run_cmd(init_db_cmd, capture=True)
+            except CalledProcessError as e:
+                print_debug("Stdout:", e.stdout, file=sys.stderr)
+                print_debug("Stderr:", e.stderr, file=sys.stderr)
+                raise e
 
             self.start_servers()
 
             # Create sbtest TABLE
-            p = subprocess.run(
-                f"mysql -u {MYSQL_USER} -S {self.build_dir}/socket".split(),
-                input=b"CREATE DATABASE sbtest;\n",
-                stdout=PIPE,
-                stderr=PIPE,
+            create_db_cmd = f"mysql -u {MYSQL_USER} -S {self.build_dir}/socket".split(),
+            try:
+                run_cmd(create_db_cmd,
+                input="CREATE DATABASE sbtest;\n",
+                capture=True,
                 cwd=self.build_dir)
-
-            if p.returncode != 0:
-                print_debug("Stderr:", p.stderr, file=sys.stderr)
-                raise Exception("Creating test tables failed with:",
-                                p.returncode)
+            except CalledProcessError as e:
+                print_debug("Stderr:", e.stderr, file=sys.stderr)
+                raise e
 
             print_status("Prepare test tables ...")
-            prepare_cmd = PREPARE_CMD.format(build_dir=self.build_dir)
-            p = subprocess.run(prepare_cmd.split(), stdout=PIPE, stderr=PIPE)
-            if p.returncode != 0:
-                print_debug(f"Cmd: {prepare_cmd} failed with {p.returncode}",
-                            file=sys.stderr)
+            prepare_cmd = PREPARE_CMD.format(build_dir=self.build_dir).split()
+            try:
+                run_cmd(prepare_cmd, captur=True)
+            except CalledProcessError as e:
                 print_debug("Stdout:", p.stdout, file=sys.stderr)
                 print_debug("Stderr:", p.stderr, file=sys.stderr)
-                raise Exception("Preparing test tables failed with:",
-                                p.returncode)
+                raise e
 
             self.shutdown_servers()
 

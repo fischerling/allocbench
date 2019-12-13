@@ -18,13 +18,12 @@
 
 import os
 import re
-import subprocess
 import sys
 from urllib.request import urlretrieve
 
 from src.artifact import GitArtifact
 from src.benchmark import Benchmark
-from src.util import print_info
+from src.util import print_info, run_cmd
 
 RUNTIME_RE = re.compile("Elapsed time: (?P<runtime>(\\d*.\\d*)) seconds")
 
@@ -59,17 +58,8 @@ class BenchmarkRaxmlng(Benchmark):
         os.makedirs(raxmlng_builddir, exist_ok=True)
 
         # building raxml-ng
-        proc = subprocess.run(
-            ["cmake", ".."],
-            cwd=raxmlng_builddir,
-            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
-
-        proc = subprocess.run(
-            ["make"],
-            cwd=raxmlng_builddir,
-            # stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            universal_newlines=True)
+        run_cmd( ["cmake", ".."], cwd=raxmlng_builddir, output_verbosity=2)
+        run_cmd( ["make"], cwd=raxmlng_builddir, output_verbosity=2)
 
         # create symlinks
         for exe in ["raxml-ng"]:
