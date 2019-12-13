@@ -26,7 +26,7 @@ import os
 import subprocess
 
 import src.globalvars
-from src.util import print_info, print_debug, sha1sum
+from src.util import print_status, print_info, print_debug, sha1sum
 
 ARTIFACT_STORE_DIR = os.path.join(src.globalvars.allocbenchdir, "cache")
 
@@ -47,7 +47,7 @@ class Artifact:
         """Run cmd to retrieve the artifact"""
         os.makedirs(self.basedir, exist_ok=True)
 
-        print_info(f'Retrieving artifact "{self.name}"')
+        print_status(f'Retrieving artifact "{self.name}" ...')
         print_debug(f"By running: {cmd} in {self.basedir}")
         proc = subprocess.run(
             cmd,
