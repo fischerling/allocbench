@@ -82,10 +82,10 @@ import numpy as np
 
 from src.benchmark import Benchmark
 import src.facter
-from src.util import print_status, print_debug, print_info2, run_cmd
+from src.util import print_status, print_debug, print_info2, print_warn, run_cmd
 
-MYSQL_USER = "fischerling"
-RUN_TIME = 10
+MYSQL_USER = "root"
+RUN_TIME = 300
 TABLES = 5
 
 PREPARE_CMD = (
@@ -120,6 +120,12 @@ class BenchmarkMYSQL(Benchmark):
 
         self.results["facts"]["runtime [s]"] = RUN_TIME
 
+    def reset_preparations(self):
+        """Reset self.build_dir if preparing fails"""
+        if os.path.exists(self.build_dir):
+            print_warn("Reset mysql test directory")
+            shutil.rmtree(self.build_dir, ignore_errors=True)
+
     def prepare(self):
         super().prepare()
 
@@ -151,28 +157,31 @@ class BenchmarkMYSQL(Benchmark):
             except CalledProcessError as e:
                 print_debug("Stdout:", e.stdout, file=sys.stderr)
                 print_debug("Stderr:", e.stderr, file=sys.stderr)
+                self.reset_preparations()
                 raise e
 
             self.start_servers()
 
             # Create sbtest TABLE
-            create_db_cmd = f"mysql -u {MYSQL_USER} -S {self.build_dir}/socket".split(),
             try:
-                run_cmd(create_db_cmd,
-                input="CREATE DATABASE sbtest;\n",
-                capture=True,
-                cwd=self.build_dir)
+                run_cmd(f"mysql -u {MYSQL_USER} -S {self.build_dir}/socket".
+                        split(),
+                        input="CREATE DATABASE sbtest;\n",
+                        capture=True,
+                        cwd=self.build_dir)
             except CalledProcessError as e:
                 print_debug("Stderr:", e.stderr, file=sys.stderr)
+                self.reset_preparations()
                 raise e
 
             print_status("Prepare test tables ...")
             prepare_cmd = PREPARE_CMD.format(build_dir=self.build_dir).split()
             try:
-                run_cmd(prepare_cmd, captur=True)
+                run_cmd(prepare_cmd, capture=True)
             except CalledProcessError as e:
-                print_debug("Stdout:", p.stdout, file=sys.stderr)
-                print_debug("Stderr:", p.stderr, file=sys.stderr)
+                print_debug("Stdout:", e.stdout, file=sys.stderr)
+                print_debug("Stderr:", e.stderr, file=sys.stderr)
+                self.reset_preparations()
                 raise e
 
             self.shutdown_servers()
@@ -185,7 +194,6 @@ class BenchmarkMYSQL(Benchmark):
         result["min"] = re.search("min:\\s*(\\d*.\\d*)", stdout).group(1)
         result["avg"] = re.search("avg:\\s*(\\d*.\\d*)", stdout).group(1)
         result["max"] = re.search("max:\\s*(\\d*.\\d*)", stdout).group(1)
-
 
     def summary(self):
         allocators = self.results["allocators"]
