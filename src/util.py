@@ -93,8 +93,7 @@ def prefix_cmd_with_abspath(cmd):
     # add arguments of cmd to the abspath
     if binary_end:
         return binary_abspath + " " + cmd[binary_end:]
-    else:
-        return binary_abspath
+    return binary_abspath
 
 
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
@@ -168,7 +167,7 @@ def print_license_and_exit():
     print("Copyright (C) 2018-2019 Florian Fischer")
     print(
         "License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
-    exit(0)
+    sys.exit(0)
 
 
 def sha1sum(filename):

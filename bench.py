@@ -23,14 +23,13 @@ import atexit
 import datetime
 import importlib
 import os
-import subprocess
 import sys
 import traceback
 
 from src.allocator import collect_allocators
 import src.facter
 import src.globalvars
-from src.util import find_cmd
+from src.util import find_cmd, run_cmd
 from src.util import print_status, print_warn, print_error
 from src.util import print_info, print_info2, print_debug
 from src.util import print_license_and_exit
@@ -59,14 +58,14 @@ def check_dependencies():
     # used python 3.6 features: f-strings
     if sys.version_info[0] < 3 or sys.version_info[1] < 6:
         print_error("At least python version 3.6 is required.")
-        exit(1)
+        sys.exit(1)
 
     # matplotlib is needed by Benchmark.plot_*
     try:
         importlib.import_module("matplotlib")
     except ModuleNotFoundError:
         print_error("matplotlib not found.")
-        exit(1)
+        sys.exit(1)
     # TODO mariadb
 
 
@@ -117,7 +116,7 @@ def main():
 
     if args.version:
         print(src.facter.allocbench_version())
-        exit(0)
+        sys.exit(0)
 
     atexit.register(epilog)
 
@@ -135,9 +134,9 @@ def main():
     # Prepare allocbench
     print_status("Building allocbench ...")
     make_cmd = ["make"]
-    if src.globalvars.verbosity < 1:
+    if src.globalvars.verbosity < 2:
         make_cmd.append("-s")
-    subprocess.run(make_cmd)
+    run_cmd(make_cmd, output_verbosity=1)
 
     # allocators to benchmark
     src.globalvars.allocators = collect_allocators(args.allocators)
@@ -147,7 +146,7 @@ def main():
 
     if src.globalvars.allocators == {}:
         print_error("Abort because there are no allocators to benchmark")
-        exit(1)
+        sys.exit(1)
 
     # collect facts about benchmark environment
     src.facter.collect_facts()

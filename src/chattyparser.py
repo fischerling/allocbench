@@ -227,12 +227,12 @@ if __name__ == "__main__":
     if "--license" in sys.argv:
         print("Copyright (C) 2018-2019 Florian Fischer")
         print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
-        exit(0)
+        sys.exit(0)
 
     if len(sys.argv) != 2 or sys.argv[1] in ["-h", "--help"]:
         print("chattyparser: parse chattymalloc output and",
               "create size histogram and memory profile", file=sys.stderr)
         print(f"Usage: {sys.argv[0]} chattymalloc-file", file=sys.stderr)
-        exit(1)
+        sys.exit(1)
 
     plot(sys.argv[1])

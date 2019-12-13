@@ -43,7 +43,7 @@ def main():
 
     if "--version" in sys.argv:
         print(src.facter.allocbench_version())
-        exit(0)
+        sys.exit(0)
 
     parser = argparse.ArgumentParser(description="Merge to allocbench results")
     parser.add_argument("src", help="results which should be merged into dest", type=str)
@@ -58,7 +58,7 @@ def main():
     for src_save in os.listdir(args.src):
         if not os.path.splitext(src_save)[1] in [".json", ".save"]:
             continue
-        if src_save == "facts.save" or src_save == "facts.json":
+        if src_save in ["facts.save", "facts.json"]:
             continue
         if args.benchmarks and not src_save[:-5] in args.benchmarks:
             continue

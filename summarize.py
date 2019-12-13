@@ -96,7 +96,7 @@ def main():
 
     if "--version" in sys.argv:
         print(src.facter.allocbench_version())
-        exit(0)
+        sys.exit(0)
 
     parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
@@ -110,7 +110,7 @@ def main():
 
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
-        exit(1)
+        sys.exit(1)
 
     if args.file_ext:
         src.globalvars.summary_file_ext = args.file_ext
