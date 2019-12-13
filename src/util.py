@@ -84,9 +84,8 @@ def prefix_cmd_with_abspath(cmd):
     binary_end = cmd.find(" ")
     binary_end = None if binary_end == -1 else binary_end
 
-    binary_abspath = subprocess.run(["whereis", cmd[0:binary_end]],
-                                    stdout=subprocess.PIPE,
-                                    universal_newlines=True).stdout
+    binary_abspath = run_cmd(["whereis", cmd[0:binary_end]],
+                                    capture=True).stdout
     binary_abspath = binary_abspath.split()[1]
 
     # add arguments of cmd to the abspath
