@@ -169,31 +169,6 @@ def print_license_and_exit():
     exit(0)
 
 
-def print_version_and_exit():
-    """Print current commit info before exit"""
-    proc = subprocess.run(["git", "rev-parse", "HEAD"],
-                          universal_newlines=True,
-                          stdout=subprocess.PIPE)
-
-    if proc.returncode != 0:
-        print_error("git rev-parse failed")
-        exit(1)
-    commit = proc.stdout[:-1]
-
-    proc = subprocess.run(["git", "status", "--porcelain"],
-                          universal_newlines=True,
-                          stdout=subprocess.PIPE)
-
-    if proc.returncode != 0:
-        print_error("git status --porcelain failed")
-        exit(1)
-
-    dirty = "-dirty" if proc.stdout != "" else ""
-
-    print(f"{commit}{dirty}")
-    exit(0)
-
-
 def sha1sum(filename):
     """Return sha1sum of a file"""
     sha1 = hashlib.sha1()

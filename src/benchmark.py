@@ -734,7 +734,7 @@ class Benchmark:
         print(comment_symbol, self.name, file=f)
         print(file=f)
         print(comment_symbol, "Common facts:", file=f)
-        for k, v in src.globalvars.facts.items():
+        for k, v in src.facter.FACTS.items():
             print(comment_symbol, k + ":", v, file=f)
         print(file=f)
         print(comment_symbol, "Benchmark facts:", file=f)

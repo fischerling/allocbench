@@ -33,7 +33,7 @@ import src.globalvars
 from src.util import find_cmd
 from src.util import print_status, print_warn, print_error
 from src.util import print_info, print_info2, print_debug
-from src.util import print_license_and_exit, print_version_and_exit
+from src.util import print_license_and_exit
 
 
 def epilog():
@@ -46,7 +46,7 @@ def epilog():
         else:
             endtime = datetime.datetime.now().isoformat()
             endtime = endtime[:endtime.rfind(':')]
-            src.globalvars.facts["endtime"] = endtime
+            src.facter.FACTS["endtime"] = endtime
             src.facter.store_facts(src.globalvars.resdir)
 
     # remove a left over status file if some is present
@@ -116,7 +116,8 @@ def main():
         print_license_and_exit()
 
     if args.version:
-        print_version_and_exit()
+        print(src.facter.allocbench_version())
+        exit(0)
 
     atexit.register(epilog)
 
@@ -156,8 +157,8 @@ def main():
         src.globalvars.resdir = os.path.join(args.resultdir)
     else:
         src.globalvars.resdir = os.path.join("results",
-                                             src.globalvars.facts["hostname"],
-                                             src.globalvars.facts["starttime"])
+                                             src.facter.FACTS["hostname"],
+                                             src.facter.FACTS["starttime"])
 
     print_status("Writing results to:", src.globalvars.resdir)
     os.makedirs(src.globalvars.resdir, exist_ok=True)

@@ -25,7 +25,8 @@ import os
 import pickle
 import sys
 
-from src.util import print_license_and_exit, print_version_and_exit
+import src.facter
+from src.util import print_license_and_exit
 
 def load_file(filename):
     if filename.endswith("json"):
@@ -41,7 +42,8 @@ def main():
         print_license_and_exit()
 
     if "--version" in sys.argv:
-        print_version_and_exit()
+        print(src.facter.allocbench_version())
+        exit(0)
 
     parser = argparse.ArgumentParser(description="Merge to allocbench results")
     parser.add_argument("src", help="results which should be merged into dest", type=str)

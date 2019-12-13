@@ -17,7 +17,6 @@
 
 """Global variables for allocbench
 
-facts: Dict holding facts about the current benchmark run
 verbosity: Verbosity level -1: quiet, 0: status, 1: info, 2: stdout of subcommands, 3: debug info
 allocators: Dict holding the allocators to compare
 benchmarks: List of available benchmarks
@@ -34,8 +33,6 @@ resdir: Directory were the benchmark results are stored
 import inspect
 import os
 
-
-facts = {}
 
 verbosity = 0
 

@@ -26,31 +26,31 @@ import platform
 import subprocess
 
 import src.globalvars as gv
-from src.util import print_error, print_info
+from src.util import print_error, print_info, run_cmd
 
+FACTS = {}
 
 def collect_facts():
-    """Collect facts ad store them in src.globalvars.facts"""
+    """Collect general facts about the benchmark environment"""
     # Populate src.globalvars.facts on import
     _uname = platform.uname()
-    gv.facts["hostname"] = _uname.node
-    gv.facts["system"] = _uname.system
-    gv.facts["kernel"] = _uname.release
-    gv.facts["arch"] = _uname.machine
-    gv.facts["cpus"] = multiprocessing.cpu_count()
-    gv.facts["LD_PRELOAD"] = os.environ.get("LD_PRELOAD", None)
+    FACTS["hostname"] = _uname.node
+    FACTS["system"] = _uname.system
+    FACTS["kernel"] = _uname.release
+    FACTS["arch"] = _uname.machine
+    FACTS["cpus"] = multiprocessing.cpu_count()
+    FACTS["LD_PRELOAD"] = os.environ.get("LD_PRELOAD", None)
 
     with open(os.path.join(gv.builddir, "ccinfo"), "r") as ccinfo:
-        gv.facts["cc"] = ccinfo.readlines()[-1][:-1]
+        FACTS["cc"] = ccinfo.readlines()[-1][:-1]
 
-    gv.facts["allocbench"] = subprocess.run(["git", "rev-parse", "master"],
-                                            stdout=subprocess.PIPE,
-                                            universal_newlines=True).stdout
+    # get commit info from git
+    allocbench_version()
 
     starttime = datetime.datetime.now().isoformat()
     # strip seconds from string
     starttime = starttime[:starttime.rfind(':')]
-    gv.facts["starttime"] = starttime
+    FACTS["starttime"] = starttime
 
 
 def store_facts(path=None):
@@ -64,7 +64,7 @@ def store_facts(path=None):
 
     print_info(f"Saving facts to: {filename}")
     with open(filename, "w") as f:
-        json.dump(gv.facts, f)
+        json.dump(FACTS, f)
 
 
 def load_facts(path=None):
@@ -80,17 +80,30 @@ def load_facts(path=None):
     if os.path.exists(filename + ".json"):
         filename += ".json"
         with open(filename, "r") as f:
-            gv.facts = json.load(f)
+            FACTS = json.load(f)
     elif os.path.exists(filename + ".save"):
         import pickle
         filename += ".save"
         with open(filename, "rb") as f:
-            gv.facts = pickle.load(f)
+            FACTS = pickle.load(f)
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
                                 filename)
 
     print_info(f"Loading facts from: {filename}")
+
+def allocbench_version():
+    "Store and return allocbench version string."""
+    if "allocbench" in FACTS:
+        return FACTS["allocbench"]
+
+    commit = run_cmd(["git", "rev-parse", "HEAD"], capture=True).stdout[:-1]
+
+    proc = run_cmd(["git", "status", "--porcelain"], capture=True)
+    dirty = "-dirty" if proc.stdout != "" else ""
+
+    FACTS["allocbench"] = f"{commit}{dirty}"
+    return FACTS["allocbench"]
 
 
 # Copied from pip.

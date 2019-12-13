@@ -27,7 +27,7 @@ import sys
 import src.facter
 import src.globalvars
 from src.util import print_status, print_debug, print_error
-from src.util import print_license_and_exit, print_version_and_exit
+from src.util import print_license_and_exit
 
 
 def specific_summary(bench, sum_dir, allocators):
@@ -95,7 +95,8 @@ def main():
         print_license_and_exit()
 
     if "--version" in sys.argv:
-        print_version_and_exit()
+        print(src.facter.allocbench_version())
+        exit(0)
 
     parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
