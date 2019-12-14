@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Alloactor related class definitions and helpers"""
 
 from datetime import datetime
@@ -29,9 +28,9 @@ from src.artifact import ArchiveArtifact, GitArtifact
 import src.globalvars
 from src.util import print_status, print_debug, print_error, print_info2, run_cmd
 
-
 LIBRARY_PATH = ""
-for line in run_cmd(["ldconfig", "-v", "-N"], capture=True).stdout.splitlines():
+for line in run_cmd(["ldconfig", "-v", "-N"],
+                    capture=True).stdout.splitlines():
 
     if not line.startswith('\t'):
         LIBRARY_PATH += line
@@ -50,9 +49,10 @@ class Allocator:
     patches, and instructions to build the allocator.
     Allocator.build will compile the allocator and produce a for allocbench usable
     allocator dict"""
-    allowed_attributes = ["binary_suffix", "cmd_prefix", "LD_PRELOAD", "LD_LIBRARY_PATH", "color",
-                          "sources", "version", "patches", "prepare_cmds",
-                          "build_cmds"]
+    allowed_attributes = [
+        "binary_suffix", "cmd_prefix", "LD_PRELOAD", "LD_LIBRARY_PATH",
+        "color", "sources", "version", "patches", "prepare_cmds", "build_cmds"
+    ]
 
     def __init__(self, name, **kwargs):
         self.class_file = inspect.getfile(self.__class__)
@@ -93,12 +93,16 @@ class Allocator:
 
             print_status(f"Patching {self.name} ...")
             for patch in self.patches:
-                with open(patch.format(patchdir=self.patchdir), "r") as patch_file:
+                with open(patch.format(patchdir=self.patchdir),
+                          "r") as patch_file:
                     patch_content = patch_file.read()
 
                 # check if patch is already applied
-                already_patched = run_cmd(["patch", "-R", "-p0", "-s", "-f", "--dry-run"],
-                                          cwd=cwd, input=patch_content, check=False).returncode
+                already_patched = run_cmd(
+                    ["patch", "-R", "-p0", "-s", "-f", "--dry-run"],
+                    cwd=cwd,
+                    input=patch_content,
+                    check=False).returncode
                 if not already_patched:
                     try:
                         run_cmd(["patch", "-p0"], cwd=cwd, input=patch_content)
@@ -126,7 +130,8 @@ class Allocator:
             print_info2("Old build found. Comparing build time with mtime")
 
             with open(buildtimestamp_path, "r") as buildtimestamp_file:
-                timestamp = datetime.fromtimestamp(float(buildtimestamp_file.read()))
+                timestamp = datetime.fromtimestamp(
+                    float(buildtimestamp_file.read()))
 
             modtime = os.stat(self.class_file).st_mtime
             modtime = datetime.fromtimestamp(modtime)
@@ -134,7 +139,8 @@ class Allocator:
             build_needed = timestamp < modtime
 
             print_debug("Time of last build:", timestamp.isoformat())
-            print_debug("Last modification of allocators file:", modtime.isoformat())
+            print_debug("Last modification of allocators file:",
+                        modtime.isoformat())
             print_info2("" if build_needed else "No " + "build needed")
 
         if build_needed:
@@ -158,11 +164,13 @@ class Allocator:
                     buildtimestamp_file.write(str(datetime.now().timestamp()))
 
         print_info2("Create allocator dictionary")
-        res_dict = {"cmd_prefix": self.cmd_prefix or "",
-                    "binary_suffix": self.binary_suffix or "",
-                    "LD_PRELOAD": self.LD_PRELOAD or "",
-                    "LD_LIBRARY_PATH": self.LD_LIBRARY_PATH or "",
-                    "color": self.color}
+        res_dict = {
+            "cmd_prefix": self.cmd_prefix or "",
+            "binary_suffix": self.binary_suffix or "",
+            "LD_PRELOAD": self.LD_PRELOAD or "",
+            "LD_LIBRARY_PATH": self.LD_LIBRARY_PATH or "",
+            "color": self.color
+        }
 
         for attr in ["LD_PRELOAD", "LD_LIBRARY_PATH", "cmd_prefix"]:
             value = getattr(self, attr, "") or ""
@@ -186,6 +194,7 @@ def read_allocators_collection_file(alloc_path):
 
     print_error("No global dictionary 'allocators' in", alloc_path)
     return {}
+
 
 def collect_allocators(allocators):
     """Collect allocators to benchmark
@@ -224,8 +233,11 @@ def collect_allocators(allocators):
                 for alloc in module.allocators:
                     ret[alloc.name] = alloc.build()
             # name is single allocator
-            elif issubclass(getattr(module, name).__class__, src.allocator.Allocator):
+            elif issubclass(
+                    getattr(module, name).__class__, src.allocator.Allocator):
                 ret[name] = getattr(module, name).build()
         else:
-            print_error(name, "is neither a python file or a known allocator definition.")
+            print_error(
+                name,
+                "is neither a python file or a known allocator definition.")
     return ret
