@@ -24,3 +24,6 @@
 
 - implement verbosity aware system() wrapper
 
+- possible benchmarks:
+   - https://github.com/GraphChi/graphchi-cpp
+   - http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
