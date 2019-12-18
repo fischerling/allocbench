@@ -96,7 +96,7 @@ def prefix_cmd_with_abspath(cmd):
     return binary_abspath
 
 
-def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
+def allocbench_msg(color, *objects, sep=' ', end='\n', file=None):
     """Colored output function wrapping print"""
     if src.globalvars.verbosity < 0:
         return
@@ -117,40 +117,40 @@ def allocbench_msg(color, *objects, sep=' ', end='\n', file=sys.stdout):
         print("\x1b[0m", end="", file=file, flush=True)
 
 
-def print_debug(*objects, sep=' ', end='\n', file=sys.stdout):
+def print_debug(*objects, sep=' ', end='\n', file=None):
     """Print colorless debug message"""
     if src.globalvars.verbosity < 3:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
-def print_info(*objects, sep=' ', end='\n', file=sys.stdout):
+def print_info(*objects, sep=' ', end='\n', file=None):
     """Print colorless info message"""
     if src.globalvars.verbosity < 1:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
-def print_info0(*objects, sep=' ', end='\n', file=sys.stdout):
+def print_info0(*objects, sep=' ', end='\n', file=None):
     """Print colorless info message at every verbosity level message"""
     if src.globalvars.verbosity < 0:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
-def print_info2(*objects, sep=' ', end='\n', file=sys.stdout):
+def print_info2(*objects, sep=' ', end='\n', file=None):
     """Print colorless info message at the second verbosity level message"""
     if src.globalvars.verbosity < 2:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
-def print_status(*objects, sep=' ', end='\n', file=sys.stdout):
+def print_status(*objects, sep=' ', end='\n', file=None):
     """Print green status message"""
     allocbench_msg("GREEN", *objects, sep=sep, end=end, file=file)
 
 
-def print_warn(*objects, sep=' ', end='\n', file=sys.stdout):
+def print_warn(*objects, sep=' ', end='\n', file=None):
     """Print yellow warning"""
     if src.globalvars.verbosity < 1:
         return
