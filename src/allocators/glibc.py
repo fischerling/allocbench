@@ -29,8 +29,6 @@ class Glibc(Allocator):
     sources = GitArtifact("glibc", "git://sourceware.org/git/glibc.git")
 
     def __init__(self, name, **kwargs):
-
-
         configure_args = ""
         if "configure_args" in kwargs:
             configure_args = kwargs["configure_args"]
