@@ -62,16 +62,16 @@ class Allocator:
         self.patchdir = os.path.join(os.path.splitext(self.class_file)[0])
 
         # members known by the base class
-        self.binary_suffix = None
-        self.cmd_prefix = None
-        self.LD_PRELOAD = None
-        self.LD_LIBRARY_PATH = None
-        self.color = None
-        self.sources = None
-        self.version = None
-        self.patches = []
-        self.prepare_cmds = []
-        self.build_cmds = []
+        self.binary_suffix = self.binary_suffix if hasattr(self, "binary_suffix") else None
+        self.cmd_prefix = self.cmd_prefix if hasattr(self, "cmd_prefix") else None
+        self.LD_PRELOAD = self.LD_PRELOAD if hasattr(self, "LD_PRELOAD") else None
+        self.LD_LIBRARY_PATH = self.LD_LIBRARY_PATH if hasattr(self, "LD_LIBRARY_PATH") else None
+        self.color = self.color if hasattr(self, "color") else None
+        self.sources = self.sources if hasattr(self, "sources") else None
+        self.version = self.version if hasattr(self, "version") else None
+        self.patches = self.patches if hasattr(self, "patches") else []
+        self.prepare_cmds = self.prepare_cmds if hasattr(self, "prepare_cmds") else []
+        self.build_cmds = self.build_cmds if hasattr(self, "build_cmds") else []
 
         # Update attributes
         for attr, value in kwargs.items():
@@ -98,14 +98,14 @@ class Allocator:
                     patch_content = patch_file.read()
 
                 # check if patch is already applied
-                already_patched = run_cmd(
-                    ["patch", "-R", "-p0", "-s", "-f", "--dry-run"],
+                not_patched = run_cmd(
+                    ["patch", "-R", "-p0", "-s", "-f", "--dry-run", "--verbose"],
                     cwd=cwd,
                     input=patch_content,
                     check=False).returncode
-                if not already_patched:
+                if not_patched:
                     try:
-                        run_cmd(["patch", "-p0"], cwd=cwd, input=patch_content)
+                        run_cmd(["patch", "-p0", "--verbose"], cwd=cwd, input=patch_content)
                     except CalledProcessError as e:
                         print_debug(e.stderr, file=sys.stderr)
                         print_error(f"Patching of {self.name} failed.")
