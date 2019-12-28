@@ -90,41 +90,16 @@ def bench_sum(bench):
     os.chdir("..")
 
 
-def main():
-    if "--license" in sys.argv:
-        print_license_and_exit()
+def summarize(benchmarks=None, exclude_benchmarks=None):
+    """summarize the benchmarks in the resdir"""
 
-    if "--version" in sys.argv:
-        print(src.facter.allocbench_version())
-        sys.exit(0)
-
-    parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
-    parser.add_argument("results", help="path to results", type=str)
-    parser.add_argument("-t", "--file-ext", help="file extension used for plots", type=str)
-    parser.add_argument("--license", help="print license info and exit", action='store_true')
-    parser.add_argument("--version", help="print version info and exit", action='store_true')
-    parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
-    parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
-
-    args = parser.parse_args()
-
-    if not os.path.isdir(args.results):
-        print_error(f"{args.results} is no directory")
-        sys.exit(1)
-
-    if args.file_ext:
-        src.globalvars.summary_file_ext = args.file_ext
-
-    src.globalvars.resdir = args.results
-    os.chdir(args.results)
-
-    # Load facts
-    src.facter.load_facts()
+    cwd = os.getcwd()
+    os.chdir(src.globalvars.resdir)
 
     for benchmark in src.globalvars.benchmarks:
-        if args.benchmarks and not benchmark in args.benchmarks:
+        if benchmarks and not benchmark in benchmarks:
             continue
-        if args.exclude_benchmarks and benchmark in args.exclude_benchmarks:
+        if exclude_benchmarks and benchmark in exclude_benchmarks:
             continue
 
         bench_module = importlib.import_module(f"src.benchmarks.{benchmark}")
@@ -146,6 +121,36 @@ def main():
         except FileExistsError as e:
             print(e)
 
+    os.chdir(cwd)
 
 if __name__ == "__main__":
-    main()
+    if "--license" in sys.argv:
+        print_license_and_exit()
+
+    if "--version" in sys.argv:
+        print(src.facter.allocbench_version())
+        sys.exit(0)
+
+    parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
+    parser.add_argument("results", help="path to results", type=str)
+    parser.add_argument("-t", "--file-ext", help="file extension used for plots", type=str)
+    parser.add_argument("--license", help="print license info and exit", action='store_true')
+    parser.add_argument("--version", help="print version info and exit", action='store_true')
+    parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
+    parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
+
+    args = parser.parse_args()
+
+    if args.file_ext:
+        src.globalvars.summary_file_ext = args.file_ext
+
+    if not os.path.isdir(args.results):
+        print_error(f"{args.results} is no directory")
+        sys.exit(1)
+
+    src.globalvars.resdir = args.results
+
+    # Load facts
+    src.facter.load_facts(src.globalvars.resdir)
+
+    summarize(benchmarks=args.benchmarks, exclude_benchmarks=args.exclude_benchmarks)

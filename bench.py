@@ -34,6 +34,8 @@ from src.util import print_status, print_warn, print_error
 from src.util import print_info, print_info2, print_debug
 from src.util import print_license_and_exit
 
+from summarize import summarize
+
 
 def epilog():
     """Run tasks on exit"""
@@ -81,10 +83,7 @@ def main():
                         help="how often the benchmarks run",
                         default=3,
                         type=int)
-    parser.add_argument("-v",
-                        "--verbose",
-                        help="more output",
-                        action='count')
+    parser.add_argument("-v", "--verbose", help="more output", action='count')
     parser.add_argument("-b",
                         "--benchmarks",
                         help="benchmarks to run",
@@ -103,6 +102,10 @@ def main():
                         "--resultdir",
                         help="directory where all results go",
                         type=str)
+    parser.add_argument("-s",
+                        "--summarize",
+                        help="create a summary of this run",
+                        action='store_true')
     parser.add_argument("--license",
                         help="print license info and exit",
                         action='store_true')
@@ -255,6 +258,9 @@ def main():
         if hasattr(bench, "cleanup"):
             print_status("Cleaning up", bench.name, "...")
             bench.cleanup()
+
+        if args.summarize:
+            summarize()
 
 
 if __name__ == "__main__":
