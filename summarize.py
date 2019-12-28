@@ -16,7 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Summarize the results of an allocbench run"""
 
 import argparse
@@ -45,13 +44,15 @@ def specific_summary(bench, sum_dir, allocators):
     bench.results["allocators"] = allocs_in_set
 
     # set colors
-    explicit_colors = [v["color"] for k, v in allocs_in_set.items()
-                       if v["color"] is not None]
+    explicit_colors = [
+        v["color"] for k, v in allocs_in_set.items() if v["color"] is not None
+    ]
     print_debug("Explicit colors:", explicit_colors)
 
     cycle_list = ["C" + str(i) for i in range(0, 10)]
-    avail_colors = [color for color in cycle_list
-                    if color not in explicit_colors]
+    avail_colors = [
+        color for color in cycle_list if color not in explicit_colors
+    ]
     print_debug("available colors:", avail_colors)
 
     for _, value in allocs_in_set.items():
@@ -67,14 +68,21 @@ def specific_summary(bench, sum_dir, allocators):
 
 def bench_sum(bench):
     """Create a summary of bench for each set of allocators"""
-    sets = {"glibcs": ["glibc", "glibc-noThreadCache", "glibc-noFalsesharing",
-                       "glibc-noFalsesharingClever"],
-            "tcmalloc": ["TCMalloc", "TCMalloc-NoFalsesharing"],
-            "nofs": ["glibc", "glibc-noFalsesharing", "glibc-noFalsesharingClever",
-                     "TCMalloc", "TCMalloc-NoFalsesharing"],
-            "ba" : ["glibc", "TCMalloc", "jemalloc", "Hoard"],
-            "industry" : ["glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc", "mimalloc"],
-            "research" : ["scalloc", "SuperMalloc", "Mesh", "Hoard", "snmalloc"]}
+    sets = {
+        "glibcs": [
+            "glibc", "glibc-noThreadCache", "glibc-noFalsesharing",
+            "glibc-noFalsesharingClever"
+        ],
+        "tcmalloc": ["TCMalloc", "TCMalloc-NoFalsesharing"],
+        "nofs": [
+            "glibc", "glibc-noFalsesharing", "glibc-noFalsesharingClever",
+            "TCMalloc", "TCMalloc-NoFalsesharing"
+        ],
+        "ba": ["glibc", "TCMalloc", "jemalloc", "Hoard"],
+        "industry":
+        ["glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc", "mimalloc"],
+        "research": ["scalloc", "SuperMalloc", "Mesh", "Hoard", "snmalloc"]
+    }
 
     os.makedirs(bench.name)
     os.chdir(bench.name)
@@ -123,6 +131,7 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
 
     os.chdir(cwd)
 
+
 if __name__ == "__main__":
     if "--license" in sys.argv:
         print_license_and_exit()
@@ -131,13 +140,27 @@ if __name__ == "__main__":
         print(src.facter.allocbench_version())
         sys.exit(0)
 
-    parser = argparse.ArgumentParser(description="Summarize allocbench results in allocator sets")
+    parser = argparse.ArgumentParser(
+        description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
-    parser.add_argument("-t", "--file-ext", help="file extension used for plots", type=str)
-    parser.add_argument("--license", help="print license info and exit", action='store_true')
-    parser.add_argument("--version", help="print version info and exit", action='store_true')
-    parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
-    parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
+    parser.add_argument("-t",
+                        "--file-ext",
+                        help="file extension used for plots",
+                        type=str)
+    parser.add_argument("--license",
+                        help="print license info and exit",
+                        action='store_true')
+    parser.add_argument("--version",
+                        help="print version info and exit",
+                        action='store_true')
+    parser.add_argument("-b",
+                        "--benchmarks",
+                        help="benchmarks to summarize",
+                        nargs='+')
+    parser.add_argument("-x",
+                        "--exclude-benchmarks",
+                        help="benchmarks to exclude",
+                        nargs='+')
 
     args = parser.parse_args()
 
@@ -153,4 +176,5 @@ if __name__ == "__main__":
     # Load facts
     src.facter.load_facts(src.globalvars.resdir)
 
-    summarize(benchmarks=args.benchmarks, exclude_benchmarks=args.exclude_benchmarks)
+    summarize(benchmarks=args.benchmarks,
+              exclude_benchmarks=args.exclude_benchmarks)
