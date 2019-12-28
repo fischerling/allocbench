@@ -16,7 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Parser and Plotter for the traces produced by chattymalloc"""
 
 import re
@@ -34,19 +33,35 @@ FREE_RE = re.compile(f"^f {PTR}$")
 CALLOC_RE = re.compile(f"^c (?P<nmemb>\\d+) {SIZE} {PTR}$")
 REALLOC_RE = re.compile(f"^r {PTR} {SIZE} {PTR.replace('ptr', 'nptr')}$")
 MEMALIGN_RE = re.compile(f"^ma {ALIGNMENT} {SIZE} {PTR}$")
-POSIX_MEMALIGN_RE = re.compile(f"^p_ma {PTR} {ALIGNMENT} {SIZE} (?P<ret>\\d+)$")
+POSIX_MEMALIGN_RE = re.compile(
+    f"^p_ma {PTR} {ALIGNMENT} {SIZE} (?P<ret>\\d+)$")
 VALLOC_RE = re.compile(f"^v {SIZE} {PTR}$")
 PVALLOC_RE = re.compile(f"^pv {SIZE} {PTR}$")
 ALIGNED_ALLOC_RE = re.compile(f"^a_m {ALIGNMENT} {SIZE} {PTR}$")
 
-TRACE_REGEX = {"malloc": MALLOC_RE, "free": FREE_RE, "calloc": CALLOC_RE,
-               "realloc": REALLOC_RE, "memalign": MEMALIGN_RE,
-               "posix_memalign": POSIX_MEMALIGN_RE, "valloc": VALLOC_RE,
-               "pvalloc": PVALLOC_RE, "aligned_alloc": ALIGNED_ALLOC_RE}
+TRACE_REGEX = {
+    "malloc": MALLOC_RE,
+    "free": FREE_RE,
+    "calloc": CALLOC_RE,
+    "realloc": REALLOC_RE,
+    "memalign": MEMALIGN_RE,
+    "posix_memalign": POSIX_MEMALIGN_RE,
+    "valloc": VALLOC_RE,
+    "pvalloc": PVALLOC_RE,
+    "aligned_alloc": ALIGNED_ALLOC_RE
+}
 
 
-def record_allocation(hist, total_size, allocations, ptr, size, coll_size,
-                      req_size, nohist, optr=None, free=False):
+def record_allocation(hist,
+                      total_size,
+                      allocations,
+                      ptr,
+                      size,
+                      coll_size,
+                      req_size,
+                      nohist,
+                      optr=None,
+                      free=False):
     """add allocation to histogram or total requested memory
 
        hist - dict mapping allocation sizes to their occurrence
@@ -97,14 +112,26 @@ def record_allocation(hist, total_size, allocations, ptr, size, coll_size,
         total_size.append(total_size[-1])
 
 
-def parse(path="chattymalloc.txt", coll_size=True, req_size=None, nohist=False):
+def parse(path="chattymalloc.txt",
+          coll_size=True,
+          req_size=None,
+          nohist=False):
     """parse a chattymalloc trace
 
     :returns: a histogram dict, a dict of occurred function calls, list of total requested memory
     """
     # count function calls
-    calls = {"malloc": 0, "free": 0, "calloc": 0, "realloc": 0, "memalign": 0,
-             "posix_memalign": 0, "valloc": 0, "pvalloc": 0, "aligned_alloc": 0}
+    calls = {
+        "malloc": 0,
+        "free": 0,
+        "calloc": 0,
+        "realloc": 0,
+        "memalign": 0,
+        "posix_memalign": 0,
+        "valloc": 0,
+        "pvalloc": 0,
+        "aligned_alloc": 0
+    }
     # Dictionary to track all live allocations
     allocations = {}
     # List of total live memory per operation
@@ -129,7 +156,8 @@ def parse(path="chattymalloc.txt", coll_size=True, req_size=None, nohist=False):
                     if func == "free":
                         record(res["ptr"], 0, free=True)
                     elif func == "calloc":
-                        record(res["ptr"], int(res["nmemb"]) * int(res["size"]))
+                        record(res["ptr"],
+                               int(res["nmemb"]) * int(res["size"]))
                     elif func == "realloc":
                         record(res["nptr"], res["size"], optr=res["ptr"])
                     else:
@@ -161,8 +189,11 @@ def plot_profile(total_sizes, trace_path, plot_path, sizes):
     """Plot a memory profile of the total memory and the top 5 sizes"""
     x_vals = range(0, len(total_sizes))
 
-    plt.plot(x_vals, total_sizes / 1000, marker='',
-             linestyle='-', label="Total requested")
+    plt.plot(x_vals,
+             total_sizes / 1000,
+             marker='',
+             linestyle='-',
+             label="Total requested")
 
     for size in sizes:
         _, _, total_size = parse(path=trace_path, nohist=True, req_size=size)
@@ -175,10 +206,11 @@ def plot_profile(total_sizes, trace_path, plot_path, sizes):
     plt.savefig(plot_path)
     plt.clf()
 
+
 def plot_hist_ascii(path, hist, calls):
     """Plot an ascii histogram"""
     # make sure all sizes are stored as ints
-    for nonint_key in [key for key in hist.keys() if type(key) is not int]:
+    for nonint_key in [key for key in hist.keys() if not isinstance(key, int)]:
         hist[int(nonint_key)] = hist[nonint_key]
         del hist[nonint_key]
 
@@ -186,7 +218,6 @@ def plot_hist_ascii(path, hist, calls):
     for size in sorted(hist):
         size_class = size // 16
         bins[size_class] = bins.get(size_class, 0) + hist[size]
-
 
     with open(path, "w") as hist_file:
         print("Total function calls:", sum(calls.values()), file=hist_file)
@@ -199,14 +230,19 @@ def plot_hist_ascii(path, hist, calls):
         top10 = [t[1] for t in sorted([(n, s) for s, n in hist.items()])[-10:]]
         top10_total = sum([hist[size] for size in top10])
 
-        print(f"Top 10 allocation sizes {(top10_total/total)*100:.2f}% of all allocations", file=hist_file)
+        print(
+            f"Top 10 allocation sizes {(top10_total/total)*100:.2f}% of all allocations",
+            file=hist_file)
         for i, size in enumerate(reversed(top10)):
-            print(f"{i+1}. {size} B occurred {hist[size]} times", file=hist_file)
+            print(f"{i+1}. {size} B occurred {hist[size]} times",
+                  file=hist_file)
         print(file=hist_file)
 
         for i in [64, 1024, 4096]:
             allocations = sum([n for s, n in hist.items() if s <= i])
-            print(f"allocations <= {i}: {allocations} {(allocations/total)*100:.2f}%", file=hist_file)
+            print(
+                f"allocations <= {i}: {allocations} {(allocations/total)*100:.2f}%",
+                file=hist_file)
         print(file=hist_file)
 
         print("Histogram of sizes:", file=hist_file)
@@ -214,11 +250,14 @@ def plot_hist_ascii(path, hist, calls):
         binmaxlength = len(str(sbins[-1])) + 1
         amountmaxlength = str(len(str(sorted(bins.values())[-1])))
         for current_bin in sbins:
-            perc = bins[current_bin]/total*100
+            perc = bins[current_bin] / total * 100
             binsize = f"{{:<{binmaxlength}}} - {{:>{binmaxlength}}}"
-            print(binsize.format(current_bin*16, (current_bin+1)*16-1), end=" ", file=hist_file)
+            print(binsize.format(current_bin * 16, (current_bin + 1) * 16 - 1),
+                  end=" ",
+                  file=hist_file)
             amount = "{:<" + amountmaxlength + "} {:.2f}% {}"
-            print(amount.format(bins[current_bin], perc, '*'*int(perc/2)), file=hist_file)
+            print(amount.format(bins[current_bin], perc, '*' * int(perc / 2)),
+                  file=hist_file)
 
 
 if __name__ == "__main__":
@@ -226,12 +265,15 @@ if __name__ == "__main__":
     # to keep chattyparser independent from allocbench
     if "--license" in sys.argv:
         print("Copyright (C) 2018-2019 Florian Fischer")
-        print("License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
+        print(
+            "License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>"
+        )
         sys.exit(0)
 
     if len(sys.argv) != 2 or sys.argv[1] in ["-h", "--help"]:
         print("chattyparser: parse chattymalloc output and",
-              "create size histogram and memory profile", file=sys.stderr)
+              "create size histogram and memory profile",
+              file=sys.stderr)
         print(f"Usage: {sys.argv[0]} chattymalloc-file", file=sys.stderr)
         sys.exit(1)
 
