@@ -54,24 +54,23 @@ class Allocator:
         "color", "sources", "version", "patches", "prepare_cmds", "build_cmds"
     ]
 
+    binary_suffix = None
+    cmd_prefix = None
+    LD_PRELOAD = None
+    LD_LIBRARY_PATH = None
+    color = None
+    sources = None
+    version = None
+    patches = []
+    prepare_cmds = []
+    build_cmds = []
+
     def __init__(self, name, **kwargs):
         self.class_file = inspect.getfile(self.__class__)
         self.name = name
         self.srcdir = os.path.join(SRCDIR, self.name)
         self.dir = os.path.join(BUILDDIR, self.name)
         self.patchdir = os.path.join(os.path.splitext(self.class_file)[0])
-
-        # members known by the base class
-        self.binary_suffix = self.binary_suffix if hasattr(self, "binary_suffix") else None
-        self.cmd_prefix = self.cmd_prefix if hasattr(self, "cmd_prefix") else None
-        self.LD_PRELOAD = self.LD_PRELOAD if hasattr(self, "LD_PRELOAD") else None
-        self.LD_LIBRARY_PATH = self.LD_LIBRARY_PATH if hasattr(self, "LD_LIBRARY_PATH") else None
-        self.color = self.color if hasattr(self, "color") else None
-        self.sources = self.sources if hasattr(self, "sources") else None
-        self.version = self.version if hasattr(self, "version") else None
-        self.patches = self.patches if hasattr(self, "patches") else []
-        self.prepare_cmds = self.prepare_cmds if hasattr(self, "prepare_cmds") else []
-        self.build_cmds = self.build_cmds if hasattr(self, "build_cmds") else []
 
         # Update attributes
         for attr, value in kwargs.items():

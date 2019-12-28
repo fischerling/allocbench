@@ -27,12 +27,12 @@ class Benchmark:
     # class member to remember if we are allowed to use perf
     perf_allowed = None
 
-    defaults = {"cmd": "false",
-                "args": {},
-                "measure_cmd_csv": False,
-                "measure_cmd": "perf stat -x, -d",
-                "servers": [],
-                "allocators": copy.deepcopy(src.globalvars.allocators)}
+    cmd = "false"
+    args = {}
+    measure_cmd_csv = False
+    measure_cmd = "perf stat -x, -d"
+    servers = []
+    allocators = copy.deepcopy(src.globalvars.allocators)
 
     @staticmethod
     def terminate_subprocess(proc, timeout=5):
@@ -103,11 +103,6 @@ class Benchmark:
     def __init__(self, name):
         """Initialize a benchmark with default members if they aren't set already"""
         self.name = name
-
-        # Set default values
-        for k in Benchmark.defaults:
-            if not hasattr(self, k):
-                setattr(self, k, Benchmark.defaults[k])
 
         # Set result_dir
         if not hasattr(self, "result_dir"):
@@ -486,7 +481,7 @@ class Benchmark:
                                             break
 
                         # parse perf output if available
-                        if self.measure_cmd == self.defaults["measure_cmd"] or self.measure_cmd_csv:
+                        if self.measure_cmd == Benchmark.measure_cmd or self.measure_cmd_csv:
                             csvreader = csv.reader(res.stderr.splitlines(),
                                                    delimiter=',')
                             for row in csvreader:
