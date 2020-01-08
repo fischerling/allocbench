@@ -24,20 +24,21 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 
+TID = "(?P<tid>\\d+)"
 PTR = "(?:0x)?(?P<ptr>(?:\\w+)|(?:\\(nil\\)))"
 SIZE = "(?P<size>\\d+)"
 ALIGNMENT = "(?P<alignment>\\d+)"
 
-MALLOC_RE = re.compile(f"^m {SIZE} {PTR}$")
-FREE_RE = re.compile(f"^f {PTR}$")
-CALLOC_RE = re.compile(f"^c (?P<nmemb>\\d+) {SIZE} {PTR}$")
-REALLOC_RE = re.compile(f"^r {PTR} {SIZE} {PTR.replace('ptr', 'nptr')}$")
-MEMALIGN_RE = re.compile(f"^ma {ALIGNMENT} {SIZE} {PTR}$")
+MALLOC_RE = re.compile(f"^{TID}: m {SIZE} {PTR}$")
+FREE_RE = re.compile(f"^{TID}: f {PTR}$")
+CALLOC_RE = re.compile(f"^{TID}: c (?P<nmemb>\\d+) {SIZE} {PTR}$")
+REALLOC_RE = re.compile(f"^{TID}: r {PTR} {SIZE} {PTR.replace('ptr', 'nptr')}$")
+MEMALIGN_RE = re.compile(f"^{TID}: ma {ALIGNMENT} {SIZE} {PTR}$")
 POSIX_MEMALIGN_RE = re.compile(
-    f"^p_ma {PTR} {ALIGNMENT} {SIZE} (?P<ret>\\d+)$")
-VALLOC_RE = re.compile(f"^v {SIZE} {PTR}$")
-PVALLOC_RE = re.compile(f"^pv {SIZE} {PTR}$")
-ALIGNED_ALLOC_RE = re.compile(f"^a_m {ALIGNMENT} {SIZE} {PTR}$")
+    f"^{TID}: p_ma {PTR} {ALIGNMENT} {SIZE} (?P<ret>\\d+)$")
+VALLOC_RE = re.compile(f"^{TID}: v {SIZE} {PTR}$")
+PVALLOC_RE = re.compile(f"^{TID}: pv {SIZE} {PTR}$")
+ALIGNED_ALLOC_RE = re.compile(f"^{TID}: a_m {ALIGNMENT} {SIZE} {PTR}$")
 
 TRACE_REGEX = {
     "malloc": MALLOC_RE,
