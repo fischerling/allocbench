@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 static char tmpbuff[4096];
@@ -40,8 +39,6 @@ write_output(const char* fmt, ...)
     prevent_recursion = 1;
 
     /* lockf(out, F_LOCK, 0); */
-
-    dprintf(out, "%d: ", gettid());
 
     va_list args;
     va_start(args, fmt);
