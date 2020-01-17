@@ -6,3 +6,4 @@ results/*
 status
 tags
 **/obj
+*.trace*

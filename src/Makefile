@@ -29,7 +29,7 @@ $(OBJDIR)/allocators/speedymalloc.so: speedymalloc.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared -DMEMSIZE=$(MEMSIZE) $(CFLAGS) -o $@ $<
 
-$(OBJDIR)/allocators/chattymalloc.so: chattymalloc.c Makefile
+$(OBJDIR)/allocators/chattymalloc.so: chattymalloc.h chattymalloc.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $< -ldl
 
