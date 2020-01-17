@@ -17,7 +17,7 @@
 
 """TCMalloc definition for allocbench"""
 
-from src.allocator import Allocator
+from src.allocator import Allocator, BUILDDIR
 from src.artifact import GitArtifact
 
 
@@ -42,3 +42,9 @@ tcmalloc_nofs = TCMalloc("TCMalloc-NoFalsesharing",
                          patches=["{patchdir}/tcmalloc_2.7_no_active_falsesharing.patch"],
                          version="gperftools-2.7",
                          color="xkcd:navy")
+
+tcmalloc_align = TCMalloc("TCMalloc-Aligned",
+                         version="gperftools-2.7",
+                         color="xkcd:navy")
+
+tcmalloc_align.LD_PRELOAD = f"{BUILDDIR}/align_to_cl.so {tcmalloc_align.LD_PRELOAD}"
