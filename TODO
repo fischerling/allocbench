@@ -1,3 +1,10 @@
+- chattymalloc
+  - trace thread termination
+  - don't serialize through the log file
+
+- chattyparser
+  - fix passed allocations
+
 - randomization
   - env randomization *easy*
   - benchmark order *relatively easy* warmup?
