@@ -973,3 +973,45 @@ class Benchmark:
 
             print("\\end{tabular}", file=f)
             print("\\end{document}", file=f)
+
+    def pgfplot_linear(self, perms, xval, yval, ylabel="'y-label'", xlabel="'x-label'",
+                       title="'default title'", postfix="", sumdir="", scale=None):
+
+        allocators = self.results["allocators"]
+        perms = list(perms)
+        title = eval(title)
+        s =\
+"""\\documentclass{standalone}
+\\usepackage{pgfplots}
+"""
+
+        for alloc in allocators:
+            s += f"\\begin{{filecontents*}}{{{alloc}.dat}}\n"
+            for i, perm in enumerate(perms):
+                x = self._eval_with_stat(xval, alloc, perm, "mean")
+                y = self._eval_with_stat(yval, alloc, perm, "mean")
+                s += f"{x} {y}\n"
+            s += "\\end{filecontents*}\n"
+
+        s +=\
+f"""
+\\begin{{document}}
+\\begin{{tikzpicture}}
+\\begin{{axis}}[
+\ttitle={{{title}}},
+\txlabel={{{eval(xlabel)}}},
+\tylabel={{{eval(ylabel)}}},
+]
+"""
+
+        for alloc in allocators:
+            # s += f"\\addplot [color{i}] table {{{alloc_name}.dat}}"
+            s += f"\t\\addplot table {{{alloc}.dat}};\n"
+
+        s +=\
+"""\\end{axis}
+\\end{tikzpicture}
+\\end{document}"""
+
+        with open(os.path.join(sumdir, f"{self.name}.{postfix}.tex"), "w") as plot_file:
+            print(s, file=plot_file)
