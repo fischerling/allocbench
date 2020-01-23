@@ -54,18 +54,21 @@ def update_cache_lines(cache_lines, trace, size):
         return ""
 
     start = trace.ptr
+    # print(hex(start), "allocs" if trace.func != Function.free else "frees", "cache lines: ", end="")
     end = start + abs(size)
     msg = ""
 
     cache_line = start & ~(64 - 1)
+    assert(cache_line % 64 == 0)
     while cache_line < end:
         if trace.func != Function.free:
             if cache_line not in cache_lines or cache_lines[cache_line] == []:
                 cache_lines[cache_line] = [trace.tid]
             # false sharing
-            elif trace.tid not in cache_lines[cache_line]:
+            else:
+                if trace.tid not in cache_lines[cache_line]:
+                    msg += f"WARNING: cache line {hex(cache_line)} is shared between {cache_lines[cache_line] + [trace.tid]}\n"
                 cache_lines[cache_line].append(trace.tid)
-                msg += f"WARNING: cache line {hex(cache_line)} is shared between {cache_lines[cache_line]}\n"
         else:
             if trace.tid in cache_lines[cache_line]:
                 cache_lines[cache_line].remove(trace.tid)
@@ -79,8 +82,10 @@ def update_cache_lines(cache_lines, trace, size):
                 else:
                     pass
 
+        # print(hex(cache_line), cache_lines[cache_line], end=" ")
         cache_line += 64
 
+    # print()
     return msg
 
 
