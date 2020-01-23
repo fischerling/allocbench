@@ -3,8 +3,8 @@ OBJDIR ?= obj
 CC ?= gcc
 
 WARNFLAGS ?= -Wall -Wextra
-COMMONFLAGS ?= -fno-builtin -fPIC -DPIC -pthread
-OPTFLAGS ?= -O3 -DNDEBUG
+COMMONFLAGS ?= -fno-builtin -pthread
+OPTFLAGS ?= -O0 -g
 
 CFLAGS ?= $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 
@@ -14,7 +14,7 @@ LDFLAGS ?= -pthread -static-libgcc
 
 all: $(OBJDIR)/loop
 
-$(OBJDIR)/loop: loop.c | $(OBJDIR)
+$(OBJDIR)/loop: loop.c Makefile | $(OBJDIR)
 	@echo compiling $@...
 	$(CC) $(LDFLAGS) $(CFLAGS) -o $@ $<
 
