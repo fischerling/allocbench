@@ -85,5 +85,13 @@ class BenchmarkLoop(Benchmark):
         self.export_stats_to_csv("task-clock")
         self.export_stats_to_dataref("task-clock")
 
+        # pgfplot test
+        self.pgfplot_linear(self.iterate_args_fixed({"maxsize": 1024}, args=self.results["args"]),
+                            "int(perm.nthreads)",
+                            "perm.nthreads / ({task-clock}/1000)",
+                            xlabel='"Threads"',
+                            ylabel='"MOPS/cpu-second"',
+                            title='"Loop: 1024B"',
+                            postfix='mops_1024B')
 
 loop = BenchmarkLoop()
