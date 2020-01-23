@@ -27,5 +27,3 @@
 - possible benchmarks:
    - https://github.com/GraphChi/graphchi-cpp
    - http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
-
-- warn if misspelled benchmark was skipped
