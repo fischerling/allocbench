@@ -167,6 +167,11 @@ def main():
 
     cwd = os.getcwd()
 
+    # warn about unknown benchmarks
+    for bench in (args.benchmarks or []) + (args.exclude_benchmarks or []):
+        if bench not in src.globalvars.benchmarks:
+            print_error(f'Benchmark "{bench}" unknown!')
+
     # Run actual benchmarks
     for bench in src.globalvars.benchmarks:
         if args.benchmarks and bench not in args.benchmarks:
