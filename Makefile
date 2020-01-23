@@ -18,7 +18,7 @@ export CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
 export LDFLAGS = -pthread -static-libgcc
 export LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 
-.PHONY: all clean pylint $(MAKEFILES) $(CMAKELISTS)
+.PHONY: all clean pylint yapf tags $(MAKEFILES) $(CMAKELISTS)
 all: $(OBJDIR)/ccinfo  $(MAKEFILES) $(CMAKELISTS)
 
 $(CMAKELISTS):
@@ -50,3 +50,6 @@ pylint:
 
 yapf:
 	yapf -i $(PYTHONFILES)
+
+tags:
+	ctags -R --exclude="build/*" --exclude="cache/*" --exclude="doc/*" --exclude="results/*"
