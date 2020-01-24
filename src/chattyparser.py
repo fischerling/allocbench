@@ -18,11 +18,16 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Parser and Plotter for the traces produced by chattymalloc"""
 
+import argparse
 from enum import Enum
+import os
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+CHECK_ALIGNMENT = None
+EXPORT_TXT = False
 
 
 class Function(Enum):
@@ -40,6 +45,9 @@ class Function(Enum):
 
 class Trace:
     """Class representing the chattymalloc trace_t struct"""
+
+    size = 29
+
     def __init__(self, line):
         self.tid = int.from_bytes(line[0:4], "little")
         self.ptr = int.from_bytes(line[4:12], "little")
@@ -119,12 +127,17 @@ def record_allocation(trace, context):
         # get size and delete old pointer
         if trace.ptr != 0:
             if trace.ptr not in allocations:
-                msg = f"WARNING: free of invalid pointer {trace.ptr}"
+                msg = f"WARNING: free of invalid pointer {trace.ptr:x}\n"
             else:
                 size = allocations.pop(trace.ptr) * -1
                 msg = update_cache_lines(cache_lines, trace, size)
 
     else:
+        # check for alignment
+        if CHECK_ALIGNMENT:
+            if (trace.ptr - CHECK_ALIGNMENT[1]) % CHECK_ALIGNMENT[0] != 0:
+                msg += f"WARNING: ptr: {trace.ptr:x} is not aligned to {CHECK_ALIGNMENT[0]:x} with offset {CHECK_ALIGNMENT[1]}\n"
+
         if trace.func == Function.calloc:
             size = trace.var_arg * trace.size
         else:
@@ -202,30 +215,37 @@ def parse(path="chattymalloc.txt",
         context["cache_lines"] = {}
 
     with open(path, "rb") as trace_file, open(path+".txt", "w") as plain_file:
-        i = 1
-        entry = trace_file.read(29) # sizeof(trace_t) = 39
+        total_entries = os.stat(trace_file.fileno()).st_size // Trace.size
+        update_interval = int(total_entries * 0.0005)
+
+        i = 0
+        entry = trace_file.read(Trace.size)
         while entry != b'':
+            # print process
+            if i % update_interval == 0:
+                print(f"\r[{i} / {total_entries}] {(i / total_entries) * 100:.2f}% parsed ...", end="")
+
             try:
-                # parse one trace entry
                 trace = Trace(entry)
+
                 context["calls"][trace.func] += 1
                 msg = record_allocation(trace, context)
                 if msg:
-                    print(f"entry {i}: {msg}", end='')
+                    print(f"entry {i}: {msg}", file=sys.stderr, end="")
 
             except ValueError as e:
-                print(f"ERROR: {e} at entry {i}: {entry}")
-                print(file=plain_file)
+                print(f"ERROR: {e} in entry {i}: {entry}", file=sys.stderr)
 
             except IndexError as e:
-                print(f"ERROR: uknown function {e} at entry {i}: {entry}")
-                print(file=plain_file)
+                print(f"ERROR: uknown function {e} in entry {i}: {entry}", file=sys.stderr)
 
-            print(f"{trace.tid}: {trace.func.name} {hex(trace.ptr)} {trace.size} {trace.var_arg}",
-                  file=plain_file)
+            if EXPORT_TXT:
+                print((f"{trace.tid}: {trace.func.name} "
+                      f"{hex(trace.ptr)} {trace.size} {trace.var_arg}"),
+                      file=plain_file)
 
-            entry = trace_file.read(29)
             i += 1
+            entry = trace_file.read(Trace.size)
 
     return context
 
@@ -332,11 +352,23 @@ if __name__ == "__main__":
         )
         sys.exit(0)
 
-    if len(sys.argv) != 2 or sys.argv[1] in ["-h", "--help"]:
-        print("chattyparser: parse chattymalloc output and",
-              "create size histogram and memory profile",
-              file=sys.stderr)
-        print(f"Usage: {sys.argv[0]} chattymalloc-file", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="parse and analyse chattymalloc traces")
+    parser.add_argument("trace",
+                        help="binary trace file created by chattymalloc")
+    parser.add_argument("--alignment",
+                        nargs=2,
+                        help="export to plain text format")
+    parser.add_argument("--txt",
+                        help="export to plain text format",
+                        action="store_true")
+    parser.add_argument("-v", "--verbose", help="more output", action='count')
+    parser.add_argument("--license",
+                        help="print license info and exit",
+                        action='store_true')
 
-    plot(sys.argv[1])
+    args = parser.parse_args()
+
+    if args.alignment:
+        CHECK_ALIGNMENT = [int(x) for x in args.alignment]
+    EXPORT_TXT = args.txt
+    plot(args.trace)
