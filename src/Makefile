@@ -29,9 +29,9 @@ $(OBJDIR)/allocators/speedymalloc.so: speedymalloc.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared -DMEMSIZE=$(MEMSIZE) $(CFLAGS) -o $@ $<
 
-$(OBJDIR)/allocators/chattymalloc.so: chattymalloc.c Makefile
+$(OBJDIR)/allocators/chattymalloc.so: chattymalloc.h chattymalloc.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $< -ldl
+	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ chattymalloc.c -ldl
 
 $(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi

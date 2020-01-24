@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -18,171 +18,252 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Parser and Plotter for the traces produced by chattymalloc"""
 
-import re
+import argparse
+from enum import Enum
+import os
 import sys
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-PTR = "(?:0x)?(?P<ptr>(?:\\w+)|(?:\\(nil\\)))"
-SIZE = "(?P<size>\\d+)"
-ALIGNMENT = "(?P<alignment>\\d+)"
-
-MALLOC_RE = re.compile(f"^m {SIZE} {PTR}$")
-FREE_RE = re.compile(f"^f {PTR}$")
-CALLOC_RE = re.compile(f"^c (?P<nmemb>\\d+) {SIZE} {PTR}$")
-REALLOC_RE = re.compile(f"^r {PTR} {SIZE} {PTR.replace('ptr', 'nptr')}$")
-MEMALIGN_RE = re.compile(f"^ma {ALIGNMENT} {SIZE} {PTR}$")
-POSIX_MEMALIGN_RE = re.compile(
-    f"^p_ma {PTR} {ALIGNMENT} {SIZE} (?P<ret>\\d+)$")
-VALLOC_RE = re.compile(f"^v {SIZE} {PTR}$")
-PVALLOC_RE = re.compile(f"^pv {SIZE} {PTR}$")
-ALIGNED_ALLOC_RE = re.compile(f"^a_m {ALIGNMENT} {SIZE} {PTR}$")
-
-TRACE_REGEX = {
-    "malloc": MALLOC_RE,
-    "free": FREE_RE,
-    "calloc": CALLOC_RE,
-    "realloc": REALLOC_RE,
-    "memalign": MEMALIGN_RE,
-    "posix_memalign": POSIX_MEMALIGN_RE,
-    "valloc": VALLOC_RE,
-    "pvalloc": PVALLOC_RE,
-    "aligned_alloc": ALIGNED_ALLOC_RE
-}
+CHECK_ALIGNMENT = None
+EXPORT_TXT = False
 
 
-def record_allocation(hist,
-                      total_size,
-                      allocations,
-                      ptr,
-                      size,
-                      coll_size,
-                      req_size,
-                      nohist,
-                      optr=None,
-                      free=False):
+class Function(Enum):
+    """Enum holding all trace events of chattymalloc"""
+    malloc = 0
+    free = 1
+    realloc = 2
+    calloc = 3
+    memalign = 4
+    posix_memalign = 5
+    valloc = 6
+    pvalloc = 7
+    aligned_alloc = 8
+
+
+class Trace:
+    """Class representing the chattymalloc trace_t struct"""
+
+    size = 29
+
+    def __init__(self, line):
+        self.tid = int.from_bytes(line[0:4], "little")
+        self.ptr = int.from_bytes(line[4:12], "little")
+        self.size = int.from_bytes(line[12:20], "little")
+        self.var_arg = int.from_bytes(line[20:28], "little")
+        self.func = Function(line[28])
+
+
+def update_cache_lines(cache_lines, trace, size):
+    """mark or unmark all cache lines spanned by this allocation"""
+    if cache_lines is None:
+        return ""
+
+    start = trace.ptr
+    # print(hex(start), "allocs" if trace.func != Function.free else "frees", "cache lines: ", end="")
+    end = start + abs(size)
+    msg = ""
+
+    cache_line = start & ~(64 - 1)
+    assert(cache_line % 64 == 0)
+    while cache_line < end:
+        if trace.func != Function.free:
+            if cache_line not in cache_lines or cache_lines[cache_line] == []:
+                cache_lines[cache_line] = [trace.tid]
+            # false sharing
+            else:
+                if trace.tid not in cache_lines[cache_line]:
+                    msg += f"WARNING: cache line {hex(cache_line)} is shared between {cache_lines[cache_line] + [trace.tid]}\n"
+                cache_lines[cache_line].append(trace.tid)
+        else:
+            if trace.tid in cache_lines[cache_line]:
+                cache_lines[cache_line].remove(trace.tid)
+            else:
+                #If cache line is only owned by one thread it should be save to remove it
+                if len(cache_lines[cache_line]) == 1:
+                    del cache_lines[cache_line]
+                elif len(cache_lines[cache_line]) == 0:
+                    msg += f"INTERNAL ERROR: freeing not owned cache line\n"
+                #TODO fix passed allocations
+                else:
+                    pass
+
+        # print(hex(cache_line), cache_lines[cache_line], end=" ")
+        cache_line += 64
+
+    # print()
+    return msg
+
+
+def record_allocation(trace, context):
     """add allocation to histogram or total requested memory
 
-       hist - dict mapping allocation sizes to their occurrence
-       total_size - list of total requested memory till last recorded function call
-       allocations - dict of life allocations mapping their pointer to their size
-       ptr - pointer returned from function to record
-       size - size passed to function to record
-       coll_size - should the total memory be tracked
-       req_size - track only allocations of requested size
-       nohist - don't create a histogram
-       optr - pointer passed to funtion to record
-       free - is recorded function free(ptr)"""
+       trace - Trace object ro record
+       context - dict holding all data structures used for parsing
+           allocations - dict of life allocations mapping their pointer to their size
+           hist - dict mapping allocation sizes to their occurrence
+           total_size - list of total requested memory till last recorded function call
+           cache_lines - dict of cache lines mapped to the owning tids
+           realloc_hist - dict mapping the two realloc sizes to their occurence
+    """
 
-    if not free:
-        size = int(size)
+    # mandatory
+    allocations = context.setdefault("allocations", [])
 
-        # realloc returns new pointer
-        if optr and optr in allocations:
-            size -= allocations[optr]
-            del allocations[optr]
+    # optional
+    hist = context.get("hist", None)
+    realloc_hist = context.get("realloc_hist", None)
+    total_size = context.get("total_size", None)
+    cache_lines = context.get("cache_lines", None)
+    req_size = context.get("cache_lines", None)
 
-        allocations[ptr] = size
-        if not nohist:
+    size = 0
+    msg = ""
+
+    # get size
+    if trace.func == Function.free:
+        # get size and delete old pointer
+        if trace.ptr != 0:
+            if trace.ptr not in allocations:
+                msg = f"WARNING: free of invalid pointer {trace.ptr:x}\n"
+            else:
+                size = allocations.pop(trace.ptr) * -1
+                msg = update_cache_lines(cache_lines, trace, size)
+
+    else:
+        # check for alignment
+        if CHECK_ALIGNMENT:
+            if (trace.ptr - CHECK_ALIGNMENT[1]) % CHECK_ALIGNMENT[0] != 0:
+                msg += f"WARNING: ptr: {trace.ptr:x} is not aligned to {CHECK_ALIGNMENT[0]:x} with offset {CHECK_ALIGNMENT[1]}\n"
+
+        if trace.func == Function.calloc:
+            size = trace.var_arg * trace.size
+        else:
+            size = trace.size
+
+        allocations[trace.ptr] = size
+
+        msg = update_cache_lines(cache_lines, trace, size)
+
+        # update hist
+        if hist is not None and trace.func != Function.free:
             hist[size] = hist.get(size, 0) + 1
 
-        if not isinstance(total_size[-1], int) or not isinstance(size, int):
-            print("invalid type", type(total_size[-1]), type(size))
-            return
+        # special case realloc
+        if trace.func == Function.realloc:
+            # free old pointer
+            old_size = allocations.pop(trace.var_arg, 0)
 
-        if coll_size:
-            if not req_size or size == req_size:
-                total_size.append(total_size[-1] + size)
-            elif req_size:
-                total_size.append(total_size[-1])
+            if realloc_hist is not None:
+                realloc_hist[(old_size, size)] = realloc_hist.get(
+                    (old_size, size), 0)
 
-    # free of a valid pointer
-    elif ptr != "(nil)" and ptr in allocations:
-        size = allocations[ptr]
-        if coll_size:
-            if not req_size or size == req_size:
-                total_size.append(total_size[-1] - size)
-            elif req_size:
-                total_size.append(total_size[-1])
+            # size delta after realloc
+            size -= old_size
 
-        del allocations[ptr]
-    # free of invalid pointer
-    elif coll_size:
-        total_size.append(total_size[-1])
+    # update total size
+    if total_size is not None:
+        if not req_size or size == req_size:
+            total_size.append(total_size[-1] + size)
+        elif req_size:
+            total_size.append(total_size[-1])
+
+    return msg
 
 
 def parse(path="chattymalloc.txt",
-          coll_size=True,
-          req_size=None,
-          nohist=False):
+          hist=True,
+          track_total=True,
+          track_calls=True,
+          realloc_hist=True,
+          cache_lines=True,
+          req_size=None):
     """parse a chattymalloc trace
 
-    :returns: a histogram dict, a dict of occurred function calls, list of total requested memory
+    :returns: a context dict containing the histogram, a realloc histogram,
+              a function call histogram, total live memory per function call,
+              a dict mapping cache_lines to their owning TIDs
     """
-    # count function calls
-    calls = {
-        "malloc": 0,
-        "free": 0,
-        "calloc": 0,
-        "realloc": 0,
-        "memalign": 0,
-        "posix_memalign": 0,
-        "valloc": 0,
-        "pvalloc": 0,
-        "aligned_alloc": 0
-    }
+    # context dictionary holding our parsed information
+    context = {}
+
     # Dictionary to track all live allocations
-    allocations = {}
-    # List of total live memory per operation
-    requested_size = [0]
-    # Dictionary mapping allocation sizes to the count of their appearance
-    hist = {}
+    context["allocations"] = {}
 
-    def record(ptr, size, optr=None, free=False):
-        """Wrapper around record_allocation using local variables from parse"""
-        record_allocation(hist, requested_size, allocations, ptr, size,
-                          coll_size, req_size, nohist, optr, free)
+    if track_calls:
+        # function call histogram
+        context["calls"] = {f: 0 for f in Function}
 
-    with open(path, "r") as trace_file:
-        for i, line in enumerate(trace_file.readlines()):
-            valid_line = False
-            for func, func_regex in TRACE_REGEX.items():
-                res = func_regex.match(line)
-                if res is not None:
-                    calls[func] += 1
-                    res = res.groupdict()
+    if track_total:
+        # List of total live memory per operation
+        context["total_size"] = [0]
+        # allocation size to track
+        context["req_size"] = req_size
 
-                    if func == "free":
-                        record(res["ptr"], 0, free=True)
-                    elif func == "calloc":
-                        record(res["ptr"],
-                               int(res["nmemb"]) * int(res["size"]))
-                    elif func == "realloc":
-                        record(res["nptr"], res["size"], optr=res["ptr"])
-                    else:
-                        record(res["ptr"], res["size"])
+    if hist:
+        # Dictionary mapping allocation sizes to the count
+        context["hist"] = {}
 
-                    valid_line = True
-                    break
+    if realloc_hist:
+        # Dictionary mapping realloc sizes to their count
+        context["realloc_hist"] = {}
 
-            if not valid_line:
-                print(f"\ninvalid line at {i}: {line}")
+    if cache_lines:
+        # Dictionary mapping cache lines to their owning TIDs
+        context["cache_lines"] = {}
 
-    return hist, calls, np.array(requested_size)
+    with open(path, "rb") as trace_file, open(path+".txt", "w") as plain_file:
+        total_entries = os.stat(trace_file.fileno()).st_size // Trace.size
+        update_interval = int(total_entries * 0.0005)
+
+        i = 0
+        entry = trace_file.read(Trace.size)
+        while entry != b'':
+            # print process
+            if i % update_interval == 0:
+                print(f"\r[{i} / {total_entries}] {(i / total_entries) * 100:.2f}% parsed ...", end="")
+
+            try:
+                trace = Trace(entry)
+
+                context["calls"][trace.func] += 1
+                msg = record_allocation(trace, context)
+                if msg:
+                    print(f"entry {i}: {msg}", file=sys.stderr, end="")
+
+            except ValueError as e:
+                print(f"ERROR: {e} in entry {i}: {entry}", file=sys.stderr)
+
+            except IndexError as e:
+                print(f"ERROR: uknown function {e} in entry {i}: {entry}", file=sys.stderr)
+
+            if EXPORT_TXT:
+                print((f"{trace.tid}: {trace.func.name} "
+                      f"{hex(trace.ptr)} {trace.size} {trace.var_arg}"),
+                      file=plain_file)
+
+            i += 1
+            entry = trace_file.read(Trace.size)
+
+    return context
 
 
 def plot(path):
     """Plot a histogram and a memory profile of the given chattymalloc trace"""
-    hist, calls, total_sizes = parse(path=path, req_size=None)
+    result = parse(path=path)
+    hist = result["hist"]
 
-    plot_hist_ascii(f"{path}.hist", hist, calls)
+    plot_hist_ascii(f"{path}.hist", hist, result["calls"])
 
     top5 = [t[1] for t in sorted([(n, s) for s, n in hist.items()])[-5:]]
-    del hist
-    del calls
+    del result["hist"]
+    del result["calls"]
 
-    plot_profile(total_sizes, path, path + ".profile.png", top5)
+    total_size = np.array(result["total_size"])
+    del result["total_size"]
+    plot_profile(total_size, path, path + ".profile.png", top5)
 
 
 def plot_profile(total_sizes, trace_path, plot_path, sizes):
@@ -196,7 +277,13 @@ def plot_profile(total_sizes, trace_path, plot_path, sizes):
              label="Total requested")
 
     for size in sizes:
-        _, _, total_size = parse(path=trace_path, nohist=True, req_size=size)
+        res = parse(path=trace_path,
+                    hist=False,
+                    realloc_hist=False,
+                    cache_lines=False,
+                    req_size=size)
+        total_size = np.array(res["total_size"])
+        del res["total_size"]
         plt.plot(x_vals, total_size / 1000, label=size)
 
     plt.legend(loc="lower center")
@@ -209,11 +296,6 @@ def plot_profile(total_sizes, trace_path, plot_path, sizes):
 
 def plot_hist_ascii(path, hist, calls):
     """Plot an ascii histogram"""
-    # make sure all sizes are stored as ints
-    for nonint_key in [key for key in hist.keys() if not isinstance(key, int)]:
-        hist[int(nonint_key)] = hist[nonint_key]
-        del hist[nonint_key]
-
     bins = {}
     for size in sorted(hist):
         size_class = size // 16
@@ -222,7 +304,7 @@ def plot_hist_ascii(path, hist, calls):
     with open(path, "w") as hist_file:
         print("Total function calls:", sum(calls.values()), file=hist_file)
         for func, func_calls in calls.items():
-            print(func, func_calls, file=hist_file)
+            print(func.name, func_calls, file=hist_file)
 
         print(file=hist_file)
 
@@ -270,11 +352,23 @@ if __name__ == "__main__":
         )
         sys.exit(0)
 
-    if len(sys.argv) != 2 or sys.argv[1] in ["-h", "--help"]:
-        print("chattyparser: parse chattymalloc output and",
-              "create size histogram and memory profile",
-              file=sys.stderr)
-        print(f"Usage: {sys.argv[0]} chattymalloc-file", file=sys.stderr)
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="parse and analyse chattymalloc traces")
+    parser.add_argument("trace",
+                        help="binary trace file created by chattymalloc")
+    parser.add_argument("--alignment",
+                        nargs=2,
+                        help="export to plain text format")
+    parser.add_argument("--txt",
+                        help="export to plain text format",
+                        action="store_true")
+    parser.add_argument("-v", "--verbose", help="more output", action='count')
+    parser.add_argument("--license",
+                        help="print license info and exit",
+                        action='store_true')
 
-    plot(sys.argv[1])
+    args = parser.parse_args()
+
+    if args.alignment:
+        CHECK_ALIGNMENT = [int(x) for x in args.alignment]
+    EXPORT_TXT = args.txt
+    plot(args.trace)
