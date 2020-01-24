@@ -136,7 +136,7 @@ def record_allocation(trace, context):
         # check for alignment
         if CHECK_ALIGNMENT:
             if (trace.ptr - CHECK_ALIGNMENT[1]) % CHECK_ALIGNMENT[0] != 0:
-                msg += f"WARNING: ptr: {trace.ptr:x} is not aligned to {CHECK_ALIGNMENT[0]:x} with offset {CHECK_ALIGNMENT[1]}\n"
+                msg += f"WARNING: ptr: {trace.ptr:x} is not aligned to {CHECK_ALIGNMENT[0]} with offset {CHECK_ALIGNMENT[1]}\n"
 
         if trace.func == Function.calloc:
             size = trace.var_arg * trace.size
@@ -145,7 +145,7 @@ def record_allocation(trace, context):
 
         allocations[trace.ptr] = size
 
-        msg = update_cache_lines(cache_lines, trace, size)
+        msg += update_cache_lines(cache_lines, trace, size)
 
         # update hist
         if hist is not None and trace.func != Function.free:
@@ -247,6 +247,7 @@ def parse(path="chattymalloc.txt",
             i += 1
             entry = trace_file.read(Trace.size)
 
+    print(f"\r[{i} / {total_entries}] {(i / total_entries) * 100:.2f}% parsed ...")
     return context
 
 
