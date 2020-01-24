@@ -21,14 +21,25 @@ along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <inttypes.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <unistd.h>
 
 #include "chattymalloc.h"
+
+#define unlikely(x)     __builtin_expect((x),0)
+
+#define GROWTH_THRESHOLD 4096
+#define GROWTH_ENTRIES 100000
+
+// flag to stop recursion during bootstrap
+static int initializing = 0;
 
 // memory to bootstrap malloc
 static char tmpbuff[4096];
@@ -36,10 +47,19 @@ static unsigned long tmppos = 0;
 static unsigned long tmpallocs = 0;
 
 // global log file descriptor
-static int out = -1;
+static int out_fd = -1;
+// memory mapping of our output file
+static volatile trace_t* out[2] = {NULL, NULL};
+// next free index into the mapped buffer
+static volatile uint64_t next_entry = 0;
+// current size of our log file / mapping
+static volatile uint64_t total_entries = 0;
 
-// thread local trace buffer
-static __thread trace_t trace;
+// pthread mutex and cond to protect growth of the buffer
+static pthread_cond_t growing;
+static pthread_mutex_t growth_mutex;
+
+__thread pid_t tid = 0;
 
 /*=========================================================
  * intercepted functions
@@ -57,41 +77,106 @@ static void* (*next_aligned_alloc)(size_t alignment, size_t size);
 static int   (*next_malloc_stats)();
 
 static void
-write_trace(char func, void* ptr, size_t size, size_t var_arg)
+grow_trace()
 {
-  if (!trace.tid) {
-    trace.tid = gettid();
+  pthread_mutex_lock(&growth_mutex);
+
+  size_t old_buf_idx;
+  if (unlikely(total_entries == 0))
+    old_buf_idx = 0;
+  else
+    old_buf_idx = ((total_entries) / GROWTH_ENTRIES) % 2;
+  size_t new_buf_size = (total_entries + GROWTH_ENTRIES) * sizeof(trace_t);
+
+  /* remap old buffer
+   * hopefully no thread uses the old buffer anymore!
+   */
+  if (out[old_buf_idx] == NULL) {
+    out[old_buf_idx] = (trace_t*) mmap(NULL, new_buf_size, PROT_WRITE,
+                                       MAP_FILE | MAP_SHARED, out_fd, 0);
+    if (out[old_buf_idx] == MAP_FAILED) {
+      perror("mapping new buf failed");
+      exit(1);
+    }
+  } else {
+    size_t old_buf_size = (total_entries - GROWTH_ENTRIES) * sizeof(trace_t);
+    out[old_buf_idx] = (trace_t*) mremap((void*) out[old_buf_idx], old_buf_size,
+                                         new_buf_size, MREMAP_MAYMOVE);
+    if (out[old_buf_idx] == MAP_FAILED) {
+      perror("remapping old buf failed");
+      exit(1);
+    }
   }
 
-  trace.func = func;
-  trace.ptr = ptr;
-  trace.size = size;
-  trace.var_arg = var_arg;
 
-  size_t written = 0;
+  if(ftruncate(out_fd, new_buf_size) != 0) {
+    perror("extending file failed");
+    exit(1);
+  }
 
-  lockf(out, F_LOCK, 0);
+  total_entries += GROWTH_ENTRIES;
+  pthread_cond_broadcast(&growing);
+  pthread_mutex_unlock(&growth_mutex);
+}
 
-  while(written < sizeof(trace_t))
-    written += write(out, (char*)&trace, sizeof(trace_t) - written);
+static void
+write_trace(char func, void* ptr, size_t size, size_t var_arg)
+{
+  if (unlikely(tid == 0)) {
+    tid = gettid();
+  }
 
-  lockf(out, F_ULOCK, 0);
+  uint64_t idx = __atomic_fetch_add (&next_entry, 1, __ATOMIC_SEQ_CST); 
+  if (idx == total_entries - GROWTH_THRESHOLD) {
+    grow_trace();
+  // wait for growth completion
+  } else if (idx >= total_entries) {
+    pthread_mutex_lock(&growth_mutex);
+    while(idx >= total_entries)
+      pthread_cond_wait(&growing, &growth_mutex);
+    pthread_mutex_unlock(&growth_mutex);
+  }
+
+  volatile trace_t* trace = &out[(idx / GROWTH_ENTRIES) % 2][idx];
+
+  trace->tid = tid;
+  trace->func = func;
+  trace->ptr = ptr;
+  trace->size = size;
+  trace->var_arg = var_arg;
+}
+
+static void
+trim_trace()
+{
+  uint64_t cur_size = next_entry * sizeof(trace_t);
+  if(ftruncate(out_fd, cur_size) != 0) {
+    perror("trimming file failed");
+  }
+  close(out_fd);
 }
 
 static void __attribute__((constructor))
 init()
 {
+  initializing = 1;
   char* fname = getenv("CHATTYMALLOC_FILE");
   if (fname == NULL)
     fname = "chattymalloc.trace";
 
-  out = open(fname,
-             O_WRONLY | O_TRUNC | O_CREAT,
+  out_fd = open(fname,
+             O_RDWR | O_TRUNC | O_CREAT,
              S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-  if (out == -1) {
+  if (out_fd == -1) {
     perror("opening output file");
     exit(1);
   }
+  
+  pthread_cond_init(&growing, NULL);
+  pthread_mutex_init(&growth_mutex, NULL);
+
+  // init trace buffer
+  grow_trace();
 
   next_malloc = dlsym(RTLD_NEXT, "malloc");
   next_free = dlsym(RTLD_NEXT, "free");
@@ -119,18 +204,18 @@ init()
     fprintf(stderr, "Can't load aligned_alloc with `dlsym`: %s\n", dlerror());
   if (!next_malloc_stats)
     fprintf(stderr, "Can't load malloc_stats with `dlsym`: %s\n", dlerror());
+
+  atexit(trim_trace);
+  initializing = 0;
 }
 
 void*
 malloc(size_t size)
 {
-  static int initializing = 0;
 
   if (next_malloc == NULL) {
     if (!initializing) {
-      initializing = 1;
       init();
-      initializing = 0;
 
     } else {
         void* retptr = tmpbuff + tmppos;
