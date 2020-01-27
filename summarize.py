@@ -136,10 +136,6 @@ if __name__ == "__main__":
     if "--license" in sys.argv:
         print_license_and_exit()
 
-    if "--version" in sys.argv:
-        print(src.facter.allocbench_version())
-        sys.exit(0)
-
     parser = argparse.ArgumentParser(
         description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
@@ -152,7 +148,8 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("--version",
                         help="print version info and exit",
-                        action='store_true')
+                        action='version',
+                        version=f"allocbench {src.facter.allocbench_version()}")
     parser.add_argument("-b",
                         "--benchmarks",
                         help="benchmarks to summarize",

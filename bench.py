@@ -111,15 +111,12 @@ def main():
                         action='store_true')
     parser.add_argument("--version",
                         help="print version info and exit",
-                        action='store_true')
+                        action='version',
+                        version=f"allocbench {src.facter.allocbench_version()}")
 
     args = parser.parse_args()
     if args.license:
         print_license_and_exit()
-
-    if args.version:
-        print(src.facter.allocbench_version())
-        sys.exit(0)
 
     atexit.register(epilog)
 
