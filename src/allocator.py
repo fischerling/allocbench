@@ -225,8 +225,8 @@ def collect_allocators(allocators):
             ret.update(read_allocators_collection_file(name))
 
         # file is one of our allocator definitions import it
-        elif os.path.isfile("src/allocators/" + name + ".py"):
-            module = importlib.import_module('src.allocators.' + name)
+        elif os.path.isfile("src/allocators/" + name.split('_')[0] + ".py"):
+            module = importlib.import_module('src.allocators.' + name.split('_')[0])
             # name is collection
             if hasattr(module, "allocators"):
                 for alloc in module.allocators:
