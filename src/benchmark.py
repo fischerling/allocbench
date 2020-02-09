@@ -257,7 +257,41 @@ class Benchmark:
             if is_fixed:
                 yield perm
 
-    def start_servers(self, env=None, alloc_name="None", alloc={"cmd_prefix": ""}):
+    def prepare_argv(self, cmd, env={}, alloc={}, substitutions={}, prepend=True):
+        """Prepare an complete argv list for benchmarking"""
+        argv = []
+        if prepend:
+            if "cmd_prefix" in alloc:
+                prefix_argv = alloc["cmd_prefix"].format(**substitutions).split()
+                argv.extend(prefix_argv)
+
+            if self.measure_cmd != "":
+                measure_argv = self.measure_cmd.format(**substitutions)
+                measure_argv = src.util.prefix_cmd_with_abspath(measure_argv).split()
+                argv.extend(measure_argv)
+
+            argv.extend([f"{src.globalvars.builddir}/exec"])
+
+            ld_preload = f"{src.globalvars.builddir}/print_status_on_exit.so"
+            ld_preload += f" {src.globalvars.builddir}/sig_handlers.so"
+
+            if "LD_PRELOAD" in env or alloc.get("LD_PRELOAD", ""):
+                ld_preload += f" {alloc.get('LD_PRELOAD', '')}"
+                ld_preload += " " + env.get('LD_PRELOAD', '')
+
+            argv.extend(["-p", ld_preload])
+
+            if "LD_LIBRARY_PATH" in env or alloc.get("LD_LIBRARY_PATH", ""):
+                argv.extend(["-l", f"{alloc.get('LD_LIBRARY_PATH', '')} {env.get('LD_LIBRARY_PATH', '')}"])
+
+        cmd_argv = cmd.format(**substitutions)
+        cmd_argv = src.util.prefix_cmd_with_abspath(cmd_argv).split()
+
+        argv.extend(cmd_argv)
+
+        return argv
+
+    def start_servers(self, env={}, alloc_name="None", alloc={"cmd_prefix": ""}):
         """Start Servers
 
         Servers are not allowed to deamonize because then they can't
@@ -274,15 +308,10 @@ class Benchmark:
             server_name = server.get("name", "Server")
             print_info(f"Starting {server_name} for {alloc_name}")
 
-            server_cmd = src.util.prefix_cmd_with_abspath(server["cmd"])
-            server_cmd = "{} {} {}".format(self.measure_cmd,
-                                           alloc["cmd_prefix"],
-                                           server_cmd)
+            argv = self.prepare_argv(server["cmd"], env, alloc, substitutions)
+            print_debug(argv)
 
-            server_cmd = server_cmd.format(**substitutions)
-            print_debug(server_cmd)
-
-            proc = subprocess.Popen(server_cmd.split(), env=env,
+            proc = subprocess.Popen(argv, env=env,
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     universal_newlines=True)
@@ -370,20 +399,8 @@ class Benchmark:
                     self.results[alloc_name] = {}
 
                 skip = False
-
-                env = dict(os.environ)
-                old_ld_preload = env.get('LD_PRELOAD', '')
-                env["LD_PRELOAD"] = f"{src.globalvars.builddir}/print_status_on_exit.so"
-                env["LD_PRELOAD"] += f" {src.globalvars.builddir}/sig_handlers.so"
-                env["LD_PRELOAD"] += f" {alloc['LD_PRELOAD']}"
-                env["LD_PRELOAD"] += f" {old_ld_preload}"
-
-                if "LD_LIBRARY_PATH" in alloc:
-                    env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "")
-                    env["LD_LIBRARY_PATH"] += f'{os.pathsep}{alloc["LD_LIBRARY_PATH"]}'
-
                 try:
-                    self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
+                    self.start_servers(alloc_name=alloc_name, alloc=alloc, env=os.environ)
                 except Exception as e:
                     print_debug(traceback.format_exc())
                     print_error(e)
@@ -392,15 +409,17 @@ class Benchmark:
 
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
-                    self.preallocator_hook((alloc_name, alloc), run, env)
+                    self.preallocator_hook((alloc_name, alloc), run, os.environ)
 
                 # Run benchmark for alloc
                 for perm in self.iterate_args():
                     i += 1
 
+                    # create new result entry
                     if perm not in self.results[alloc_name]:
                         self.results[alloc_name][perm] = []
 
+                    # starting the server failed -> add empty result and continue
                     if skip:
                         self.results[alloc_name][perm].append({})
                         continue
@@ -417,26 +436,12 @@ class Benchmark:
                     else:
                         substitutions["perm"] = ""
 
-                    cmd_argv = self.cmd.format(**substitutions)
-                    cmd_argv = src.util.prefix_cmd_with_abspath(cmd_argv).split()
-                    argv = []
-
-                    # Prepend cmd if we are not measuring servers
+                    # we measure the cmd -> prepare it accordingly
                     if self.servers == []:
-                        prefix_argv = alloc["cmd_prefix"].format(**substitutions).split()
-                        if self.measure_cmd != "":
-                            measure_argv = self.measure_cmd.format(**substitutions)
-                            measure_argv = src.util.prefix_cmd_with_abspath(measure_argv).split()
-
-                            argv.extend(measure_argv)
-
-                        argv.extend([f"{src.globalvars.builddir}/exec", "-p", env["LD_PRELOAD"]])
-                        if alloc["LD_LIBRARY_PATH"] != "":
-                            argv.extend(["-l", env["LD_LIBRARY_PATH"]])
-
-                        argv.extend(prefix_argv)
-
-                    argv.extend(cmd_argv)
+                        argv = self.prepare_argv(self.cmd, alloc, os.environ, substitutions)
+                    # we measure the server -> run cmd as it is
+                    else:
+                        argv = self.prepare_argv(self.cmd, substitutions=substitutions, prepend=False)
 
                     cwd = os.getcwd()
                     if hasattr(self, "run_dir"):
