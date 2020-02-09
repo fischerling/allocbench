@@ -295,7 +295,7 @@ class Benchmark:
         """Start Servers
 
         Servers are not allowed to deamonize because then they can't
-        be terminated with their Popen object."""
+        be terminated using their Popen object."""
 
         substitutions = {"alloc": alloc_name,
                          "perm": alloc_name,
@@ -365,6 +365,9 @@ class Benchmark:
 
                 print_debug("Stdout:", proc.stdout)
                 print_debug("Stderr:", proc.stderr)
+
+            # wait for server termination
+            sleep(5)
 
         Benchmark.terminate_subprocess(server["popen"])
 
