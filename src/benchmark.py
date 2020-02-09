@@ -8,6 +8,7 @@ import multiprocessing
 import os
 import subprocess
 from time import sleep
+import traceback
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -383,6 +384,7 @@ class Benchmark:
                 try:
                     self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
                 except Exception as e:
+                    print_debug(traceback.format_exc())
                     print_error(e)
                     print_error("Skipping", alloc_name)
                     skip = True
@@ -576,7 +578,6 @@ class Benchmark:
         try:
             s = evaluation.format(**self.results["stats"][alloc][perm][stat])
         except KeyError as e:
-            import traceback
             print_warn(traceback.format_exc())
             print_warn(f"For {alloc} in {perm}")
             return nan
