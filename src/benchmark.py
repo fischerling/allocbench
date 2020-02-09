@@ -372,14 +372,15 @@ class Benchmark:
                 skip = False
 
                 env = dict(os.environ)
-                env["LD_PRELOAD"] = env.get("LD_PRELOAD", "")
-                env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/print_status_on_exit.so"
-                env["LD_PRELOAD"] += " " + f"{src.globalvars.builddir}/sig_handlers.so"
-                env["LD_PRELOAD"] += " " + alloc["LD_PRELOAD"]
+                old_ld_preload = env.get('LD_PRELOAD', '')
+                env["LD_PRELOAD"] = f"{src.globalvars.builddir}/print_status_on_exit.so"
+                env["LD_PRELOAD"] += f" {src.globalvars.builddir}/sig_handlers.so"
+                env["LD_PRELOAD"] += f" {alloc['LD_PRELOAD']}"
+                env["LD_PRELOAD"] += f" {old_ld_preload}"
 
                 if "LD_LIBRARY_PATH" in alloc:
                     env["LD_LIBRARY_PATH"] = env.get("LD_LIBRARY_PATH", "")
-                    env["LD_LIBRARY_PATH"] += ":" + alloc["LD_LIBRARY_PATH"]
+                    env["LD_LIBRARY_PATH"] += f'{os.pathsep}{alloc["LD_LIBRARY_PATH"]}'
 
                 try:
                     self.start_servers(alloc_name=alloc_name, alloc=alloc, env=env)
