@@ -27,6 +27,7 @@ import sys
 import traceback
 
 from src.allocator import collect_allocators
+from src.analyse import analyze_bench, analyze_allocators
 import src.facter
 import src.globalvars
 from src.util import find_cmd, run_cmd
@@ -76,7 +77,10 @@ def main():
 
     parser = argparse.ArgumentParser(description="benchmark memory allocators")
     parser.add_argument("--analyze",
-                        help="analyze benchmark behavior using malt",
+                        help="analyze benchmark behavior",
+                        action="store_true")
+    parser.add_argument("--analyze-allocators",
+                        help="analyze allocator behavior",
                         action="store_true")
     parser.add_argument("-r",
                         "--runs",
@@ -195,46 +199,10 @@ def main():
             continue
 
         if args.analyze:
-            print_status("Analysing {} ...".format(bench))
+            analyze_bench(bench)
 
-            # Create benchmark result directory
-            if not os.path.isdir(bench.result_dir):
-                print_info2("Creating benchmark result dir:", bench.result_dir)
-                os.makedirs(bench.result_dir, exist_ok=True)
-
-            if find_cmd("malt") is not None:
-                analyze_alloc = "malt"
-            else:
-                print_warn("malt not found. Using chattymalloc.")
-                analyze_alloc = "chattymalloc"
-
-            old_allocs = bench.allocators
-            old_measure_cmd = bench.measure_cmd
-            bench.measure_cmd = ""
-            analyze_alloc_module = importlib.import_module(
-                f"src.allocators.{analyze_alloc}")
-            bench.allocators = {
-                analyze_alloc: getattr(analyze_alloc_module,
-                                       analyze_alloc).build()
-            }
-
-            try:
-                bench.run(runs=1)
-            except Exception:
-                print_error(traceback.format_exc())
-                print_error("Skipping analysis of", bench, "!")
-
-            bench.measure_cmd = old_measure_cmd
-
-            # Remove results for analyze_alloc
-            if analyze_alloc in bench.results:
-                del bench.results[analyze_alloc]
-            if "stats" in bench.results and analyze_alloc in bench.results[
-                    "stats"]:
-                del bench.results["stats"][analyze_alloc]
-
-            # restore allocs
-            bench.allocators = old_allocs
+        if args.analyze_allocators:
+            analyze_allocators(bench, src.globalvars.allocators)
 
         if args.runs > 0:
             print_status("Running", bench.name, "...")

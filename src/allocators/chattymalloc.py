@@ -28,4 +28,4 @@ from src.allocator import Allocator, BUILDDIR
 
 chattymalloc = Allocator("chattymalloc",
                          LD_PRELOAD=os.path.join(BUILDDIR, "chattymalloc.so"),
-                         cmd_prefix="env CHATTYMALLOC_FILE={{result_dir}}/chatty_{{perm}}.txt")
+                         cmd_prefix="env CHATTYMALLOC_FILE={{result_dir}}/{{perm}}.trace")
