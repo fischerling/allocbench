@@ -214,7 +214,10 @@ def parse(path="chattymalloc.txt",
         # Dictionary mapping cache lines to their owning TIDs
         context["cache_lines"] = {}
 
-    with open(path, "rb") as trace_file, open(path+".txt", "w") as plain_file:
+    if EXPORT_TXT:
+        plain_file = open(path+".txt", "w")
+
+    with open(path, "rb") as trace_file:
         total_entries = os.stat(trace_file.fileno()).st_size // Trace.size
         update_interval = int(total_entries * 0.0005)
 
@@ -248,6 +251,8 @@ def parse(path="chattymalloc.txt",
             entry = trace_file.read(Trace.size)
 
     print(f"\r[{i} / {total_entries}] {(i / total_entries) * 100:.2f}% parsed ...")
+    if EXPORT_TXT:
+        plain_file.close()
     return context
 
 
