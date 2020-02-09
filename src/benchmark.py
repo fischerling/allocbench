@@ -351,6 +351,9 @@ class Benchmark:
         if self.measure_cmd.startswith("perf"):
             Benchmark.is_perf_allowed()
 
+        # add benchmark dir to PATH
+        os.environ["PATH"] += f"{os.pathsep}{src.globalvars.builddir}/benchmarks/{self.name}"
+
         # save one valid result to expand invalid results
         valid_result = {}
 
