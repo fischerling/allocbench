@@ -456,7 +456,7 @@ def write_tex_table(bench, entries, filepostfix="", sumdir=""):
         print("\\end{tabular}", file=tex_file)
         print("\\end{document}", file=tex_file)
 
-def pgfplot_legend(bench, sumdir=""):
+def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend"):
     """create a standalone pgfplot legend"""
 
     allocators = bench.results["allocators"]
@@ -509,7 +509,7 @@ def pgfplot_legend(bench, sumdir=""):
 \\end{tikzpicture}
 \\end{document}"""
 
-    with open(os.path.join(sumdir, "legend.tex"), "w") as legend_file:
+    with open(os.path.join(sumdir, f"{file_name}.tex"), "w") as legend_file:
         print(tex, file=legend_file)
 
 def pgfplot_linear(bench, perms, xval, yval, ylabel="'y-label'", xlabel="'x-label'",
