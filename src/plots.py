@@ -103,8 +103,8 @@ def plot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
         plt.savefig(figname)
     plt.clf()
 
-def barplot_single_arg(bench, yval, ylabel="'y-label'", xlabel="'x-label'",
-                       title="'default title'", filepostfix="", sumdir="",
+def barplot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
+                       title="default title", filepostfix="", sumdir="",
                        arg="", scale=None, file_ext=src.globalvars.summary_file_ext, yerr=True):
     """plot bar plots for each permutation of the benchmark's command arguments"""
 
@@ -160,8 +160,8 @@ def barplot_single_arg(bench, yval, ylabel="'y-label'", xlabel="'x-label'",
         plt.savefig(figname)
     plt.clf()
 
-def plot_fixed_arg(bench, yval, ylabel="'y-label'", xlabel="loose_arg",
-                   autoticks=True, title="'default title'", filepostfix="",
+def plot_fixed_arg(bench, yval, ylabel="y-label", xlabel="{loose_arg}",
+                   autoticks=True, title="default title", filepostfix="",
                    sumdir="", fixed=None, file_ext=src.globalvars.summary_file_ext, scale=None):
 
     args = bench.results["args"]
