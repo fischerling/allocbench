@@ -31,6 +31,22 @@ from src.util import print_warn
 nan = np.NaN
 
 
+def _get_alloc_color(bench, alloc):
+    """Populate all not set allocator colors with matplotlib 'C' colors"""
+    if isinstance(alloc, str):
+        alloc = bench.results["allocators"][alloc]
+    if alloc["color"] is None:
+        allocs = bench.results["allocators"]
+        explicit_colors = [v["color"] for v in allocs.values() if v["color"] is not None]
+        matplotlib_c_colors = ["C" + str(i) for i in range(0,16)]
+        avail_colors = [c for c in matplotlib_c_colors if c not in explicit_colors]
+
+        for alloc in allocs.values():
+            if alloc["color"] is None:
+                alloc["color"] = avail_colors.pop()
+
+    return alloc["color"]
+
 def _eval_with_stat(bench, evaluation, alloc, perm, stat):
     """Helper to evaluate a datapoint description string"""
     try:
@@ -70,7 +86,7 @@ def plot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
                 y_vals.append(_eval_with_stat(bench, yval, allocator, perm, "mean"))
 
         plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                 label=allocator, color=allocators[allocator]["color"])
+                 label=allocator, color=_get_alloc_color(bench, allocator))
 
     plt.legend(loc="best")
     if not autoticks:
@@ -127,7 +143,7 @@ def barplot_single_arg(bench, yval, ylabel="'y-label'", xlabel="'x-label'",
                 y_errs.append(_eval_with_stat(bench, yval, allocator, perm, "std"))
 
         plt.bar(x_vals, y_vals, width=1, label=allocator, yerr=y_errs,
-                color=allocators[allocator]["color"])
+                color=_get_alloc_color(bench, allocator))
 
     plt.legend(loc="best")
     plt.xticks(list(range(int(np.floor(nallocators/2)), narg*(nallocators+1), nallocators+1)), arg)
@@ -174,7 +190,7 @@ def plot_fixed_arg(bench, yval, ylabel="'y-label'", xlabel="loose_arg",
                         y_vals.append(_eval_with_stat(bench, yval, allocator, perm, "mean"))
 
                 plt.plot(x_vals, y_vals, marker='.', linestyle='-',
-                         label=allocator, color=allocators[allocator]["color"])
+                         label=allocator, color=_get_alloc_color(bench, allocator))
 
             plt.legend(loc="best")
             if not autoticks:
@@ -466,7 +482,7 @@ def pgfplot_legend(bench, sumdir=""):
 
     for alloc_name, alloc_dict in allocators.items():
         # define color
-        rgb = matplotlib.colors.to_rgb(alloc_dict["color"])
+        rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
         tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
 
     if src.globalvars.latex_custom_preamble:
@@ -483,7 +499,7 @@ def pgfplot_legend(bench, sumdir=""):
     addlegendimage_list = ""
     for alloc_name in allocators:
         alloc_list += f"{alloc_name}, "
-        addlegendimage_list += "\t\\addlegendimage{}\n"
+        addlegendimage_list += f"\t\\addlegendimage{{color={alloc_name}-color}}\n"
 
     tex += alloc_list[:-2] + "},\n]"
     tex += addlegendimage_list
@@ -517,7 +533,7 @@ def pgfplot_linear(bench, perms, xval, yval, ylabel="'y-label'", xlabel="'x-labe
         tex += "\\end{filecontents*}\n"
 
         # define color
-        rgb = matplotlib.colors.to_rgb(alloc_dict["color"])
+        rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
         tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
 
     if src.globalvars.latex_custom_preamble:
