@@ -59,6 +59,7 @@ import os
 
 from src.benchmark import Benchmark
 import src.globalvars
+import src.plots as plt
 
 
 class BenchmarkEspresso(Benchmark):
@@ -79,13 +80,15 @@ class BenchmarkEspresso(Benchmark):
 
     def summary(self):
         # Speed
-        self.barplot_single_arg("{task-clock}/1000",
-                                ylabel='"cpu-second"',
-                                title='"Espresso: runtime"',
-                                filepostfix="time")
+        plt.barplot_single_arg(self,
+                               "{task-clock}/1000",
+                               ylabel='"cpu-second"',
+                               title='"Espresso: runtime"',
+                               filepostfix="time")
 
         # L1 cache misses
-        self.barplot_single_arg(
+        plt.barplot_single_arg(
+            self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
             ylabel='"L1 misses in %"',
             title='"Espresso l1 cache misses"',
@@ -93,12 +96,13 @@ class BenchmarkEspresso(Benchmark):
             yerr=False)
 
         # Memusage
-        self.barplot_single_arg("{VmHWM}",
-                                ylabel='"VmHWM in KB"',
-                                title='"Espresso VmHWM"',
-                                filepostfix="vmhwm")
+        plt.barplot_single_arg(self,
+                               "{VmHWM}",
+                               ylabel='"VmHWM in KB"',
+                               title='"Espresso VmHWM"',
+                               filepostfix="vmhwm")
 
-        self.write_tex_table([{
+        plt.write_tex_table(self, [{
             "label": "Runtime [ms]",
             "expression": "{task-clock}",
             "sort": "<"
@@ -107,11 +111,11 @@ class BenchmarkEspresso(Benchmark):
             "expression": "{VmHWM}",
             "sort": "<"
         }],
-                             filepostfix="table")
+                            filepostfix="table")
 
-        self.export_stats_to_dataref("task-clock")
+        plt.export_stats_to_dataref(self, "task-clock")
 
-        self.export_stats_to_dataref("VmHWM")
+        plt.export_stats_to_dataref(self, "VmHWM")
 
 
 espresso = BenchmarkEspresso()
