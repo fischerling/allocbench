@@ -975,6 +975,58 @@ class Benchmark:
             print("\\end{tabular}", file=f)
             print("\\end{document}", file=f)
 
+    def pgfplot_legend(self, sumdir=""):
+
+        allocators = self.results["allocators"]
+        s =\
+"""
+\\documentclass{standalone}
+\\usepackage{pgfplots}
+
+\\usepackage{pgfkeys}
+
+\\newenvironment{customlegend}[1][]{%
+\t\\begingroup
+\t\\csname pgfplots@init@cleared@structures\\endcsname
+\t\\pgfplotsset{#1}%
+}{%
+\t\\csname pgfplots@createlegend\\endcsname
+\t\\endgroup
+}%
+\\def\\addlegendimage{\\csname pgfplots@addlegendimage\\endcsname}
+
+\\usepackage{xcolor}
+"""
+
+        for alloc_name, alloc_dict in allocators.items():
+            # define color
+            rgb = matplotlib.colors.to_rgb(alloc_dict["color"])
+            s += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
+
+        s +=\
+"""
+\\begin{document}
+\\begin{tikzpicture}
+\\begin{customlegend}[
+\tlegend entries={"""
+
+        alloc_list = ""
+        addlegendimage_list = ""
+        for alloc_name in allocators:
+            alloc_list += f"{alloc_name}, "
+            addlegendimage_list += "\t\\addlegendimage{}\n"
+
+        s += alloc_list[:-2] + "},\n]"
+        s += addlegendimage_list
+        s +=\
+"""
+\\end{customlegend}
+\\end{tikzpicture}
+\\end{document}"""
+
+        with open(os.path.join(sumdir, "legend.tex"), "w") as legend_file:
+            print(s, file=legend_file)
+
     def pgfplot_linear(self, perms, xval, yval, ylabel="'y-label'", xlabel="'x-label'",
                        title="'default title'", postfix="", sumdir="", scale=None):
 

@@ -94,4 +94,7 @@ class BenchmarkLoop(Benchmark):
                             title='"Loop: 1024B"',
                             postfix='mops_1024B')
 
+        # create pgfplot legend
+        self.pgfplot_legend()
+
 loop = BenchmarkLoop()
