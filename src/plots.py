@@ -512,8 +512,8 @@ def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend"):
     with open(os.path.join(sumdir, f"{file_name}.tex"), "w") as legend_file:
         print(tex, file=legend_file)
 
-def pgfplot_linear(bench, perms, xval, yval, ylabel="'y-label'", xlabel="'x-label'",
-                   title="'default title'", postfix="", sumdir="", scale=None):
+def pgfplot_linear(bench, perms, xexpr, yexpr, ylabel="y-label", xlabel="x-label",
+                   title="default title", postfix="", sumdir="", scale=None):
 
     allocators = bench.results["allocators"]
     perms = list(perms)
@@ -527,8 +527,8 @@ def pgfplot_linear(bench, perms, xval, yval, ylabel="'y-label'", xlabel="'x-labe
     for alloc_name, alloc_dict in allocators.items():
         tex += f"\\begin{{filecontents*}}{{{alloc_name}.dat}}\n"
         for perm in perms:
-            xval = _eval_with_stat(bench, xval, alloc_name, perm, "mean")
-            yval = _eval_with_stat(bench, yval, alloc_name, perm, "mean")
+            xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
+            yval = _eval_with_stat(bench, yexpr, alloc_name, perm, "mean")
             tex += f"{xval} {yval}\n"
         tex += "\\end{filecontents*}\n"
 
@@ -539,6 +539,11 @@ def pgfplot_linear(bench, perms, xval, yval, ylabel="'y-label'", xlabel="'x-labe
     if src.globalvars.latex_custom_preamble:
         tex += src.globalvars.latex_custom_preamble + "\n"
 
+    label_substitutions = vars()
+    label_substitutions.update(vars(bench))
+    xlabel = xlabel.format(**label_substitutions)
+    ylabel = ylabel.format(**label_substitutions)
+    title = title.format(**label_substitutions)
     tex +=\
 f"""
 \\begin{{document}}
