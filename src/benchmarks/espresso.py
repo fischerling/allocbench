@@ -82,24 +82,24 @@ class BenchmarkEspresso(Benchmark):
         # Speed
         plt.barplot_single_arg(self,
                                "{task-clock}/1000",
-                               ylabel='"cpu-second"',
-                               title='"Espresso: runtime"',
+                               ylabel="cpu-second",
+                               title="Espresso: runtime",
                                filepostfix="time")
 
         # L1 cache misses
         plt.barplot_single_arg(
             self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel='"L1 misses in %"',
-            title='"Espresso l1 cache misses"',
+            ylabel="L1 misses in %",
+            title="Espresso l1 cache misses",
             filepostfix="l1misses",
             yerr=False)
 
         # Memusage
         plt.barplot_single_arg(self,
                                "{VmHWM}",
-                               ylabel='"VmHWM in KB"',
-                               title='"Espresso VmHWM"',
+                               ylabel="VmHWM in KB",
+                               title="Espresso VmHWM",
                                filepostfix="vmhwm")
 
         plt.write_tex_table(self, [{

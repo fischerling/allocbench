@@ -83,15 +83,15 @@ class BenchmarkLarson(Benchmark):
         # Plot threads->throughput and maxsize->throughput
         plt.plot_fixed_arg(self,
                            "{throughput}/1000000",
-                           ylabel="'MOPS/s'",
-                           title="'Larson: ' + arg + ' ' + str(arg_value)",
+                           ylabel="MOPS/s",
+                           title="Larson: {arg} {arg_value}",
                            filepostfix="throughput")
 
         plt.plot_fixed_arg(
             self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel="'l1 cache misses in %'",
-            title="'Larson cache misses: ' + arg + ' ' + str(arg_value)",
+            ylabel="l1 cache misses in %",
+            title="Larson cache misses: {arg} {arg_value}",
             filepostfix="cachemisses")
 
 

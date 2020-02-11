@@ -81,8 +81,8 @@ class BenchmarkFalsesharing(Benchmark):
 
         plt.plot_fixed_arg(self,
                            "{speedup}",
-                           ylabel="'Speedup'",
-                           title="'Speedup: ' + arg + ' ' + str(arg_value)",
+                           ylabel="Speedup",
+                           title="Speedup: {arg} {arg_value}",
                            filepostfix="speedup",
                            autoticks=False,
                            fixed=["bench"])
@@ -90,16 +90,16 @@ class BenchmarkFalsesharing(Benchmark):
         plt.plot_fixed_arg(
             self,
             "{l1chache_misses}",
-            ylabel="'l1 cache misses in %'",
-            title="'cache misses: ' + arg + ' ' + str(arg_value)",
+            ylabel="l1 cache misses in %",
+            title="cache misses: {arg} {arg_value}",
             filepostfix="l1-misses",
             autoticks=False,
             fixed=["bench"])
 
         plt.plot_fixed_arg(self,
                            "({LLC-load-misses}/{LLC-loads})*100",
-                           ylabel="'llc cache misses in %'",
-                           title="'LLC misses: ' + arg + ' ' + str(arg_value)",
+                           ylabel="llc cache misses in %",
+                           title="LLC misses: {arg} {arg_value}",
                            filepostfix="llc-misses",
                            autoticks=False,
                            fixed=["bench"])

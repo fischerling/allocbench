@@ -56,8 +56,8 @@ class BenchmarkBlowup(Benchmark):
 
         plt.barplot_single_arg(self,
                                "{VmHWM}/1000",
-                               ylabel='"VmHWM in MB"',
-                               title='"blowup test"',
+                               ylabel="VmHWM in MB",
+                               title="blowup test",
                                filepostfix="vmhwm")
 
         del allocators["Ideal-RSS"]

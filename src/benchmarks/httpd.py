@@ -62,25 +62,25 @@ class BenchmarkHTTPD(Benchmark):
     def summary(self):
         plt.plot_fixed_arg(self,
                            "{requests}",
-                           xlabel='"threads"',
-                           ylabel='"requests/s"',
+                           xlabel="threads",
+                           ylabel="requests/s",
                            autoticks=False,
                            filepostfix="requests",
-                           title='perm.site + ": requests/s"')
+                           title="{perm.site}: requests/s")
 
         plt.plot_fixed_arg(self,
                            "{nginx_vmhwm}",
-                           xlabel='"threads"',
-                           ylabel='"VmHWM in KB"',
-                           title='perm.site + ": nginx memory usage"',
+                           xlabel="threads",
+                           ylabel="VmHWM in KB",
+                           title="{perm.site}: nginx memory usage",
                            filepostfix="httpd_vmhwm",
                            autoticks=False)
 
         plt.plot_fixed_arg(self,
                            "{php-fpm_vmhwm}",
-                           xlabel='"threads"',
-                           ylabel='"VmHWM in KB"',
-                           title='perm.site + ": php-fpm memory usage"',
+                           xlabel="threads",
+                           ylabel="VmHWM in KB",
+                           title="{perm.site}: php-fpm memory usage",
                            filepostfix="php-fpm_vmhwm",
                            autoticks=False)
 
