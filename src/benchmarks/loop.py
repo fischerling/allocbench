@@ -60,8 +60,8 @@ class BenchmarkLoop(Benchmark):
         # Speed
         plt.plot_fixed_arg(self,
                            "perm.nthreads / ({task-clock}/1000)",
-                           ylabel='"MOPS/cpu-second"',
-                           title='"Loop: " + arg + " " + str(arg_value)',
+                           ylabel="MOPS/cpu-second",
+                           title="Loop: {arg} {arg_value}",
                            filepostfix="time",
                            autoticks=False)
 
@@ -69,8 +69,8 @@ class BenchmarkLoop(Benchmark):
         plt.plot_fixed_arg(
             self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel='"L1 misses in %"',
-            title='"Loop l1 cache misses: " + arg + " " + str(arg_value)',
+            ylabel="L1 misses in %",
+            title="Loop l1 cache misses: {arg} {arg_value}",
             filepostfix="l1misses",
             autoticks=False)
 
@@ -96,9 +96,9 @@ class BenchmarkLoop(Benchmark):
                                                    args=self.results["args"]),
                            "int(perm.nthreads)",
                            "perm.nthreads / ({task-clock}/1000)",
-                           xlabel='"Threads"',
-                           ylabel='"MOPS/cpu-second"',
-                           title='"Loop: 1024B"',
+                           xlabel="Threads",
+                           ylabel="MOPS/cpu-second",
+                           title="Loop: 1024B",
                            postfix='mops_1024B')
 
         # create pgfplot legend
