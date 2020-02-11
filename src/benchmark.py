@@ -9,6 +9,7 @@ import os
 import subprocess
 from time import sleep
 
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -983,15 +984,20 @@ class Benchmark:
         s =\
 """\\documentclass{standalone}
 \\usepackage{pgfplots}
+\\usepackage{xcolor}
 """
 
-        for alloc in allocators:
-            s += f"\\begin{{filecontents*}}{{{alloc}.dat}}\n"
+        for alloc_name, alloc_dict in allocators.items():
+            s += f"\\begin{{filecontents*}}{{{alloc_name}.dat}}\n"
             for i, perm in enumerate(perms):
-                x = self._eval_with_stat(xval, alloc, perm, "mean")
-                y = self._eval_with_stat(yval, alloc, perm, "mean")
+                x = self._eval_with_stat(xval, alloc_name, perm, "mean")
+                y = self._eval_with_stat(yval, alloc_name, perm, "mean")
                 s += f"{x} {y}\n"
             s += "\\end{filecontents*}\n"
+
+            # define color
+            rgb = matplotlib.colors.to_rgb(alloc_dict["color"])
+            s += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
 
         s +=\
 f"""
@@ -1004,9 +1010,9 @@ f"""
 ]
 """
 
-        for alloc in allocators:
-            # s += f"\\addplot [color{i}] table {{{alloc_name}.dat}}"
-            s += f"\t\\addplot table {{{alloc}.dat}};\n"
+        for alloc_name in allocators:
+            s += f"\\addplot [{alloc_name}-color] table {{{alloc_name}.dat}};\n"
+            # s += f"\t\\addplot table {{{alloc_name}.dat}};\n"
 
         s +=\
 """\\end{axis}
