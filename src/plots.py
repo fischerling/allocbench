@@ -469,6 +469,9 @@ def pgfplot_legend(bench, sumdir=""):
         rgb = matplotlib.colors.to_rgb(alloc_dict["color"])
         tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
 
+    if src.globalvars.latex_custom_preamble:
+        tex += src.globalvars.latex_custom_preamble + "\n"
+
     tex +=\
 """
 \\begin{document}
@@ -516,6 +519,9 @@ def pgfplot_linear(bench, perms, xval, yval, ylabel="'y-label'", xlabel="'x-labe
         # define color
         rgb = matplotlib.colors.to_rgb(alloc_dict["color"])
         tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
+
+    if src.globalvars.latex_custom_preamble:
+        tex += src.globalvars.latex_custom_preamble + "\n"
 
     tex +=\
 f"""

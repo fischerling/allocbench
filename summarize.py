@@ -161,11 +161,17 @@ if __name__ == "__main__":
                         "--exclude-benchmarks",
                         help="benchmarks to exclude",
                         nargs='+')
+    parser.add_argument("--latex-preamble",
+                        help="latex code to include in the preamble of generated standalones",
+                        type=str)
 
     args = parser.parse_args()
 
     if args.file_ext:
         src.globalvars.summary_file_ext = args.file_ext
+
+    if args.latex_preamble:
+        src.globalvars.latex_custom_preamble = args.latex_preamble
 
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
