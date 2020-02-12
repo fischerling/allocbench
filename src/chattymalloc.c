@@ -29,6 +29,7 @@ along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
 #include <unistd.h>
 
 #include "chattymalloc.h"
@@ -123,7 +124,7 @@ static void
 write_trace(char func, void* ptr, size_t size, size_t var_arg)
 {
   if (unlikely(tid == 0)) {
-    tid = gettid();
+    tid = syscall(SYS_gettid);;
   }
 
   uint64_t idx = __atomic_fetch_add (&next_entry, 1, __ATOMIC_SEQ_CST); 
