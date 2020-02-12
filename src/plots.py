@@ -484,6 +484,7 @@ def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend"):
         # define color
         rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
         tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
+        tex += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
 
     if src.globalvars.latex_custom_preamble:
         tex += src.globalvars.latex_custom_preamble + "\n"
@@ -499,7 +500,7 @@ def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend"):
     addlegendimage_list = ""
     for alloc_name in allocators:
         alloc_list += f"{alloc_name}, "
-        addlegendimage_list += f"\t\\addlegendimage{{color={alloc_name}-color}}\n"
+        addlegendimage_list += f"\t\\addlegendimage{{{alloc_name}}}\n"
 
     tex += alloc_list[:-2] + "},\n]"
     tex += addlegendimage_list
@@ -535,6 +536,7 @@ def pgfplot_linear(bench, perms, xexpr, yexpr, ylabel="y-label", xlabel="x-label
         # define color
         rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
         tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
+        tex += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
 
     if src.globalvars.latex_custom_preamble:
         tex += src.globalvars.latex_custom_preamble + "\n"
@@ -556,8 +558,8 @@ f"""
 """
 
     for alloc_name in allocators:
-        tex += f"\\addplot [{alloc_name}-color] table {{{alloc_name}.dat}};\n"
-        # tex += f"\t\\addplot table {{{alloc_name}.dat}};\n"
+        # tex += f"\\addplot [{alloc_name}-color] table {{{alloc_name}.dat}};\n"
+        tex += f"\t\\addplot+[{alloc_name}] table {{{alloc_name}.dat}};\n"
 
     tex +=\
 """\\end{axis}
