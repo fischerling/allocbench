@@ -459,7 +459,7 @@ class Benchmark:
 
                     # we measure the cmd -> prepare it accordingly
                     if self.servers == []:
-                        argv = self.prepare_argv(self.cmd, alloc, os.environ, substitutions)
+                        argv = self.prepare_argv(self.cmd, os.environ, alloc, substitutions)
                     # we measure the server -> run cmd as it is
                     else:
                         argv = self.prepare_argv(self.cmd, substitutions=substitutions, prepend=False)
