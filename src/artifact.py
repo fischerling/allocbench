@@ -77,6 +77,14 @@ class GitArtifact(Artifact):
         if not os.path.exists(self.repo):
             self.retrieve()
 
+        # update repo
+        print_status(f'Updating git repository "{self.name}" ...')
+        try:
+            run_cmd(["git", "fetch"], output_verbosity=1, cwd=self.repo)
+        except CalledProcessError as e:
+            print_error(f"Failed to update {self.name}")
+            raise e
+
         worktree_cmd = ["git", "worktree", "add", location, checkout]
         print_debug("create new worktree. By running: ", worktree_cmd,
                     f"in {self.repo}")
