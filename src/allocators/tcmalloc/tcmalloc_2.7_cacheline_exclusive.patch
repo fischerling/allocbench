@@ -1,0 +1,26 @@
+diff --git src/common.cc src/common.cc
+index 203afdf..9257518 100644
+--- src/common.cc
++++ src/common.cc
+@@ -79,7 +79,7 @@ int AlignmentForSize(size_t size) {
+   if (size > kMaxSize) {
+     // Cap alignment at kPageSize for large sizes.
+     alignment = kPageSize;
+-  } else if (size >= 128) {
++  } else if (size >= 512) {
+     // Space wasted due to alignment is at most 1/8, i.e., 12.5%.
+     alignment = (1 << LgFloor(size)) / 8;
+   } else if (size >= kMinAlign) {
+diff --git a/src/common.h b/src/common.h
+index cb45315..4131a13 100644
+--- src/common.h
++++ src/common.h
+@@ -61,7 +61,7 @@ typedef uintptr_t Length;
+ // waste due alignment of 25%. (eg malloc of 24 bytes will get 32 bytes)
+ static const size_t kMinAlign   = 8;
+ #else
+-static const size_t kMinAlign   = 16;
++static const size_t kMinAlign   = 64;
+ #endif
+ 
+ // Using large pages speeds up the execution at a cost of larger memory use.

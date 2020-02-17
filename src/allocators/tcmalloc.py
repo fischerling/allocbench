@@ -45,6 +45,11 @@ tcmalloc_nofs = TCMalloc("TCMalloc-NoFalsesharing",
 
 tcmalloc_align = TCMalloc("TCMalloc-Aligned",
                          version="gperftools-2.7",
-                         color="xkcd:navy")
+                         color="xkcd:light blue")
 
 tcmalloc_align.LD_PRELOAD = f"{BUILDDIR}/align_to_cl.so {tcmalloc_align.LD_PRELOAD}"
+
+tcmalloc_cacheline_exclusive = TCMalloc("TCMalloc-Cacheline-Exclusive",
+                         patches=["{patchdir}/tcmalloc_2.7_cacheline_exclusive.patch"],
+                         version="gperftools-2.7",
+                         color="xkcd:royal blue")
