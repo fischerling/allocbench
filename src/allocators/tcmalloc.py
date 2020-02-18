@@ -30,7 +30,8 @@ class TCMalloc(Allocator):
         self.LD_PRELOAD = "{dir}/libtcmalloc.so"
         self.patches = ["{patchdir}/tcmalloc_bazel_build_so.patch"]
         self.build_cmds = [
-            "cd {srcdir}; bazel build tcmalloc/tcmalloc.so", "mkdir {dir}",
+            "cd {srcdir}; bazel build tcmalloc/tcmalloc.so --compilation_mode opt",
+            "mkdir {dir}",
             "cp {srcdir}/bazel-bin/tcmalloc/tcmalloc.so {dir}/libtcmalloc.so"
         ]
 
