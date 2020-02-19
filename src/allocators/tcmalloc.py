@@ -42,7 +42,7 @@ tcmalloc = TCMalloc("TCMalloc",
                     color="xkcd:blue",
                     version="1676100265bd189df6b5513feac15f102542367e")
 
-tcmalloc_align = TCMallocGperftools("TCMalloc-Aligned",
+tcmalloc_align = TCMalloc("TCMalloc-Aligned",
                          version="1676100265bd189df6b5513feac15f102542367e",
                          color="xkcd:light blue")
 
