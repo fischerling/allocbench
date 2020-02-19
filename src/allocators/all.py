@@ -32,6 +32,6 @@ from src.allocators.rpmalloc import rpmalloc
 
 
 allocators = [*src.allocators.glibcs.allocators,
-              *src.allocators.tcmalloc.allocators,
+              *src.allocators.tcmallocs.allocators,
               jemalloc, hoard, mesh, supermalloc, scalloc, tbbmalloc, llalloc, # streamflow,
               mimalloc, snmalloc, rpmalloc]
