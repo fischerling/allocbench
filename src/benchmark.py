@@ -500,6 +500,18 @@ class Benchmark:
                                             break
 
                                 os.remove("status")
+
+                            # parse perf output if available
+                            if self.measure_cmd == Benchmark.measure_cmd or self.measure_cmd_csv:
+                                csvreader = csv.reader(res.stderr.splitlines(),
+                                                       delimiter=',')
+                                for row in csvreader:
+                                    # Split of the user/kernel space info to be better portable
+                                    try:
+                                        result[row[2].split(":")[0]] = row[0]
+                                    except Exception as e:
+                                        print_warn("Exception", e, "occured on", row, "for",
+                                                   alloc_name, "and", perm)
                         else:
                             result["server_status"] = []
                             for server in self.servers:
@@ -512,17 +524,6 @@ class Benchmark:
                                             result[f"{server.get('name', 'Server')}_vmhwm"] = l.split()[1]
                                             break
 
-                        # parse perf output if available
-                        if self.measure_cmd == Benchmark.measure_cmd or self.measure_cmd_csv:
-                            csvreader = csv.reader(res.stderr.splitlines(),
-                                                   delimiter=',')
-                            for row in csvreader:
-                                # Split of the user/kernel space info to be better portable
-                                try:
-                                    result[row[2].split(":")[0]] = row[0]
-                                except Exception as e:
-                                    print_warn("Exception", e, "occured on", row, "for",
-                                               alloc_name, "and", perm)
 
                         if hasattr(self, "process_output"):
                             self.process_output(result, res.stdout, res.stderr,
