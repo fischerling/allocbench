@@ -35,13 +35,9 @@ class BenchmarkKeyDB(Benchmark):
         name = "keydb"
 
         self.cmd = "memtier_benchmark –hide-histogram --threads {threads} –data-size {size}"
-        # self.args = {"threads": Benchmark.scale_threads_for_cpus(1 / 2),
-                     # "size": [8, 64, 256, 1024, 4096, 16384]}
+        self.args = {"threads": Benchmark.scale_threads_for_cpus(1 / 2),
+                     "size": [8, 64, 256, 1024, 4096, 16384]}
         
-        self.args = {"threads": [2],
-                     "size": [64]}
-
-
         self.servers = [{
             "name": "keydb",
             "cmd": f"keydb-server --server-threads {cpu_count()//2}",
@@ -107,6 +103,14 @@ class BenchmarkKeyDB(Benchmark):
             os.remove("dump.rdb")
 
     def summary(self):
-        pass
+        self.plot_fixed_arg("{totals_ops}",
+                            ylabel="'OPS/second'",
+                            title="'KeyDB Operations: ' + str(perm)",
+                            filepostfix="total_ops")
+
+        self.plot_fixed_arg("{keydb_vmhwm}",
+                            ylabel="'VmHWM [KB]'",
+                            title="'KeyDB Memusage: ' + str(perm)",
+                            filepostfix="vmhwm")
 
 keydb = BenchmarkKeyDB()
