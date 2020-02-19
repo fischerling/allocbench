@@ -18,7 +18,7 @@
 """Collection containing  all available allocators"""
 
 import src.allocators.glibcs
-from src.allocators.tcmalloc import tcmalloc, tcmalloc_gperftools, tcmalloc_gperftools_nofs
+import src.allocators.tcmallocs
 from src.allocators.jemalloc import jemalloc
 from src.allocators.hoard import hoard
 from src.allocators.mesh import mesh
@@ -32,6 +32,6 @@ from src.allocators.rpmalloc import rpmalloc
 
 
 allocators = [*src.allocators.glibcs.allocators,
-              tcmalloc, tcmalloc_gperftools, tcmalloc_gperftools_nofs,
+              *src.allocators.tcmalloc.allocators,
               jemalloc, hoard, mesh, supermalloc, scalloc, tbbmalloc, llalloc, # streamflow,
               mimalloc, snmalloc, rpmalloc]
