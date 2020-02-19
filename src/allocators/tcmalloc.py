@@ -42,6 +42,12 @@ tcmalloc = TCMalloc("TCMalloc",
                     color="xkcd:blue",
                     version="1676100265bd189df6b5513feac15f102542367e")
 
+tcmalloc_align = TCMallocGperftools("TCMalloc-Aligned",
+                         version="1676100265bd189df6b5513feac15f102542367e",
+                         color="xkcd:light blue")
+
+tcmalloc_align.LD_PRELOAD = f"{BUILDDIR}/align_to_cl.so {tcmalloc_align.LD_PRELOAD}"
+
 
 class TCMallocGperftools(Allocator):
     """gperftools TCMalloc allocator"""
@@ -72,7 +78,7 @@ tcmalloc_gperftools_nofs = TCMallocGperftools("TCMalloc-NoFalsesharing",
 
 tcmalloc_gperftools_align = TCMallocGperftools("TCMalloc-Aligned",
                          version="gperftools-2.7",
-                         color="xkcd:light blue")
+                         color="xkcd:navy blue")
 
 tcmalloc_gperftools_align.LD_PRELOAD = f"{BUILDDIR}/align_to_cl.so {tcmalloc_gperftools_align.LD_PRELOAD}"
 
