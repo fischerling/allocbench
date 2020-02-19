@@ -1,0 +1,22 @@
+diff --git tcmalloc/BUILD tcmalloc/BUILD
+index 66d160e..25946af 100644
+--- tcmalloc/BUILD
++++ tcmalloc/BUILD
+@@ -109,6 +109,17 @@ cc_library(
+     alwayslink = 1,
+ )
+ 
++# This library provides tcmalloc as shared object
++cc_binary(
++    name = "tcmalloc.so",
++    copts = TCMALLOC_DEFAULT_COPTS,
++    linkshared = 1,
++    linkstatic = 1,
++    deps = overlay_deps + tcmalloc_deps + [
++        ":tcmalloc",
++    ]
++)
++
+ # Provides tcmalloc always; use per-thread mode.
+ #
+ cc_library(

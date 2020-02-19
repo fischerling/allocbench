@@ -1,3 +1,21 @@
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
+#
+# This file is part of allocbench.
+#
+# allocbench is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# allocbench is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
+"""Benchmark class providing general purpose implementation of required methods"""
+
 import atexit
 from collections import namedtuple
 import errno
@@ -441,7 +459,7 @@ class Benchmark:
 
                     # we measure the cmd -> prepare it accordingly
                     if self.servers == []:
-                        argv = self.prepare_argv(self.cmd, alloc, os.environ, substitutions)
+                        argv = self.prepare_argv(self.cmd, os.environ, alloc, substitutions)
                     # we measure the server -> run cmd as it is
                     else:
                         argv = self.prepare_argv(self.cmd, substitutions=substitutions, prepend=False)

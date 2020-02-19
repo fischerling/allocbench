@@ -17,6 +17,8 @@
 
 """Glibc definitions"""
 
+from multiprocessing import cpu_count
+
 from src.allocator import Allocator, LIBRARY_PATH
 from src.artifact import GitArtifact
 
@@ -37,7 +39,7 @@ class Glibc(Allocator):
         self.build_cmds = ["mkdir -p glibc-build",
                            "cd glibc-build; {srcdir}/configure --prefix={dir} " + configure_args,
                            "cd glibc-build; make",
-                           "cd glibc-build; make install"]
+                           f"cd glibc-build; make -l {cpu_count()} install"]
 
         self.cmd_prefix = "{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:" + LIBRARY_PATH
 

@@ -17,7 +17,10 @@
 
 """Collection containing all glibc variants"""
 
-from src.allocators.tcmalloc import tcmalloc, tcmalloc_nofs, tcmalloc_align
+import src.allocators.tcmalloc as tcm
 
 
-allocators = [tcmalloc, tcmalloc_nofs, tcmalloc_align]
+allocators = [tcm.tcmalloc,
+              tcm.tcmalloc_gperftools_nofs,
+              tcm.tcmalloc_gperftools_align,
+              tcm.tcmalloc_gperftools_cacheline_exclusive]
