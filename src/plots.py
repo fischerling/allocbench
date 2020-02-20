@@ -513,8 +513,9 @@ def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend"):
     with open(os.path.join(sumdir, f"{file_name}.tex"), "w") as legend_file:
         print(tex, file=legend_file)
 
-def pgfplot_linear(bench, perms, xexpr, yexpr, ylabel="y-label", xlabel="x-label",
-                   title="default title", postfix="", sumdir="", scale=None):
+def pgfplot(bench, perms, xexpr, yexpr, bar=False,
+            ylabel="y-label", xlabel="x-label", title="default title",
+            postfix="", sumdir="", scale=None, error_bars=True):
 
     allocators = bench.results["allocators"]
     perms = list(perms)
@@ -527,10 +528,20 @@ def pgfplot_linear(bench, perms, xexpr, yexpr, ylabel="y-label", xlabel="x-label
 
     for alloc_name, alloc_dict in allocators.items():
         tex += f"\\begin{{filecontents*}}{{{alloc_name}.dat}}\n"
+        tex += "x y"
+        if error_bars:
+            tex += " error"
+        tex += "\n"
+
         for perm in perms:
             xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
             yval = _eval_with_stat(bench, yexpr, alloc_name, perm, "mean")
-            tex += f"{xval} {yval}\n"
+            tex += f"{xval} {yval}"
+            if error_bars:
+                error = _eval_with_stat(bench, yexpr, alloc_name, perm, "std")
+                tex += f" {error}"
+            tex += "\n"
+
         tex += "\\end{filecontents*}\n"
 
         # define color
@@ -553,13 +564,20 @@ f"""
 \\begin{{axis}}[
 \ttitle={{{title}}},
 \txlabel={{{xlabel}}},
-\tylabel={{{ylabel}}},
-]
-"""
+\tylabel={{{ylabel}}},"""
+    if bar:
+        tex += "\n\tybar,\n"
+    tex += "]\n"
 
     for alloc_name in allocators:
         # tex += f"\\addplot [{alloc_name}-color] table {{{alloc_name}.dat}};\n"
-        tex += f"\t\\addplot+[{alloc_name}] table {{{alloc_name}.dat}};\n"
+        tex += f"\t\\addplot+[{alloc_name},"
+        if error_bars:
+            tex += "\n\terror bars/.cd, y dir=both, y explicit,\n\t"
+        tex += f"] table"
+        if error_bars:
+            tex += "[y error=error]"
+        tex += f" {{{alloc_name}.dat}};\n"
 
     tex +=\
 """\\end{axis}
