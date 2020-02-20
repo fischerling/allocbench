@@ -40,7 +40,7 @@ class BenchmarkKeyDB(Benchmark):
         
         self.servers = [{
             "name": "keydb",
-            "cmd": f"keydb-server --server-threads {cpu_count()//2}",
+            "cmd": f"keydb-server --server-threads 4", # 4 is the by keydb recommended amount
             "shutdown_cmds": ["{build_dir}/keydb-cli shutdown"]
         }]
 
