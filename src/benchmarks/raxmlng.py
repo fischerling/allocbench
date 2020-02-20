@@ -18,11 +18,10 @@
 
 import os
 import re
-import sys
-from urllib.request import urlretrieve
 
 from src.artifact import GitArtifact
 from src.benchmark import Benchmark
+import src.plots as plt
 from src.util import print_info, run_cmd
 
 RUNTIME_RE = re.compile("Elapsed time: (?P<runtime>(\\d*.\\d*)) seconds")
@@ -58,8 +57,8 @@ class BenchmarkRaxmlng(Benchmark):
         os.makedirs(raxmlng_builddir, exist_ok=True)
 
         # building raxml-ng
-        run_cmd( ["cmake", ".."], cwd=raxmlng_builddir)
-        run_cmd( ["make"], cwd=raxmlng_builddir)
+        run_cmd(["cmake", ".."], cwd=raxmlng_builddir)
+        run_cmd(["make"], cwd=raxmlng_builddir)
 
         # create symlinks
         for exe in ["raxml-ng"]:
@@ -83,19 +82,21 @@ class BenchmarkRaxmlng(Benchmark):
         result["runtime"] = RUNTIME_RE.search(stdout).group("runtime")
 
     def summary(self):
-        self.barplot_single_arg("{runtime}",
-                                ylabel='"runtime in s"',
-                                title='"raxml-ng tree inference benchmark"',
-                                filepostfix="runtime")
+        plt.barplot_single_arg(self,
+                               "{runtime}",
+                               ylabel='"runtime in s"',
+                               title='"raxml-ng tree inference benchmark"',
+                               filepostfix="runtime")
 
-        self.export_stats_to_dataref("runtime")
+        plt.export_stats_to_dataref(self, "runtime")
 
-        self.barplot_single_arg("{VmHWM}",
-                                ylabel='"VmHWM in KB"',
-                                title='"raxml-ng memusage"',
-                                filepostfix="memusage")
+        plt.barplot_single_arg(self,
+                               "{VmHWM}",
+                               ylabel='"VmHWM in KB"',
+                               title='"raxml-ng memusage"',
+                               filepostfix="memusage")
 
-        self.export_stats_to_dataref("VmHWM")
+        plt.export_stats_to_dataref(self, "VmHWM")
 
 
 raxmlng = BenchmarkRaxmlng()

@@ -22,6 +22,7 @@ from urllib.request import urlretrieve
 
 from src.artifact import ArchiveArtifact, GitArtifact
 from src.benchmark import Benchmark
+import src.plots as plt
 from src.util import print_info
 
 
@@ -66,19 +67,21 @@ class BenchmarkFd(Benchmark):
             os.link(src, dest)
 
     def summary(self):
-        self.barplot_single_arg("{task-clock}",
-                                ylabel='"runtime in ms"',
-                                title='"fd runtime"',
-                                filepostfix="runtime")
+        plt.barplot_single_arg(self,
+                               "{task-clock}",
+                               ylabel="runtime in ms",
+                               title="fd runtime",
+                               filepostfix="runtime")
 
-        self.export_stats_to_dataref("task-clock")
+        plt.export_stats_to_dataref(self, "task-clock")
 
-        self.barplot_single_arg("{VmHWM}",
-                                ylabel='"VmHWM in KB"',
-                                title='"fd memusage"',
-                                filepostfix="memusage")
+        plt.barplot_single_arg(self,
+                               "{VmHWM}",
+                               ylabel="VmHWM in KB",
+                               title="fd memusage",
+                               filepostfix="memusage")
 
-        self.export_stats_to_dataref("VmHWM")
+        plt.export_stats_to_dataref(self, "VmHWM")
 
 
 fd = BenchmarkFd()

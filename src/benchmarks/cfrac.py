@@ -59,6 +59,7 @@ API function as well as memory placement strategies with good data locality.
 """
 
 from src.benchmark import Benchmark
+import src.plots as plt
 
 
 class BenchmarkCfrac(Benchmark):
@@ -75,24 +76,27 @@ class BenchmarkCfrac(Benchmark):
 
     def summary(self):
         # Speed
-        self.barplot_single_arg("{task-clock}/1000",
-                                ylabel='"cpu-second"',
-                                title='"Cfrac: runtime"',
-                                filepostfix="time")
+        plt.barplot_single_arg(self,
+                               "{task-clock}/1000",
+                               ylabel='"cpu-second"',
+                               title='"Cfrac: runtime"',
+                               filepostfix="time")
 
         # L1 cache misses
-        self.barplot_single_arg(
+        plt.barplot_single_arg(
+            self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel='"L1 misses in %"',
-            title='"Cfrac l1 cache misses"',
+            ylabel="L1 misses in %",
+            title="Cfrac l1 cache misses",
             filepostfix="l1misses",
             yerr=False)
 
         # Memusage
-        self.barplot_single_arg("{VmHWM}",
-                                ylabel='"VmHWM in KB"',
-                                title='"Cfrac VmHWM"',
-                                filepostfix="vmhwm")
+        plt.barplot_single_arg(self,
+                               "{VmHWM}",
+                               ylabel="VmHWM in KB",
+                               title="Cfrac VmHWM",
+                               filepostfix="vmhwm")
 
         self.write_tex_table([{
             "label": "Runtime [ms]",
@@ -105,9 +109,9 @@ class BenchmarkCfrac(Benchmark):
         }],
                              filepostfix="table")
 
-        self.export_stats_to_dataref("task-clock")
+        plt.export_stats_to_dataref(self, "task-clock")
 
-        self.export_stats_to_dataref("VmHWM")
+        plt.export_stats_to_dataref(self, "VmHWM")
 
 
 cfrac = BenchmarkCfrac()

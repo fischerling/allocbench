@@ -48,6 +48,7 @@ false sharing because it uses multiple threads, which pass memory around.
 import re
 
 from src.benchmark import Benchmark
+import src.plots as plt
 
 THROUGHPUT_RE = re.compile(
     "^Throughput =\\s*(?P<throughput>\\d+) operations per second.$")
@@ -80,15 +81,17 @@ class BenchmarkLarson(Benchmark):
 
     def summary(self):
         # Plot threads->throughput and maxsize->throughput
-        self.plot_fixed_arg("{throughput}/1000000",
-                            ylabel="'MOPS/s'",
-                            title="'Larson: ' + arg + ' ' + str(arg_value)",
-                            filepostfix="throughput")
+        plt.plot_fixed_arg(self,
+                           "{throughput}/1000000",
+                           ylabel="MOPS/s",
+                           title="Larson: {arg} {arg_value}",
+                           filepostfix="throughput")
 
-        self.plot_fixed_arg(
+        plt.plot_fixed_arg(
+            self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel="'l1 cache misses in %'",
-            title="'Larson cache misses: ' + arg + ' ' + str(arg_value)",
+            ylabel="l1 cache misses in %",
+            title="Larson cache misses: {arg} {arg_value}",
             filepostfix="cachemisses")
 
 

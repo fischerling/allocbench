@@ -35,6 +35,7 @@ Interpretation:
 """
 
 from src.benchmark import Benchmark
+import src.plots as plt
 
 
 class BenchmarkLoop(Benchmark):
@@ -57,33 +58,51 @@ class BenchmarkLoop(Benchmark):
 
     def summary(self):
         # Speed
-        self.plot_fixed_arg("perm.nthreads / ({task-clock}/1000)",
-                            ylabel='"MOPS/cpu-second"',
-                            title='"Loop: " + arg + " " + str(arg_value)',
-                            filepostfix="time",
-                            autoticks=False)
+        plt.plot_fixed_arg(self,
+                           "perm.nthreads / ({task-clock}/1000)",
+                           ylabel="MOPS/cpu-second",
+                           title="Loop: {arg} {arg_value}",
+                           filepostfix="time",
+                           autoticks=False)
 
         # L1 cache misses
-        self.plot_fixed_arg(
+        plt.plot_fixed_arg(
+            self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel='"L1 misses in %"',
-            title='"Loop l1 cache misses: " + arg + " " + str(arg_value)',
+            ylabel="L1 misses in %",
+            title="Loop l1 cache misses: {arg} {arg_value}",
             filepostfix="l1misses",
             autoticks=False)
 
         # Speed Matrix
-        self.write_best_doublearg_tex_table(
-            "perm.nthreads / ({task-clock}/1000)", filepostfix="time.matrix")
+        plt.write_best_doublearg_tex_table(
+            self,
+            "perm.nthreads / ({task-clock}/1000)",
+            filepostfix="time.matrix")
 
-        self.write_tex_table([{
+        plt.write_tex_table(self, [{
             "label": "MOPS/s",
             "expression": "perm.nthreads / ({task-clock}/1000)",
             "sort": ">"
         }],
-                             filepostfix="mops.table")
+                            filepostfix="mops.table")
 
-        self.export_stats_to_csv("task-clock")
-        self.export_stats_to_dataref("task-clock")
+        plt.export_stats_to_csv(self, "task-clock")
+        plt.export_stats_to_dataref(self, "task-clock")
+
+        # pgfplot test
+        plt.pgfplot_linear(self,
+                           self.iterate_args_fixed({"maxsize": 1024},
+                                                   args=self.results["args"]),
+                           "int(perm.nthreads)",
+                           "perm.nthreads / ({task-clock}/1000)",
+                           xlabel="Threads",
+                           ylabel="MOPS/cpu-second",
+                           title="Loop: 1024B",
+                           postfix='mops_1024B')
+
+        # create pgfplot legend
+        plt.pgfplot_legend(self)
 
 
 loop = BenchmarkLoop()

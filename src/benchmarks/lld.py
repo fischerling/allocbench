@@ -204,6 +204,7 @@ import matplotlib.pyplot as plt
 from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
 import src.facter
+import src.plots
 from src.globalvars import summary_file_ext
 
 
@@ -283,17 +284,17 @@ class BenchmarkLld(Benchmark):
             plt.clf()
 
         # self.export_stats_to_csv("VmHWM")
-        self.export_stats_to_csv("task-clock")
+        src.plots.export_stats_to_csv("task-clock")
 
         # self.export_stats_to_dataref("VmHWM")
-        self.export_stats_to_dataref("task-clock")
+        src.plots.export_stats_to_dataref("task-clock")
 
-        self.write_tex_table([{
+        src.plots.write_tex_table([{
             "label": "Runtime [ms]",
             "expression": "{task-clock}",
             "sort": "<"
         }],
-                             filepostfix="table")
+                                  filepostfix="table")
 
 
 lld = BenchmarkLld()

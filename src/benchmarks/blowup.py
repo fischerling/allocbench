@@ -17,6 +17,7 @@
 """Definition of the blowup micro benchmark"""
 
 from src.benchmark import Benchmark
+import src.plots as plt
 
 
 class BenchmarkBlowup(Benchmark):
@@ -53,15 +54,16 @@ class BenchmarkBlowup(Benchmark):
                 }
             }
 
-        self.barplot_single_arg("{VmHWM}/1000",
-                                ylabel='"VmHWM in MB"',
-                                title='"blowup test"',
-                                filepostfix="vmhwm")
+        plt.barplot_single_arg(self,
+                               "{VmHWM}/1000",
+                               ylabel="VmHWM in MB",
+                               title="blowup test",
+                               filepostfix="vmhwm")
 
         del allocators["Ideal-RSS"]
         del self.results["stats"]["Ideal-RSS"]
 
-        self.export_stats_to_dataref("VmHWM")
+        plt.export_stats_to_dataref(self, "VmHWM")
 
 
 blowup = BenchmarkBlowup()

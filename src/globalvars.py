@@ -62,3 +62,5 @@ benchmarks = [e[:-3] for e in os.listdir(os.path.join(allocbenchdir, benchsrcdir
               if e[-3:] == ".py" and e != "__init__.py"]
 
 summary_file_ext = "svg"
+
+latex_custom_preamble = ""

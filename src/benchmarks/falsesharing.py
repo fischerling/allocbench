@@ -23,6 +23,7 @@ import numpy as np
 
 from src.benchmark import Benchmark
 from src.globalvars import summary_file_ext
+import src.plots as plt
 
 TIME_RE = re.compile("^Time elapsed = (?P<time>\\d*\\.\\d*) seconds.$")
 
@@ -78,38 +79,40 @@ class BenchmarkFalsesharing(Benchmark):
         del self.results["stats"]
         self.calc_desc_statistics()
 
-        self.plot_fixed_arg("{speedup}",
-                            ylabel="'Speedup'",
-                            title="'Speedup: ' + arg + ' ' + str(arg_value)",
-                            filepostfix="speedup",
-                            autoticks=False,
-                            fixed=["bench"])
+        plt.plot_fixed_arg(self,
+                           "{speedup}",
+                           ylabel="Speedup",
+                           title="Speedup: {arg} {arg_value}",
+                           filepostfix="speedup",
+                           autoticks=False,
+                           fixed=["bench"])
 
-        self.plot_fixed_arg(
+        plt.plot_fixed_arg(
+            self,
             "{l1chache_misses}",
-            ylabel="'l1 cache misses in %'",
-            title="'cache misses: ' + arg + ' ' + str(arg_value)",
+            ylabel="l1 cache misses in %",
+            title="cache misses: {arg} {arg_value}",
             filepostfix="l1-misses",
             autoticks=False,
             fixed=["bench"])
 
-        self.plot_fixed_arg(
-            "({LLC-load-misses}/{LLC-loads})*100",
-            ylabel="'llc cache misses in %'",
-            title="'LLC misses: ' + arg + ' ' + str(arg_value)",
-            filepostfix="llc-misses",
-            autoticks=False,
-            fixed=["bench"])
+        plt.plot_fixed_arg(self,
+                           "({LLC-load-misses}/{LLC-loads})*100",
+                           ylabel="llc cache misses in %",
+                           title="LLC misses: {arg} {arg_value}",
+                           filepostfix="llc-misses",
+                           autoticks=False,
+                           fixed=["bench"])
 
-        self.write_tex_table([{
+        plt.write_tex_table(self, [{
             "label": "Speedup",
             "expression": "{speedup}",
             "sort": ">"
         }],
-                             filepostfix="speedup.table")
+                            filepostfix="speedup.table")
 
-        self.export_stats_to_csv("speedup", "time")
-        self.export_stats_to_csv("l1chache_misses", "l1-misses")
+        plt.export_stats_to_csv(self, "speedup", "time")
+        plt.export_stats_to_csv(self, "l1chache_misses", "l1-misses")
 
 
 falsesharing = BenchmarkFalsesharing()
