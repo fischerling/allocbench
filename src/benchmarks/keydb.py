@@ -49,41 +49,47 @@ class BenchmarkKeyDB(Benchmark):
     def prepare(self):
         super().prepare()
 
-        os.makedirs(self.build_dir, exist_ok=True)
 
         keydb_version = "v5.3.1"
         self.results["facts"]["versions"]["keydb"] = keydb_version
-        keydb = GitArtifact("keydb", "https://github.com/JohnSully/KeyDB")
-
         keydb_dir = os.path.join(self.build_dir, "keydb")
-        keydb.provide(keydb_version, keydb_dir)
 
-        # building keyDB
-        run_cmd(["make", "-C", keydb_dir, "MALLOC=libc"])
+        if not os.path.exists(os.path.join(self.build_dir, "keydb-server")):
+            keydb = GitArtifact("keydb", "https://github.com/JohnSully/KeyDB")
 
-        # create symlinks
-        for exe in ["keydb-cli", "keydb-server"]:
-            src = os.path.join(keydb_dir, "src", exe)
-            dest = os.path.join(self.build_dir, exe)
-            if not os.path.exists(dest):
-                os.link(src, dest)
+            os.makedirs(self.build_dir, exist_ok=True)
+
+            # checkout sources
+            keydb.provide(keydb_version, keydb_dir)
+
+            # building keyDB
+            run_cmd(["make", "-C", keydb_dir, "MALLOC=libc"])
+
+            # create symlinks
+            for exe in ["keydb-cli", "keydb-server"]:
+                src = os.path.join(keydb_dir, "src", exe)
+                dest = os.path.join(self.build_dir, exe)
+                if not os.path.exists(dest):
+                    os.link(src, dest)
 
         memtier_version = "1.2.17"
         self.results["facts"]["versions"]["memtier"] = memtier_version
-        memtier = GitArtifact("memtier", "https://github.com/RedisLabs/memtier_benchmark")
-
         memtier_dir = os.path.join(self.build_dir, "memtier")
-        memtier.provide(memtier_version, memtier_dir)
 
-        # building memtier
-        run_cmd(["autoreconf", "-ivf"], cwd=memtier_dir)
-        run_cmd(["./configure"], cwd=memtier_dir)
-        run_cmd(["make"], cwd=memtier_dir)
+        if not os.path.exists(os.path.join(self.build_dir, "memtier_benchmark")):
+            memtier = GitArtifact("memtier", "https://github.com/RedisLabs/memtier_benchmark")
 
-        src = os.path.join(memtier_dir, "memtier_benchmark")
-        dest = os.path.join(self.build_dir, "memtier_benchmark")
-        if not os.path.exists(dest):
-            os.link(src, dest)
+            memtier.provide(memtier_version, memtier_dir)
+
+            # building memtier
+            run_cmd(["autoreconf", "-ivf"], cwd=memtier_dir)
+            run_cmd(["./configure"], cwd=memtier_dir)
+            run_cmd(["make"], cwd=memtier_dir)
+
+            src = os.path.join(memtier_dir, "memtier_benchmark")
+            dest = os.path.join(self.build_dir, "memtier_benchmark")
+            if not os.path.exists(dest):
+                os.link(src, dest)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):
