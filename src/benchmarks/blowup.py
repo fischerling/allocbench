@@ -60,10 +60,20 @@ class BenchmarkBlowup(Benchmark):
                                title="blowup test",
                                filepostfix="vmhwm")
 
+        plt.pgfplot(self,
+                    self.iterate_args(self.results["args"]),
+                    "'blowup'",
+                    "{VmHWM}/1000",
+                    xlabel="",
+                    ylabel="VmHWM in MB",
+                    title="blowup test",
+                    postfix="vmhwm",
+                    bar=True)
+
         del allocators["Ideal-RSS"]
         del self.results["stats"]["Ideal-RSS"]
 
-        plt.export_stats_to_dataref(self, "VmHWM")
+        # plt.export_stats_to_dataref(self, "VmHWM")
 
 
 blowup = BenchmarkBlowup()
