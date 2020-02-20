@@ -96,13 +96,13 @@ class BenchmarkFalsesharing(Benchmark):
             autoticks=False,
             fixed=["bench"])
 
-        plt.plot_fixed_arg(self,
-                           "({LLC-load-misses}/{LLC-loads})*100",
-                           ylabel="llc cache misses in %",
-                           title="LLC misses: {arg} {arg_value}",
-                           filepostfix="llc-misses",
-                           autoticks=False,
-                           fixed=["bench"])
+        # plt.plot_fixed_arg(self,
+                           # "({LLC-load-misses}/{LLC-loads})*100",
+                           # ylabel="llc cache misses in %",
+                           # title="LLC misses: {arg} {arg_value}",
+                           # filepostfix="llc-misses",
+                           # autoticks=False,
+                           # fixed=["bench"])
 
         plt.write_tex_table(self, [{
             "label": "Speedup",
@@ -111,8 +111,23 @@ class BenchmarkFalsesharing(Benchmark):
         }],
                             filepostfix="speedup.table")
 
-        plt.export_stats_to_csv(self, "speedup", "time")
-        plt.export_stats_to_csv(self, "l1chache_misses", "l1-misses")
+        # plt.export_stats_to_csv(self, "speedup", "time")
+        # plt.export_stats_to_csv(self, "l1chache_misses", "l1-misses")
+
+        # pgfplots
+        for bench in args["bench"]:
+            plt.pgfplot(self,
+                        self.iterate_args_fixed({"bench": bench}, args=args),
+                        "int(perm.threads)",
+                        "{speedup}",
+                        xlabel="Threads",
+                        ylabel="Speedup",
+                        title=f"{bench}: Speedup",
+                        postfix=f"{bench}.speedup")
+
+        # create pgfplot legend
+        plt.pgfplot_legend(self)
+
 
 
 falsesharing = BenchmarkFalsesharing()
