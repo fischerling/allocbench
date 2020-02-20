@@ -46,20 +46,23 @@ class BenchmarkLoop(Benchmark):
     def __init__(self):
         name = "loop"
 
-        self.cmd = "loop{binary_suffix} {nthreads} 1000000 {maxsize}"
+        self.cmd = "loop{binary_suffix} {threads} 1000000 {maxsize}"
 
         self.args = {
             "maxsize": [2**x for x in range(6, 16)],
-            "nthreads": Benchmark.scale_threads_for_cpus(2)
+            "threads": Benchmark.scale_threads_for_cpus(2)
         }
 
         self.requirements = ["loop"]
         super().__init__(name)
 
+    def process_output(self, result, stdout, stderr, alloc, perm):
+        result["mops"] = perm.threads / float(result["task-clock"])
+
     def summary(self):
         # Speed
         plt.plot_fixed_arg(self,
-                           "perm.nthreads / ({task-clock}/1000)",
+                           "{mops}",
                            ylabel="MOPS/cpu-second",
                            title="Loop: {arg} {arg_value}",
                            filepostfix="time",
@@ -77,29 +80,29 @@ class BenchmarkLoop(Benchmark):
         # Speed Matrix
         plt.write_best_doublearg_tex_table(
             self,
-            "perm.nthreads / ({task-clock}/1000)",
+            "{mops}",
             filepostfix="time.matrix")
 
         plt.write_tex_table(self, [{
             "label": "MOPS/s",
-            "expression": "perm.nthreads / ({task-clock}/1000)",
+            "expression": "{mops}",
             "sort": ">"
         }],
                             filepostfix="mops.table")
 
-        plt.export_stats_to_csv(self, "task-clock")
-        plt.export_stats_to_dataref(self, "task-clock")
+        # plt.export_stats_to_csv(self, "task-clock")
+        # plt.export_stats_to_dataref(self, "task-clock")
 
         # pgfplot test
-        plt.pgfplot_linear(self,
-                           self.iterate_args_fixed({"maxsize": 1024},
-                                                   args=self.results["args"]),
-                           "int(perm.nthreads)",
-                           "perm.nthreads / ({task-clock}/1000)",
-                           xlabel="Threads",
-                           ylabel="MOPS/cpu-second",
-                           title="Loop: 1024B",
-                           postfix='mops_1024B')
+        plt.pgfplot(self,
+                    self.iterate_args_fixed({"maxsize": 1024},
+                    args=self.results["args"]),
+                    "int(perm.threads)",
+                    "{mops}",
+                    xlabel="Threads",
+                    ylabel="MOPS/cpu-second",
+                    title="Loop: 1024B",
+                    postfix='mops_1024B')
 
         # create pgfplot legend
         plt.pgfplot_legend(self)
