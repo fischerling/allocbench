@@ -282,13 +282,15 @@ class Benchmark:
             if "cmd_prefix" in alloc:
                 prefix_argv = alloc["cmd_prefix"].format(**substitutions).split()
                 argv.extend(prefix_argv)
+                # add exec wrapper so that a possible prefixed loader can execute shell scripts
+                argv.append(f"{src.globalvars.builddir}/exec")
 
             if self.measure_cmd != "":
                 measure_argv = self.measure_cmd.format(**substitutions)
                 measure_argv = src.util.prefix_cmd_with_abspath(measure_argv).split()
                 argv.extend(measure_argv)
 
-            argv.extend([f"{src.globalvars.builddir}/exec"])
+            argv.append(f"{src.globalvars.builddir}/exec")
 
             ld_preload = f"{src.globalvars.builddir}/print_status_on_exit.so"
             ld_preload += f" {src.globalvars.builddir}/sig_handlers.so"
