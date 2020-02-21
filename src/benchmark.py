@@ -248,10 +248,8 @@ class Benchmark:
         """Iterator over each possible combination of args"""
         if not args:
             args = self.args
-        arg_names = sorted(args.keys())
-        for p in itertools.product(*[args[k] for k in arg_names]):
-            Perm = namedtuple("Perm", arg_names)
-            yield Perm(*p)
+        for p in itertools.product(*[args[k] for k in args.keys()]):
+            yield self.Perm(*p)
 
     def iterate_args_fixed(self, fixed, args=None):
         """Iterator over each possible combination of args containing all fixed values
