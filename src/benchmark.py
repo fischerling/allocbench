@@ -475,14 +475,16 @@ class Benchmark:
 
                     result = {}
 
-                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr:
+                    if res.returncode != 0 or "ERROR: ld.so" in res.stderr or "Segmentation fault" in res.stderr or "Aborted" in res.stderr:
                         print()
                         print_debug("Stdout:\n" + res.stdout)
                         print_debug("Stderr:\n" + res.stderr)
                         if res.returncode != 0:
-                            print_error("{} failed with exit code {} for {}".format(argv, res.returncode, alloc_name))
+                            print_error(f"{argv} failed with exit code {res.returncode} for {alloc_name}")
                         elif "ERROR: ld.so" in res.stderr:
-                            print_error("Preloading of {} failed for {}".format(alloc["LD_PRELOAD"], alloc_name))
+                            print_error(f"Preloading of {alloc['LD_PRELOAD']} failed for {alloc_name}")
+                        else:
+                            print_error(f"{argv} terminated abnormally")
 
                     # parse and store results
                     else:
