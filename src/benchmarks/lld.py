@@ -284,12 +284,12 @@ class BenchmarkLld(Benchmark):
             plt.clf()
 
         # self.export_stats_to_csv("VmHWM")
-        src.plots.export_stats_to_csv("task-clock")
+        src.plots.export_stats_to_csv(self, "task-clock")
 
         # self.export_stats_to_dataref("VmHWM")
-        src.plots.export_stats_to_dataref("task-clock")
+        src.plots.export_stats_to_dataref(self, "task-clock")
 
-        src.plots.write_tex_table([{
+        src.plots.write_tex_table(self, [{
             "label": "Runtime [ms]",
             "expression": "{task-clock}",
             "sort": "<"

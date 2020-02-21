@@ -82,6 +82,7 @@ import numpy as np
 
 from src.benchmark import Benchmark
 import src.facter
+import src.plots as plt
 from src.util import print_status, print_debug, print_info2, print_warn, run_cmd
 
 MYSQL_USER = "root"
@@ -200,7 +201,7 @@ class BenchmarkMYSQL(Benchmark):
         args = self.results["args"]
 
         # linear plot
-        self.plot_single_arg("{transactions}",
+        plt.plot_single_arg(self, "{transactions}",
                              xlabel='"threads"',
                              ylabel='"transactions"',
                              title='"sysbench oltp read only"',
@@ -208,7 +209,7 @@ class BenchmarkMYSQL(Benchmark):
 
         # normalized linear plot
         ref_alloc = list(allocators)[0]
-        self.plot_single_arg("{transactions}",
+        plt.plot_single_arg(self, "{transactions}",
                              xlabel='"threads"',
                              ylabel='"transactions scaled at " + scale',
                              title='"sysbench oltp read only"',
@@ -216,14 +217,14 @@ class BenchmarkMYSQL(Benchmark):
                              scale=ref_alloc)
 
         # bar plot
-        self.barplot_single_arg("{transactions}",
+        plt.barplot_single_arg(self, "{transactions}",
                                 xlabel='"threads"',
                                 ylabel='"transactions"',
                                 title='"sysbench oltp read only"',
                                 filepostfix="b")
 
         # normalized bar plot
-        self.barplot_single_arg("{transactions}",
+        plt.barplot_single_arg(self, "{transactions}",
                                 xlabel='"threads"',
                                 ylabel='"transactions scaled at " + scale',
                                 title='"sysbench oltp read only"',
@@ -231,13 +232,13 @@ class BenchmarkMYSQL(Benchmark):
                                 scale=ref_alloc)
 
         # Memusage
-        self.barplot_single_arg("{mysqld_vmhwm}",
+        plt.barplot_single_arg(self, "{mysqld_vmhwm}",
                                 xlabel='"threads"',
                                 ylabel='"VmHWM in kB"',
                                 title='"Memusage sysbench oltp read only"',
                                 filepostfix="mem")
 
-        self.write_tex_table([{
+        plt.write_tex_table(self, [{
             "label": "Transactions",
             "expression": "{transactions}",
             "sort": ">"
@@ -299,8 +300,8 @@ class BenchmarkMYSQL(Benchmark):
 
             print("\\end{tabular}", file=f)
 
-        self.export_stats_to_csv("transactions")
-        self.export_stats_to_dataref("transactions")
+        plt.export_stats_to_csv(self, "transactions")
+        plt.export_stats_to_dataref(self, "transactions")
 
 
 mysql = BenchmarkMYSQL()

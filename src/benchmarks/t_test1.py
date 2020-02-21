@@ -17,6 +17,7 @@
 """Definition of the commonly used t-test1 allocator test"""
 
 from src.benchmark import Benchmark
+import src.plots as plt
 
 
 class BenchmarkTTest1(Benchmark):
@@ -41,14 +42,14 @@ class BenchmarkTTest1(Benchmark):
         # mops / per second
         yval = "perm.nthreads / ({task-clock}/1000)"
         # Speed
-        self.plot_fixed_arg(yval,
+        plt.plot_fixed_arg(self, yval,
                             ylabel='"Mops / CPU second"',
                             title='"T-Ttest1: " + arg + " " + str(arg_value)',
                             filepostfix="time",
                             autoticks=False)
 
         # L1 cache misses
-        self.plot_fixed_arg(
+        plt.plot_fixed_arg(self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
             ylabel='"L1 misses in %"',
             title='"T-Test1 l1 cache misses: " + arg + " " + str(arg_value)',
@@ -56,16 +57,16 @@ class BenchmarkTTest1(Benchmark):
             autoticks=False)
 
         # Speed Matrix
-        self.write_best_doublearg_tex_table(yval, filepostfix="mops.matrix")
+        plt.write_best_doublearg_tex_table(self, yval, filepostfix="mops.matrix")
 
-        self.write_tex_table([{
+        plt.write_tex_table(self, [{
             "label": "MOPS/s",
             "expression": yval,
             "sort": ">"
         }],
                              filepostfix="mops.table")
 
-        self.export_stats_to_csv("task-clock")
+        plt.export_stats_to_csv(self, "task-clock")
 
 
 t_test1 = BenchmarkTTest1()

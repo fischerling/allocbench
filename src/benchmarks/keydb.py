@@ -26,6 +26,7 @@ from multiprocessing import cpu_count
 
 from src.artifact import GitArtifact
 from src.benchmark import Benchmark
+import src.plots as plt
 from src.util import print_info, run_cmd
 
 
@@ -109,12 +110,12 @@ class BenchmarkKeyDB(Benchmark):
             os.remove("dump.rdb")
 
     def summary(self):
-        self.plot_fixed_arg("{totals_ops}",
+        plt.plot_fixed_arg(self, "{totals_ops}",
                             ylabel="'OPS/second'",
                             title="'KeyDB Operations: ' + str(perm)",
                             filepostfix="total_ops")
 
-        self.plot_fixed_arg("{keydb_vmhwm}",
+        plt.plot_fixed_arg(self, "{keydb_vmhwm}",
                             ylabel="'VmHWM [KB]'",
                             title="'KeyDB Memusage: ' + str(perm)",
                             filepostfix="vmhwm")

@@ -16,6 +16,7 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Definition of the realloc micro benchmark"""
 
+import src.plots as plt
 from src.benchmark import Benchmark
 
 
@@ -33,13 +34,13 @@ class BenchmarkRealloc(Benchmark):
         super().__init__(name)
 
     def summary(self):
-        self.barplot_single_arg("{task-clock}",
+        plt.barplot_single_arg(self, "{task-clock}",
                                 ylabel='"task-clock in ms"',
                                 title='"realloc micro benchmark"',
                                 filepostfix="time")
 
-        self.export_stats_to_csv("task-clock")
-        self.export_stats_to_dataref("task-clock")
+        plt.export_stats_to_csv(self, "task-clock")
+        plt.export_stats_to_dataref(self, "task-clock")
 
 
 realloc = BenchmarkRealloc()

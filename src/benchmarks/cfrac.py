@@ -98,7 +98,7 @@ class BenchmarkCfrac(Benchmark):
                                title="Cfrac VmHWM",
                                filepostfix="vmhwm")
 
-        self.write_tex_table([{
+        plt.write_tex_table(self, [{
             "label": "Runtime [ms]",
             "expression": "{task-clock}",
             "sort": "<"

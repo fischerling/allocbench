@@ -24,10 +24,10 @@ archive. The used parameters are inspired by the ones used in mimalloc-bench."
 import os
 import re
 import sys
-from urllib.request import urlretrieve
 
 from src.artifact import ArchiveArtifact
 from src.benchmark import Benchmark
+import src.plots as plt
 from src.util import print_info, run_cmd
 
 REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
@@ -81,17 +81,17 @@ class BenchmarkRedis(Benchmark):
             os.remove("dump.rdb")
 
     def summary(self):
-        self.barplot_single_arg("{requests}",
+        plt.barplot_single_arg(self, "{requests}",
                                 ylabel='"requests per s"',
                                 title='"redis throughput"',
                                 filepostfix="requests")
 
-        self.barplot_single_arg("{redis_vmhwm}",
+        plt.barplot_single_arg(self, "{redis_vmhwm}",
                                 ylabel='"VmHWM in KB"',
                                 title='"redis memusage"',
                                 filepostfix="vmhwm")
 
-        self.export_stats_to_dataref("requests")
+        plt.export_stats_to_dataref(self, "requests")
 
 
 redis = BenchmarkRedis()
