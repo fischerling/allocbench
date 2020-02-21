@@ -537,7 +537,7 @@ class Benchmark:
                     if os.getcwd() != cwd:
                         os.chdir(cwd)
 
-                if self.servers != []:
+                if self.servers != [] and not skip:
                     self.shutdown_servers()
 
                 if hasattr(self, "postallocator_hook"):
