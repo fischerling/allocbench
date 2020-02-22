@@ -529,7 +529,7 @@ class Benchmark:
 
 
                         # save a valid result so we can expand invalid ones
-                        if valid_result is not None:
+                        if valid_result is None:
                             valid_result = result
 
                     self.results[alloc_name][perm].append(result)
