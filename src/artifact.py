@@ -83,7 +83,7 @@ class GitArtifact(Artifact):
             run_cmd(["git", "fetch"], output_verbosity=1, cwd=self.repo)
         except CalledProcessError as e:
             print_error(f"Failed to update {self.name}")
-            raise e
+            raise
 
         worktree_cmd = ["git", "worktree", "add", location, checkout]
         print_debug("create new worktree. By running: ", worktree_cmd,
@@ -92,7 +92,7 @@ class GitArtifact(Artifact):
             run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
         except CalledProcessError as e:
             print_error(f"Failed to provide {self.name}")
-            raise e
+            raise
 
         submodule_init_cmd = [
             "git", "submodule", "update", "--init", "--recursive"
