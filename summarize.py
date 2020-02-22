@@ -150,6 +150,7 @@ if __name__ == "__main__":
                         help="print version info and exit",
                         action='version',
                         version=f"allocbench {src.facter.allocbench_version()}")
+    parser.add_argument("-v", "--verbose", help="more output", action='count')
     parser.add_argument("-b",
                         "--benchmarks",
                         help="benchmarks to summarize",
@@ -163,6 +164,9 @@ if __name__ == "__main__":
                         type=str)
 
     args = parser.parse_args()
+
+    if args.verbose:
+        src.globalvars.verbosity = args.verbose
 
     if args.file_ext:
         src.globalvars.summary_file_ext = args.file_ext

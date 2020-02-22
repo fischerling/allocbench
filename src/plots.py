@@ -25,7 +25,7 @@ import numpy as np
 import tikzplotlib
 
 import src.globalvars
-from src.util import print_warn
+from src.util import print_debug, print_warn
 
 # This is useful when evaluating strings in the plot functions. str(np.NaN) == "nan"
 nan = np.NaN
@@ -52,8 +52,8 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
     try:
         res = evaluation.format(**bench.results["stats"][alloc][perm][stat])
     except KeyError:
-        print_warn(traceback.format_exc())
-        print_warn(f"For {alloc} in {perm}")
+        print_debug(traceback.format_exc())
+        print_warn(f"KeyError while expanding {evaluation} for {alloc} and {perm}")
         return nan
     return eval(res)
 
