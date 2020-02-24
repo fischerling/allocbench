@@ -458,133 +458,118 @@ def write_tex_table(bench, entries, filepostfix="", sumdir=""):
         print("\\end{tabular}", file=tex_file)
         print("\\end{document}", file=tex_file)
 
-def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend"):
+def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend", colors=True, columns=3):
     """create a standalone pgfplot legend"""
 
     allocators = bench.results["allocators"]
-    tex =\
-"""
-\\documentclass{standalone}
-\\usepackage{pgfplots}
-
-\\usepackage{pgfkeys}
-
-\\newenvironment{customlegend}[1][]{%
-\t\\begingroup
-\t\\csname pgfplots@init@cleared@structures\\endcsname
-\t\\pgfplotsset{#1}%
-}{%
-\t\\csname pgfplots@createlegend\\endcsname
-\t\\endgroup
-}%
-\\def\\addlegendimage{\\csname pgfplots@addlegendimage\\endcsname}
-
-\\usepackage{xcolor}
-"""
-
+    color_definitions = ""
+    legend_entries = ""
     for alloc_name, alloc_dict in allocators.items():
-        # define color
-        rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
-        tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
-        tex += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
+        if colors:
+            # define color
+            rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
+            color_definitions += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
+            color_definitions += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
 
-    if src.globalvars.latex_custom_preamble:
-        tex += src.globalvars.latex_custom_preamble + "\n"
+        alloc_color = ""
+        if colors:
+            alloc_color = f"{alloc_name}-color"
+        legend_entries += f"\t\\addplot+ [{alloc_color}] coordinates {{(0,0)}};\n"
+        legend_entries += f"\t\\addlegendentry{{{alloc_name}}}\n\n"
 
-    tex +=\
-"""
-\\begin{document}
-\\begin{tikzpicture}
-\\begin{customlegend}[
-\tlegend entries={"""
+    tex =\
+f"""
+\\documentclass{{standalone}}
+\\usepackage{{pgfplots}}
 
-    alloc_list = ""
-    addlegendimage_list = ""
-    for alloc_name in allocators:
-        alloc_list += f"{alloc_name}, "
-        addlegendimage_list += f"\t\\addlegendimage{{{alloc_name}}}\n"
+\\usepackage{{xcolor}}
 
-    tex += alloc_list[:-2] + "},\n]"
-    tex += addlegendimage_list
-    tex +=\
-"""
-\\end{customlegend}
-\\end{tikzpicture}
-\\end{document}"""
+{color_definitions}
+{src.globalvars.latex_custom_preamble}
+\\begin{{document}}
+\\begin{{tikzpicture}}
+\\begin{{axis}} [
+\tlegend columns={columns},
+\thide axis,
+\tscale only axis, width=5mm, % make axis really small (smaller than legend)
+]
+
+{legend_entries}
+\\end{{axis}}
+\\end{{tikzpicture}}
+\\end{{document}}"""
 
     with open(os.path.join(sumdir, f"{file_name}.tex"), "w") as legend_file:
         print(tex, file=legend_file)
 
-def pgfplot(bench, perms, xexpr, yexpr, axis_attr=None, bar=False,
+def pgfplot(bench, perms, xexpr, yexpr, axis_attr="", bar=False,
             ylabel="y-label", xlabel="x-label", title="default title",
-            postfix="", sumdir="", scale=None, error_bars=True):
+            postfix="", sumdir="", scale=None, error_bars=True, colors=True):
 
     allocators = bench.results["allocators"]
     perms = list(perms)
-    title = title.format(**vars(), **vars(bench))
-    tex =\
-"""\\documentclass{standalone}
-\\usepackage{pgfplots}
-\\usepackage{xcolor}
-"""
-
-    for alloc_name, alloc_dict in allocators.items():
-        # define color
-        rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
-        tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
-        tex += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
-
-    if src.globalvars.latex_custom_preamble:
-        tex += src.globalvars.latex_custom_preamble + "\n"
 
     label_substitutions = vars()
     label_substitutions.update(vars(bench))
     xlabel = xlabel.format(**label_substitutions)
     ylabel = ylabel.format(**label_substitutions)
     title = title.format(**label_substitutions)
-    tex +=\
-f"""
+
+    if bar:
+        axis_attr = f"\n\tbar,\n{axis_attr}"
+
+    color_definitions = ""
+    plots = ""
+    for alloc_name, alloc_dict in allocators.items():
+        if colors:
+            # define color
+            rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
+            color_definitions += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
+            color_definitions += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
+
+        eb = ""
+        ebt = ""
+        edp = ""
+        if error_bars:
+            eb = ",\n\terror bars/.cd, y dir=both, y explicit,\n"
+            ebt += "[y error=error]"
+            edp = " error"
+        alloc_color = ""
+        if colors:
+            alloc_color = f"{alloc_name}"
+        plots += f"\\addplot+[{alloc_color}{eb}] table {ebt}"
+
+        plots += f" {{\n\tx y{edp}\n"
+
+        for perm in perms:
+            xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
+            yval = _eval_with_stat(bench, yexpr, alloc_name, perm, "mean")
+            error = ""
+            if error_bars:
+                error = f" {_eval_with_stat(bench, yexpr, alloc_name, perm, 'std')}"
+            plots += f"\t{xval} {yval}{error}\n"
+
+        plots += "};\n"
+
+    tex =\
+f"""\\documentclass{{standalone}}
+\\usepackage{{pgfplots}}
+\\usepackage{{xcolor}}
+
+{color_definitions}
+{src.globalvars.latex_custom_preamble}
 \\begin{{document}}
 \\begin{{tikzpicture}}
 \\begin{{axis}}[
 \ttitle={{{title}}},
 \txlabel={{{xlabel}}},
-\tylabel={{{ylabel}}},"""
-    if bar:
-        tex += "\n\tybar,\n"
-    if axis_attr:
-        tex += f"\n\t{axis_attr},\n"
-    tex += "]\n"
+\tylabel={{{ylabel}}},
+{axis_attr}]
 
-    for alloc_name in allocators:
-        # tex += f"\\addplot [{alloc_name}-color] table {{{alloc_name}.dat}};\n"
-        tex += f"\t\\addplot+[{alloc_name},"
-        if error_bars:
-            tex += "\n\terror bars/.cd, y dir=both, y explicit,\n\t"
-        tex += f"] table"
-        if error_bars:
-            tex += "[y error=error]"
-
-        tex += " {\nx y"
-        if error_bars:
-            tex += " error"
-        tex += "\n"
-
-        for perm in perms:
-            xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
-            yval = _eval_with_stat(bench, yexpr, alloc_name, perm, "mean")
-            tex += f"{xval} {yval}"
-            if error_bars:
-                error = _eval_with_stat(bench, yexpr, alloc_name, perm, "std")
-                tex += f" {error}"
-            tex += "\n"
-
-        tex += "};\n"
-
-    tex +=\
-"""\\end{axis}
-\\end{tikzpicture}
-\\end{document}"""
+{plots}
+\\end{{axis}}
+\\end{{tikzpicture}}
+\\end{{document}}"""
 
     with open(os.path.join(sumdir, f"{bench.name}.{postfix}.tex"), "w") as plot_file:
         print(tex, file=plot_file)
