@@ -22,7 +22,6 @@ import traceback
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import tikzplotlib
 
 import src.globalvars
 from src.util import print_debug, print_warn
@@ -98,6 +97,7 @@ def plot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
     plt.title(title.format(**label_substitutions))
     figname = os.path.join(sumdir, f"{bench.name}.{filepostfix}.{file_ext}")
     if figname.endswith(".tex"):
+        import tikzplotlib
         tikzplotlib.save(figname)
     else:
         plt.savefig(figname)
@@ -155,6 +155,7 @@ def barplot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
     plt.title(title.format(**label_substitutions))
     figname = os.path.join(sumdir, f"{bench.name}.{filepostfix}.{file_ext}")
     if figname.endswith(".tex"):
+        import tikzplotlib
         tikzplotlib.save(figname)
     else:
         plt.savefig(figname)
@@ -204,6 +205,7 @@ def plot_fixed_arg(bench, yval, ylabel="y-label", xlabel="{loose_arg}",
             figname = os.path.join(sumdir,
                                    f"{bench.name}.{arg}.{arg_value}.{filepostfix}.{file_ext}")
             if figname.endswith(".tex"):
+                import tikzplotlib
                 tikzplotlib.save(figname)
             else:
                 plt.savefig(figname)
