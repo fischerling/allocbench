@@ -38,7 +38,7 @@ def _get_alloc_color(bench, alloc):
     if alloc["color"] is None:
         allocs = bench.results["allocators"]
         explicit_colors = [v["color"] for v in allocs.values() if v["color"] is not None]
-        matplotlib_c_colors = ["C" + str(i) for i in range(0,16)]
+        matplotlib_c_colors = ["C" + str(i) for i in range(0,10)]
         avail_colors = [c for c in matplotlib_c_colors if c not in explicit_colors]
 
         for alloc in allocs.values():
