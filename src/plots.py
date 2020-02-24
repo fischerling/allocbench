@@ -527,23 +527,6 @@ def pgfplot(bench, perms, xexpr, yexpr, axis_attr=None, bar=False,
 """
 
     for alloc_name, alloc_dict in allocators.items():
-        tex += f"\\begin{{filecontents*}}{{{alloc_name}.dat}}\n"
-        tex += "x y"
-        if error_bars:
-            tex += " error"
-        tex += "\n"
-
-        for perm in perms:
-            xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
-            yval = _eval_with_stat(bench, yexpr, alloc_name, perm, "mean")
-            tex += f"{xval} {yval}"
-            if error_bars:
-                error = _eval_with_stat(bench, yexpr, alloc_name, perm, "std")
-                tex += f" {error}"
-            tex += "\n"
-
-        tex += "\\end{filecontents*}\n"
-
         # define color
         rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
         tex += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
@@ -579,7 +562,22 @@ f"""
         tex += f"] table"
         if error_bars:
             tex += "[y error=error]"
-        tex += f" {{{alloc_name}.dat}};\n"
+
+        tex += " {\nx y"
+        if error_bars:
+            tex += " error"
+        tex += "\n"
+
+        for perm in perms:
+            xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
+            yval = _eval_with_stat(bench, yexpr, alloc_name, perm, "mean")
+            tex += f"{xval} {yval}"
+            if error_bars:
+                error = _eval_with_stat(bench, yexpr, alloc_name, perm, "std")
+                tex += f" {error}"
+            tex += "\n"
+
+        tex += "};\n"
 
     tex +=\
 """\\end{axis}
