@@ -38,7 +38,7 @@ class BenchmarkKeyDB(Benchmark):
         self.cmd = "memtier_benchmark –hide-histogram --threads {threads} –data-size {size}"
         self.args = {"threads": Benchmark.scale_threads_for_cpus(1 / 2),
                      "size": [8, 64, 256, 1024, 4096, 16384]}
-        
+
         self.servers = [{
             "name": "keydb",
             "cmd": f"keydb-server --server-threads 4", # 4 is the by keydb recommended amount
@@ -103,7 +103,7 @@ class BenchmarkKeyDB(Benchmark):
                     result[f"{line[0].lower()}_{stat}"] = line[i + 1]
                     if result[f"{line[0].lower()}_{stat}"] == "---":
                         result[f"{line[0].lower()}_{stat}"] = "nan"
-                        
+
     @staticmethod
     def cleanup():
         if os.path.exists("dump.rdb"):
