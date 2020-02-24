@@ -516,7 +516,7 @@ def pgfplot(bench, perms, xexpr, yexpr, axis_attr="", bar=False,
     title = title.format(**label_substitutions)
 
     if bar:
-        axis_attr = f"\n\tbar,\n{axis_attr}"
+        axis_attr = f"\tybar,\n{axis_attr}"
 
     color_definitions = ""
     plots = ""
