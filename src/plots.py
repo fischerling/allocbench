@@ -513,7 +513,7 @@ def pgfplot_legend(bench, sumdir="", file_name="pgfplot_legend"):
     with open(os.path.join(sumdir, f"{file_name}.tex"), "w") as legend_file:
         print(tex, file=legend_file)
 
-def pgfplot(bench, perms, xexpr, yexpr, bar=False,
+def pgfplot(bench, perms, xexpr, yexpr, axis_attr=None, bar=False,
             ylabel="y-label", xlabel="x-label", title="default title",
             postfix="", sumdir="", scale=None, error_bars=True):
 
@@ -567,6 +567,8 @@ f"""
 \tylabel={{{ylabel}}},"""
     if bar:
         tex += "\n\tybar,\n"
+    if axis_attr:
+        tex += f"\n\t{axis_attr},\n"
     tex += "]\n"
 
     for alloc_name in allocators:
