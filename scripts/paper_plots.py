@@ -32,15 +32,14 @@ import src.allocators.paper
 import src.facter
 import src.globalvars
 import src.plots as plt
-from src.util import print_status, print_debug, print_error
+from src.util import print_status, print_warn, print_error
 from src.util import print_license_and_exit
 
 ALLOCATOR_NAMES = [a.name for a in src.allocators.paper.allocators]
-SURVEY_ALLOCATORS = [a.name for a in src.allocators.paper.allocators if not '-' in a.name]
+SURVEY_ALLOCATORS = [a.name for a in src.allocators.paper.allocators if not '-' in a.name or a.name not in ["speedymalloc", "bumpptr"]]
 TCMALLOCS = [a.name for a in src.allocators.paper.allocators if a.name.startswith("TCMalloc")]
 ALIGNED_ALLOCATORS = [a.name for a in src.allocators.paper.allocators if a.name.endswith("-Aligned")]
 
-COLORS=True
 
 def falsesharing_plots(falsesharing):
     args = falsesharing.results["args"]
@@ -48,7 +47,7 @@ def falsesharing_plots(falsesharing):
 
     falsesharing.results["allocators"] = {k: v for k, v in falsesharing.results["allocators"].items() if k in ALLOCATOR_NAMES}
 
-    plt.pgfplot_legend(falsesharing, colors=COLORS, columns=5)
+    plt.pgfplot_legend(falsesharing, columns=5)
 
     # calculate relevant datapoints: speedup, l1-cache-misses
     for bench in falsesharing.results["args"]["bench"]:
@@ -80,8 +79,7 @@ def falsesharing_plots(falsesharing):
                     xlabel="Threads",
                     ylabel="Speedup",
                     title=f"{bench}: Speedup",
-                    postfix=f"{bench}.speedup",
-                    colors=COLORS)
+                    postfix=f"{bench}.speedup")
 
 def blowup_plots(blowup):
     args = blowup.results["args"]
@@ -109,12 +107,24 @@ def blowup_plots(blowup):
                 title="blowup test",
                 postfix="vmhwm",
                 axis_attr="\txtick=data,\n\tsymbolic x coords={blowup}",
-                bar=True,
-                colors=COLORS)
+                bar=True)
+
+def loop_plots(loop):
+    args = blowup.results["args"]
+    loop.results["allocators"] = {k: v for k, v in blowup.results["allocators"].items() if k in ALLOCATOR_NAMES}
+
+    plt.pgfplot(loop,
+                loop.iterate_args_fixed({"threads": 40}, args),
+                "int(perm.threads)",
+                "{mops}",
+                xlabel="Size in B",
+                ylabel="Mops/cpu-second",
+                title="Loop: 40 threads",
+                postfix="threads.40")
 
 def mysqld_plots(mysql):
     args = mysql.results["args"]
-    mysql.results["allocators"] = {k: v for k, v in mysql.results["allocators"].items() if k in SURVEY_ALLOCATORS}
+#    mysql.results["allocators"] = {k: v for k, v in mysql.results["allocators"].items() if k in SURVEY_ALLOCATORS}
 
     plt.pgfplot(mysql,
                 mysql.iterate_args(args),
@@ -124,8 +134,7 @@ def mysqld_plots(mysql):
                 ylabel="VmHWM in MB",
                 title="Memusage sysbench mysql benchmark",
                 postfix="vmhwm",
-                axis_attr="\tybar=0, \tbar width=3",
-                colors=COLORS)
+                axis_attr="\tybar=0, \tbar width=3")
 
     plt.pgfplot(mysql,
                 mysql.iterate_args(args),
@@ -135,8 +144,9 @@ def mysqld_plots(mysql):
                 ylabel="transactions",
                 title="Transactions sysbench mysql benchmark",
                 postfix="transactions",
-                axis_attr="\tybar=0, \tbar width=3",
-                colors=COLORS)
+                axis_attr="\tybar=0, \tbar width=3")
+
+    plt.pgfplot_legend(mysql, columns=5)
 
 def keydb_plots(keydb):
     args = keydb.results["args"]
@@ -153,9 +163,7 @@ def keydb_plots(keydb):
                         ylabel="Total Operations",
                         title=f"KeyDB Operations: {fixed_arg} {arg_value}",
                         postfix=f"{fixed_arg}.{arg_value}",
-                        bar=True,
-                        colors=COLORS)
-
+                        bar=True)
 
 def summarize(benchmarks=None, exclude_benchmarks=None):
     """summarize the benchmarks in the resdir"""
@@ -163,7 +171,8 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
     cwd = os.getcwd()
 
     for benchmark, func in {"blowup": blowup_plots, "falsesharing": falsesharing_plots,
-                            "mysql": mysqld_plots, "keydb": keydb_plots}.items():
+                            "mysql": mysqld_plots, "keydb": keydb_plots,
+                            "loop": loop_plots}.items():
         if benchmarks and not benchmark in benchmarks:
             continue
         if exclude_benchmarks and benchmark in exclude_benchmarks:
@@ -216,9 +225,6 @@ if __name__ == "__main__":
     parser.add_argument("--latex-preamble",
                         help="latex code to include in the preamble of generated standalones",
                         type=str)
-    parser.add_argument("--no-colors",
-                        help="don't use matplotlib colors for pgfplots",
-                        action="store_true")
 
     args = parser.parse_args()
 
@@ -231,9 +237,6 @@ if __name__ == "__main__":
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
         sys.exit(1)
-
-    if args.no_colors:
-        COLORS=False
 
     src.globalvars.resdir = args.results
 
