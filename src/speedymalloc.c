@@ -14,6 +14,10 @@
 #define MEMSIZE 1024*4*1024*1024l
 #endif
 
+#ifndef NO_WILLNEED
+#define WILLNEED_SIZE 32 * 1024 * 1024
+#endif
+
 // sizeof(tls_t) == 4096
 #define CACHE_BINS 511
 // max cached object: 511 * 64 - 1 = 32703
@@ -45,6 +49,7 @@ typedef struct TLStates {
 } tls_t;
 
 __thread tls_t* tls;
+__thread uintptr_t next_willneed;
 
 static inline int size2bin(size_t size) {
 	assert(size > 0 && size < CACHE_BINS * CACHE_BIN_SEPERATION);
@@ -65,6 +70,9 @@ static void init_tls(void) {
 	tls = (tls_t*)mem;
 
 	tls->ptr = ((uintptr_t)tls) + sizeof(tls_t);
+#ifndef NO_WILLNEED
+	next_willneed = tls->ptr;
+#endif
 }
 
 static void* bump_alloc(size_t size) {
@@ -74,6 +82,15 @@ static void* bump_alloc(size_t size) {
 	// align ptr
 	size_t mask = MIN_ALIGNMENT -1;
 	tls->ptr = (tls->ptr + mask) & ~mask;
+
+#ifndef NO_WILLNEED
+	if(unlikely(tls->ptr >= next_willneed)) {
+		if (madvise((void*)next_willneed, WILLNEED_SIZE, MADV_WILLNEED) != 0) {
+			perror("madvice");
+		}
+		next_willneed += WILLNEED_SIZE;
+	}
+#endif
 
 	void* ptr = (void*)tls->ptr;
 	ptr2chunk(ptr)->size = size;
