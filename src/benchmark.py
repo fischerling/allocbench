@@ -55,7 +55,7 @@ class Benchmark:
 
         # Skip already terminated subprocess
         if proc.poll() is not None:
-            return
+            return proc.communicate()
 
         print_info("Terminating subprocess", proc.args)
         proc.terminate()
@@ -69,6 +69,7 @@ class Benchmark:
 
         print_debug("Server Out:", outs)
         print_debug("Server Err:", errs)
+        return outs, errs
 
     @staticmethod
     def scale_threads_for_cpus(factor=1, min_threads=1, steps=10):
@@ -143,6 +144,9 @@ class Benchmark:
             for key, default in default_results.items():
                 if key not in self.results:
                     self.results[key] = default
+
+        if self.servers:
+            self.results["servers"] = {}
 
         if not hasattr(self, "requirements"):
             self.requirements = []
@@ -342,6 +346,8 @@ class Benchmark:
             # Register termination of the server
             atexit.register(Benchmark.shutdown_server, self=self, server=server)
 
+            self.results["servers"].setdefault(alloc_name, {s["name"]: {"stdout": [], "stderr": []} for s in self.servers})
+
             if not "prepare_cmds" in server:
                 continue
 
@@ -383,7 +389,9 @@ class Benchmark:
             # wait for server termination
             sleep(5)
 
-        Benchmark.terminate_subprocess(server["popen"])
+        outs, errs = Benchmark.terminate_subprocess(server["popen"])
+        server["stdout"] = outs
+        server["stderr"] = errs
 
     def shutdown_servers(self):
         """Terminate all started servers"""
@@ -454,7 +462,7 @@ class Benchmark:
                         substitutions["perm"] = ""
 
                     # we measure the cmd -> prepare it accordingly
-                    if self.servers == []:
+                    if not self.servers:
                         argv = self.prepare_argv(self.cmd, os.environ, alloc, substitutions)
                     # we measure the server -> run cmd as it is
                     else:
@@ -486,7 +494,7 @@ class Benchmark:
 
                     # parse and store results
                     else:
-                        if self.servers == []:
+                        if not self.servers:
                             if os.path.isfile("status"):
                                 # Read VmHWM from status file. If our benchmark
                                 # didn't fork the first occurance of VmHWM is from
@@ -539,6 +547,10 @@ class Benchmark:
 
                 if self.servers != [] and not skip:
                     self.shutdown_servers()
+
+                    for server in self.servers:
+                        self.results["servers"][alloc_name][server['name']]["stdout"].append(server["stdout"])
+                        self.results["servers"][alloc_name][server['name']]["stderr"].append(server["stderr"])
 
                 if hasattr(self, "postallocator_hook"):
                     self.postallocator_hook((alloc_name, alloc), run)
