@@ -519,13 +519,14 @@ def pgfplot(bench, perms, xexpr, yexpr, axis_attr="", bar=False,
         axis_attr = f"\tybar,\n{axis_attr}"
 
     color_definitions = ""
+    style_definitions = ""
     plots = ""
     for alloc_name, alloc_dict in allocators.items():
         if colors:
             # define color
             rgb = matplotlib.colors.to_rgb(_get_alloc_color(bench, alloc_dict))
             color_definitions += f"\\providecolor{{{alloc_name}-color}}{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n"
-            color_definitions += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
+            style_definitions += f"\\pgfplotsset{{{alloc_name}/.style={{color={alloc_name}-color}}}}\n\n"
 
         eb = ""
         ebt = ""
@@ -555,9 +556,11 @@ def pgfplot(bench, perms, xexpr, yexpr, axis_attr="", bar=False,
 f"""\\documentclass{{standalone}}
 \\usepackage{{pgfplots}}
 \\usepackage{{xcolor}}
-
+{style_definitions}
+% include commont.tex if found to override styles
+% see https://tex.stackexchange.com/questions/377295/how-to-prevent-input-from-failing-if-the-file-is-missing/377312#377312
+\\InputIfFileExists{{common.tex}}{{}}{{}}
 {color_definitions}
-{src.globalvars.latex_custom_preamble}
 \\begin{{document}}
 \\begin{{tikzpicture}}
 \\begin{{axis}}[
