@@ -120,21 +120,6 @@ void free(void* ptr) {
 	}
 }
 
-void* realloc(void* ptr, size_t size) {
-	if (ptr == NULL) {
-		return malloc(size);
-	}
-
-	if (size == 0) {
-		return NULL;
-	}
-
-	void* new_ptr = malloc(size);
-	size_t to_copy = ptr2chunk(ptr)->size;
-	memcpy(new_ptr, ptr, to_copy);
-	return new_ptr;
-}
-
 void* memalign(size_t alignment, size_t size) {
 	/* if not power of two */
 	if (!((alignment != 0) && !(alignment & (alignment - 1)))) {
@@ -159,99 +144,9 @@ void* memalign(size_t alignment, size_t size) {
 	return ptr;
 }
 
-int posix_memalign(void **memptr, size_t alignment, size_t size)
-{
-	void *out;
-
-	if (memptr == NULL) {
-		return 22;
-	}
-
-	if ((alignment % sizeof(void*)) != 0) {
-		return 22;
-	}
-
-	/* if not power of two */
-	if (!((alignment != 0) && !(alignment & (alignment - 1)))) {
-		return 22;
-	}
-
-	if (size == 0) {
-		*memptr = NULL;
-		return 0;
-	}
-
-	out = memalign(alignment, size);
-	if (out == NULL) {
-		return 12;
-	}
-
-	*memptr = out;
-	return 0;
-}
-
-void* calloc(size_t nmemb, size_t size)
-{
-	void *out;
-	size_t fullsize = nmemb * size;
-
-	if ((size != 0) && ((fullsize / size) != nmemb)) {
-		return NULL;
-	}
-	
-	out = malloc(fullsize);
-	if (out != NULL)
-		memset(out, 0, fullsize);
-
-	return out;
-}
-
-void* valloc(size_t size)
-{
-	long ret = sysconf(_SC_PAGESIZE);
-	if (ret == -1) {
-		return NULL;
-	}
-
-	return memalign(ret, size);
-}
-
-void* pvalloc(size_t size)
-{
-	size_t ps, rem, allocsize;
-
-	long ret = sysconf(_SC_PAGESIZE);
-	if (ret == -1) {
-		return NULL;
-	}
-
-	ps = ret;
-	rem = size % ps;
-	allocsize = size;
-	if (rem != 0) {
-		allocsize = ps + (size - rem);
-	}
-
-	return memalign(ps, allocsize);
-}
-
-void* aligned_alloc(size_t alignment, size_t size)
-{
-	if (alignment > size) {
-		return NULL;
-	}
-
-	if ((size % alignment) != 0) {
-		return NULL;
-	}
-
-	return memalign(alignment, size);
-}
-
-int malloc_stats() {
-	fprintf(stderr, "Bump pointer allocator by muhq\n");
-	fprintf(stderr, "Memsize: %zu, start address: %p, bump pointer %p\n", MEMSIZE, &tls, tls->ptr);
-	return 0;
+void malloc_stats() {
+	fprintf(stderr, "speedymalloc allocator by muhq\n");
+	fprintf(stderr, "Memsize: %zu, start address: %p, bump pointer %p\n", MEMSIZE, tls, tls->ptr);
 }
 
 #ifdef __cplusplus
