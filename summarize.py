@@ -28,6 +28,8 @@ import src.globalvars
 from src.util import print_status, print_debug, print_error
 from src.util import print_license_and_exit
 
+ALLOCS_TO_EXCLUDE = []
+
 
 def specific_summary(bench, sum_dir, allocators):
     """Summarize bench in sum_dir for allocators"""
@@ -83,6 +85,10 @@ def bench_sum(bench):
         ["glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc", "mimalloc"],
         "research": ["scalloc", "SuperMalloc", "Mesh", "Hoard", "snmalloc"]
     }
+
+    old_allocs = bench.results["allocators"]
+    new_allocs = {an: a for an, a in bench.results["allocators"].items() if an not in ALLOCS_TO_EXCLUDE}
+    bench.results["allocators"] = new_allocs
 
     os.makedirs(bench.name)
     os.chdir(bench.name)
@@ -159,6 +165,10 @@ if __name__ == "__main__":
                         "--exclude-benchmarks",
                         help="benchmarks to exclude",
                         nargs='+')
+    parser.add_argument("-xa",
+                        "--exclude-allocators",
+                        help="allocators to exclude",
+                        nargs='+')
     parser.add_argument("--latex-preamble",
                         help="latex code to include in the preamble of generated standalones",
                         type=str)
@@ -177,6 +187,8 @@ if __name__ == "__main__":
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
         sys.exit(1)
+
+    ALLOCS_TO_EXCLUDE = args.exclude_allocators or []
 
     src.globalvars.resdir = args.results
 
