@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <errno.h>
 #include <stddef.h>   /* NULL, size_t */
 #include <stdint.h>   /* uintptr_t */
 #include <sys/mman.h> /* mmap */
@@ -24,7 +25,7 @@ static inline void* bump_up(size_t size, size_t align) {
 	assert(align % 2 == 0);
 
 	if (unlikely(tsd == NULL)) {
-		void* mem_start = mmap(NULL, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
+		void* mem_start = mmap(NULL, MEMSIZE, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_HUGETLB, -1, 0);
 		if(mem_start == MAP_FAILED) {
 			perror("mmap");
 			return NULL;
@@ -38,9 +39,10 @@ static inline void* bump_up(size_t size, size_t align) {
 	uintptr_t aligned = (tsd->ptr + align - 1) & ~(align - 1);
 
 	uintptr_t new_ptr = aligned + size;
-	if (new_ptr > tsd->end)
+	if (new_ptr > tsd->end) {
+		errno = ENOMEM;
 		return NULL;
-	else {
+	} else {
 		tsd->ptr = new_ptr;
 		return (void*)aligned;
 	}
