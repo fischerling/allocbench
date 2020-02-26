@@ -146,17 +146,16 @@ class Allocator:
             self.prepare()
             print_status("Building", self.name, "...")
 
-            if self.build_cmds:
-                for cmd in self.build_cmds:
-                    cmd = cmd.format(dir=self.dir, srcdir=self.srcdir)
+            for cmd in self.build_cmds:
+                cmd = cmd.format(dir=self.dir, srcdir=self.srcdir)
 
-                    try:
-                        run_cmd(cmd, cwd=BUILDDIR, shell=True)
-                    except CalledProcessError as e:
-                        print_debug(e.stderr, file=sys.stderr)
-                        print_error(f"Builing {self.name} failed")
-                        shutil.rmtree(self.dir, ignore_errors=True)
-                        raise e
+                try:
+                    run_cmd(cmd, cwd=BUILDDIR, shell=True)
+                except CalledProcessError as e:
+                    print_debug(e.stderr, file=sys.stderr)
+                    print_error(f"Builing {self.name} failed")
+                    shutil.rmtree(self.dir, ignore_errors=True)
+                    raise e
 
                 with open(buildtimestamp_path, "w") as buildtimestamp_file:
                     print_info2("Save build time to:", buildtimestamp_path)
