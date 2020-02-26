@@ -293,9 +293,11 @@ def export_stats_to_dataref(bench, datapoint, path=None):
         for alloc in bench.results["allocators"]:
             for perm in bench.iterate_args(args=bench.results["args"]):
                 for statistic, values in stats[alloc][perm].items():
-                    cur_line = line.format(bench.name, alloc,
+                    cur_line = line.format(bench.name,
+                                            alloc,
                                            "/".join([str(p) for p in list(perm)]),
-                                           statistic, values[datapoint])
+                                           statistic,
+                                          values.get(datapoint, nan))
                     # Replace empty outliers
                     cur_line.replace("[]", "")
                     # Replace underscores
