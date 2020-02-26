@@ -22,8 +22,35 @@ memory in speeds favor. Memory is mmapped per thread and never freed.
 See src/bumpptr.c for the actual implementation.
 """
 
-import os
-from src.allocator import Allocator, BUILDDIR
+from src.artifact import GitArtifact
+from src.allocator import Allocator
 
-speedymalloc = Allocator("speedymalloc", LD_PRELOAD=os.path.join(BUILDDIR, "speedymalloc.so"),
-                         color="xkcd:dark")
+VERSION = "ac18af91cf7c50a686b34402b772423b013553d2"
+
+class Speedymalloc(Allocator):
+    """ Speedymalloc definition for allocbench"""
+
+    sources = GitArtifact("speedymalloc", "https://gitlab.cs.fau.de/flow/speedymalloc.git")
+
+    def __init__(self, name, **kwargs):
+
+        configuration = ""
+        for option, value in kwargs.get("options", {}).items():
+            configuration += f"-D{option}={value} "
+
+        self.build_cmds = ["meson {srcdir} {dir}",
+                f"meson configure {{dir}} {configuration}",
+                           "ninja -C {dir}"]
+
+        self.LD_PRELOAD = "{dir}/libspeedymalloc.so"
+        super().__init__(name, **kwargs)
+
+speedymalloc = Speedymalloc("speedymalloc", version=VERSION)
+
+speedymalloc_dont_madv_free = Speedymalloc("speedymalloc_dont_madv_free",
+                                            options = {"madvise_free": "false"},
+                                            version=VERSION)
+
+speedymalloc_dont_madv_willneed = Speedymalloc("speedymalloc_dont_madv_willneed",
+                                            options = {"madvise_willneed": "false"},
+                                            version=VERSION)
