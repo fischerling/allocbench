@@ -25,7 +25,7 @@ See src/bumpptr.c for the actual implementation.
 from src.artifact import GitArtifact
 from src.allocator import Allocator
 
-VERSION = "ac18af91cf7c50a686b34402b772423b013553d2"
+VERSION = "4d965cd9b601d291117c11e013aa4600f694585d"
 
 class Speedymalloc(Allocator):
     """ Speedymalloc definition for allocbench"""
@@ -38,8 +38,7 @@ class Speedymalloc(Allocator):
         for option, value in kwargs.get("options", {}).items():
             configuration += f"-D{option}={value} "
 
-        self.build_cmds = ["meson {srcdir} {dir}",
-                f"meson configure {{dir}} {configuration}",
+        self.build_cmds = [f"meson {{srcdir}} {{dir}} {configuration}",
                            "ninja -C {dir}"]
 
         self.LD_PRELOAD = "{dir}/libspeedymalloc.so"
@@ -52,5 +51,10 @@ speedymalloc_dont_madv_free = Speedymalloc("speedymalloc_dont_madv_free",
                                             version=VERSION)
 
 speedymalloc_dont_madv_willneed = Speedymalloc("speedymalloc_dont_madv_willneed",
-                                            options = {"madvise_willneed": "false"},
-                                            version=VERSION)
+                                               options = {"madvise_willneed": "false"},
+                                               version=VERSION)
+
+speedymalloc_4095_sc_32 = Speedymalloc("speedymalloc_dont_madv_willneed",
+                                       options = {"cache_bins": 4095,
+                                                  "cache_bin_seperation": 32},
+                                       version=VERSION)

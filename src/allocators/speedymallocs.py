@@ -22,4 +22,5 @@ import src.allocators.speedymalloc as sm
 
 allocators = [sm.speedymalloc,
               sm.speedymalloc_dont_madv_free,
-              sm.speedymalloc_dont_madv_willneed]
+              sm.speedymalloc_dont_madv_willneed,
+              sm.speedymalloc_4095_sc_32]
