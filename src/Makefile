@@ -21,7 +21,7 @@ TARGETS = $(addprefix $(OBJDIR)/allocators/,$(ALLOCS)) $(addprefix $(OBJDIR)/,$(
 
 all: $(TARGETS)
 
-$(OBJDIR)/allocators/bumpptr_alloc.so: bump_alloc.h bumpptr_alloc.c malloc.c Makefile
+$(OBJDIR)/allocators/bumpptr_alloc.so: bumpptr_alloc.c malloc.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared -DMEMSIZE=$(MEMSIZE) $(CFLAGS) -o $@ bumpptr_alloc.c malloc.c
 
