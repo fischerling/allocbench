@@ -10,6 +10,12 @@
 
 #define MIN_ALIGNMENT 16
 
+#ifdef DONTNEED
+#define MY_MADVISE_FREE MADV_DONTNEED
+#else
+#define MY_MADVISE_FREE MADV_FREE
+#endif
+
 #ifndef MEMSIZE
 #define MEMSIZE 1024*4*1024*1024l
 #endif
@@ -19,6 +25,7 @@
 #endif
 
 // sizeof(tls_t) == 4096
+//#define CACHE_BINS 511
 #define CACHE_BINS 511
 // max cached object: 511 * 64 - 1 = 32703
 #define CACHE_BIN_SEPERATION 64
@@ -29,6 +36,7 @@
 extern "C" {
 #endif
 
+size_t PAGE_SIZE = 0;
 
 typedef struct chunk {
 	size_t size; // Size header field for internal use
@@ -73,6 +81,8 @@ static void init_tls(void) {
 #ifndef NO_WILLNEED
 	next_willneed = tls->ptr;
 #endif
+
+	PAGE_SIZE = sysconf(_SC_PAGESIZE);
 }
 
 static void* bump_alloc(size_t size) {
@@ -85,9 +95,7 @@ static void* bump_alloc(size_t size) {
 
 #ifndef NO_WILLNEED
 	if(unlikely(tls->ptr >= next_willneed)) {
-		if (madvise((void*)next_willneed, WILLNEED_SIZE, MADV_WILLNEED) != 0) {
-			perror("madvice");
-		}
+		madvise((void*)next_willneed, WILLNEED_SIZE, MADV_WILLNEED);
 		next_willneed += WILLNEED_SIZE;
 	}
 #endif
@@ -135,6 +143,19 @@ void free(void* ptr) {
 		chunk->next = tls->bins[bin];
 		tls->bins[bin] = chunk;
 	}
+#ifndef NO_FREE
+	else {
+		size_t size = chunk->size;
+		size -= ((uintptr_t)ptr % PAGE_SIZE); // size without part before a page boundry
+		size -= size % PAGE_SIZE; // size without part after a page boundry
+
+		size_t mask = PAGE_SIZE - 1;
+		void* page_start = (void*)(((uintptr_t)ptr + mask) & ~mask);
+		//fprintf(stderr, "ptr: %p, s: %ux, pages: %ux, page_ptr: %p\n",
+		//        ptr, chunk->size, size, page_start);
+		madvise(page_start, size, MY_MADVISE_FREE);
+	}
+#endif
 }
 
 void* memalign(size_t alignment, size_t size) {
