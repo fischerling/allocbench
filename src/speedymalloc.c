@@ -4,7 +4,6 @@
 #include <stdint.h> /* uintptr_t */
 #include <stdio.h> /* fprintf */
 #include <stdlib.h> /* exit */
-#include <unistd.h> /* sysconf(_SC_PAGESIZE) */
 #include <string.h> /* memset */
 #include <sys/mman.h> /* mmap */
 
@@ -25,18 +24,16 @@
 #endif
 
 // sizeof(tls_t) == 4096
-//#define CACHE_BINS 511
 #define CACHE_BINS 511
 // max cached object: 511 * 64 - 1 = 32703
 #define CACHE_BIN_SEPERATION 64
 
 #define unlikely(x)     __builtin_expect((x),0)
+#define PAGE_SIZE 4096
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-size_t PAGE_SIZE = 0;
 
 typedef struct chunk {
 	size_t size; // Size header field for internal use
@@ -49,6 +46,11 @@ static inline chunk_t* ptr2chunk(void* ptr) {
 
 static inline void* chunk2ptr (chunk_t* chunk) {
 	return (void*)((uintptr_t)chunk + sizeof(size_t));
+}
+
+static inline uintptr_t alignup (uintptr_t ptr, size_t alignment) {
+	size_t mask = alignment -1;
+	return (ptr + mask) & ~mask;
 }
 
 typedef struct TLStates {
@@ -81,8 +83,6 @@ static void init_tls(void) {
 #ifndef NO_WILLNEED
 	next_willneed = tls->ptr;
 #endif
-
-	PAGE_SIZE = sysconf(_SC_PAGESIZE);
 }
 
 static void* bump_alloc(size_t size) {
@@ -90,8 +90,7 @@ static void* bump_alloc(size_t size) {
 	tls->ptr += sizeof(size_t);
 
 	// align ptr
-	size_t mask = MIN_ALIGNMENT -1;
-	tls->ptr = (tls->ptr + mask) & ~mask;
+	tls->ptr = alignup(tls->ptr, MIN_ALIGNMENT);
 
 #ifndef NO_WILLNEED
 	if(unlikely(tls->ptr >= next_willneed)) {
@@ -149,8 +148,7 @@ void free(void* ptr) {
 		size -= ((uintptr_t)ptr % PAGE_SIZE); // size without part before a page boundry
 		size -= size % PAGE_SIZE; // size without part after a page boundry
 
-		size_t mask = PAGE_SIZE - 1;
-		void* page_start = (void*)(((uintptr_t)ptr + mask) & ~mask);
+		void* page_start = (void*)alignup((uintptr_t)ptr, PAGE_SIZE);
 		//fprintf(stderr, "ptr: %p, s: %ux, pages: %ux, page_ptr: %p\n",
 		//        ptr, chunk->size, size, page_start);
 		madvise(page_start, size, MY_MADVISE_FREE);
@@ -171,9 +169,7 @@ void* memalign(size_t alignment, size_t size) {
 	// allocate size header
 	tls->ptr += sizeof(size_t);
 
-	// align returned pointer
-	size_t mask = alignment - 1;
-	tls->ptr = (tls->ptr + mask) & ~mask;
+	tls->ptr = alignup(tls->ptr, alignment);
 
 	void* ptr = (void*)tls->ptr;
 	ptr2chunk(ptr)->size = size;
