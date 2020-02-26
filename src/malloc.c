@@ -23,10 +23,6 @@ int posix_memalign(void **memptr, size_t alignment, size_t size)
 {
 	void *out;
 
-	if(memptr == NULL) {
-		return 22;
-	}
-
 	if((alignment % sizeof(void*)) != 0) {
 		return 22;
 	}
