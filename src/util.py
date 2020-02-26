@@ -42,6 +42,8 @@ def run_cmd(cmd,
         stdout = None
         stderr = stdout
 
+    print_debug(f"Running command {cmd}")
+
     return subprocess.run(cmd,
                           stdout=stdout,
                           stderr=stderr,
