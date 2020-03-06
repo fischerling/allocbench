@@ -25,7 +25,7 @@ See src/bumpptr.c for the actual implementation.
 from src.artifact import GitArtifact
 from src.allocator import Allocator
 
-VERSION = "4d965cd9b601d291117c11e013aa4600f694585d"
+VERSION = "7b73dc51bba043d6b3269dd497263f03d52fc1ca"
 
 class Speedymalloc(Allocator):
     """ Speedymalloc definition for allocbench"""
@@ -58,3 +58,7 @@ speedymalloc_4095_sc_32 = Speedymalloc("speedymalloc_dont_madv_willneed",
                                        options = {"cache_bins": 4095,
                                                   "cache_bin_seperation": 32},
                                        version=VERSION)
+
+speedymalloc_no_glab = Speedymalloc("speedymalloc_dont_madv_willneed",
+                                    options = {"max_local_allocation_buffer_size": 0},
+                                    version=VERSION)
