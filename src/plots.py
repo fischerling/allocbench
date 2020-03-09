@@ -56,8 +56,32 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
         return nan
     return eval(res)
 
+def _get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
+    """Helper to get the y data of an allocator for given permutations"""
+    y_data = []
+    for perm in perms:
+        if scale:
+            if scale == allocator:
+                y_data.append(1)
+            else:
+                val = _eval_with_stat(bench, expression, allocator, perm, stat)
+                norm_val = _eval_with_stat(bench, expression, scale, perm, stat)
+                y_data.append(val / norm_val)
+        else:
+            y_data.append(_eval_with_stat(bench, expression, allocator, perm, stat))
+
+    return y_data
+
+def _save_figure(bench, fig, sumdir='', file_postfix='', file_ext=src.globalvars.summary_file_ext):
+    figname = os.path.join(sumdir, f"{bench.name}.{file_postfix}.{file_ext}")
+    if figname.endswith(".tex"):
+        import tikzplotlib
+        tikzplotlib.save(figname)
+    else:
+        fig.savefig(figname)
+
 def plot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
-                    autoticks=True, title="default title", filepostfix="",
+                    autoticks=True, title="default title", file_postfix="",
                     sumdir="", arg="", scale=None, file_ext=src.globalvars.summary_file_ext):
     """plot line graphs for each permutation of the benchmark's command arguments"""
 
@@ -66,24 +90,15 @@ def plot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
 
     arg = arg or list(args.keys())[0]
 
+    fig = plt.figure()
+
     if not autoticks:
         x_vals = list(range(1, len(args[arg]) + 1))
     else:
         x_vals = args[arg]
 
     for allocator in allocators:
-        y_vals = []
-        for perm in bench.iterate_args(args=args):
-            if scale:
-                if scale == allocator:
-                    y_vals = [1] * len(x_vals)
-                else:
-                    mean = _eval_with_stat(bench, yval, allocator, perm, "mean")
-                    norm_mean = _eval_with_stat(bench, yval, scale, perm, "mean")
-                    y_vals.append(mean / norm_mean)
-            else:
-                y_vals.append(_eval_with_stat(bench, yval, allocator, perm, "mean"))
-
+        y_vals = _get_y_data(bench, yval, allocator, bench.iterate_args(args=args), stat='mean', scale=scale)
         plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                  label=allocator, color=_get_alloc_color(bench, allocator))
 
@@ -95,16 +110,14 @@ def plot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
     plt.xlabel(xlabel.format(**label_substitutions))
     plt.ylabel(ylabel.format(**label_substitutions))
     plt.title(title.format(**label_substitutions))
-    figname = os.path.join(sumdir, f"{bench.name}.{filepostfix}.{file_ext}")
-    if figname.endswith(".tex"):
-        import tikzplotlib
-        tikzplotlib.save(figname)
-    else:
-        plt.savefig(figname)
-    plt.clf()
+
+    _save_figure(bench, fig, sumdir, file_postfix, file_ext)
+    fig.close()
+
+    return fig
 
 def barplot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
-                       title="default title", filepostfix="", sumdir="",
+                       title="default title", file_postfix="", sumdir="",
                        arg="", scale=None, file_ext=src.globalvars.summary_file_ext, yerr=True):
     """plot bar plots for each permutation of the benchmark's command arguments"""
 
@@ -121,26 +134,14 @@ def barplot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
 
     narg = len(arg)
 
+    fig = plt.figure()
+
     for i, allocator in enumerate(allocators):
         x_vals = list(range(i, narg * (nallocators+1), nallocators+1))
-        y_vals = []
+        y_vals = _get_y_data(bench, yval, allocator, bench.iterate_args(args=args), stat='mean', scale=scale)
         y_errs = None
         if yerr:
-            y_errs = []
-
-        for perm in bench.iterate_args(args=args):
-            if scale:
-                if scale == allocator:
-                    y_vals = [1] * len(x_vals)
-                else:
-                    mean = _eval_with_stat(bench, yval, allocator, perm, "mean")
-                    norm_mean = _eval_with_stat(bench, yval, scale, perm, "mean")
-                    y_vals.append(mean / norm_mean)
-            else:
-                y_vals.append(_eval_with_stat(bench, yval, allocator, perm, "mean"))
-
-            if yerr:
-                y_errs.append(_eval_with_stat(bench, yval, allocator, perm, "std"))
+            y_vals = _get_y_data(bench, yval, allocator, bench.iterate_args(args=args), stat='std')
 
         plt.bar(x_vals, y_vals, width=1, label=allocator, yerr=y_errs,
                 color=_get_alloc_color(bench, allocator))
@@ -153,16 +154,12 @@ def barplot_single_arg(bench, yval, ylabel="y-label", xlabel="x-label",
     plt.xlabel(xlabel.format(**label_substitutions))
     plt.ylabel(ylabel.format(**label_substitutions))
     plt.title(title.format(**label_substitutions))
-    figname = os.path.join(sumdir, f"{bench.name}.{filepostfix}.{file_ext}")
-    if figname.endswith(".tex"):
-        import tikzplotlib
-        tikzplotlib.save(figname)
-    else:
-        plt.savefig(figname)
-    plt.clf()
+
+    _save_figure(bench, fig, sumdir, file_postfix, file_ext)
+    fig.close()
 
 def plot_fixed_arg(bench, yval, ylabel="y-label", xlabel="{loose_arg}",
-                   autoticks=True, title="default title", filepostfix="",
+                   autoticks=True, title="default title", file_postfix="",
                    sumdir="", fixed=None, file_ext=src.globalvars.summary_file_ext, scale=None):
 
     args = bench.results["args"]
@@ -177,18 +174,10 @@ def plot_fixed_arg(bench, yval, ylabel="y-label", xlabel="{loose_arg}",
             x_vals = args[loose_arg]
 
         for arg_value in args[arg]:
+            fig = plt.figure()
+
             for allocator in allocators:
-                y_vals = []
-                for perm in bench.iterate_args_fixed({arg: arg_value}, args=args):
-                    if scale:
-                        if scale == allocator:
-                            y_vals = [1] * len(x_vals)
-                        else:
-                            mean = _eval_with_stat(bench, yval, allocator, perm, "mean")
-                            norm_mean = _eval_with_stat(bench, yval, scale, perm, "mean")
-                            y_vals.append(mean / norm_mean)
-                    else:
-                        y_vals.append(_eval_with_stat(bench, yval, allocator, perm, "mean"))
+                y_vals = _get_y_data(bench, yval, allocator, bench.iterate_args_fixed({arg: arg_value}, args=args), stat='mean', scale=scale)
 
                 plt.plot(x_vals, y_vals, marker='.', linestyle='-',
                          label=allocator, color=_get_alloc_color(bench, allocator))
@@ -202,14 +191,9 @@ def plot_fixed_arg(bench, yval, ylabel="y-label", xlabel="{loose_arg}",
             plt.xlabel(xlabel.format(**label_substitutions))
             plt.ylabel(ylabel.format(**label_substitutions))
             plt.title(title.format(**label_substitutions))
-            figname = os.path.join(sumdir,
-                                   f"{bench.name}.{arg}.{arg_value}.{filepostfix}.{file_ext}")
-            if figname.endswith(".tex"):
-                import tikzplotlib
-                tikzplotlib.save(figname)
-            else:
-                plt.savefig(figname)
-            plt.clf()
+
+            _save_figure(bench, fig, sumdir, file_postfix, file_ext)
+            fig.close()
 
 def export_facts_to_file(bench, comment_symbol, output_file):
     """Write collected facts about used system and benchmark to file"""
@@ -304,8 +288,7 @@ def export_stats_to_dataref(bench, datapoint, path=None):
                     cur_line.replace("_", "-")
                     print(cur_line, file=dataref_file)
 
-def write_best_doublearg_tex_table(bench, expr, sort=">",
-                                   filepostfix="", sumdir=""):
+def write_best_doublearg_tex_table(bench, expr, sort=">", file_postfix="", sumdir=""):
     args = bench.results["args"]
     keys = list(args.keys())
     allocators = bench.results["allocators"]
@@ -358,7 +341,7 @@ def write_best_doublearg_tex_table(bench, expr, sort=">",
         print("\\end{tabular}", file=tex_file)
         print("\\end{document}", file=tex_file)
 
-def write_tex_table(bench, entries, filepostfix="", sumdir=""):
+def write_tex_table(bench, entries, file_postfix="", sumdir=""):
     """generate a latex standalone table from an list of entries dictionaries
 
     Entries must have at least the two keys: "label" and "expression".
@@ -396,7 +379,7 @@ def write_tex_table(bench, entries, filepostfix="", sumdir=""):
     entry_header_line = perm_fields_header + entry_header_line * nallocators
     entry_header_line = entry_header_line[:-1] + "\\\\"
 
-    fname = os.path.join(sumdir, ".".join([bench.name, filepostfix, "tex"]))
+    fname = os.path.join(sumdir, ".".join([bench.name, file_postfix, "tex"]))
     with open(fname, "w") as tex_file:
         print("\\documentclass{standalone}", file=tex_file)
         print("\\usepackage{booktabs}", file=tex_file)

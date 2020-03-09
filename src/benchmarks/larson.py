@@ -85,14 +85,14 @@ class BenchmarkLarson(Benchmark):
                            "{throughput}/1000000",
                            ylabel="MOPS/s",
                            title="Larson: {arg} {arg_value}",
-                           filepostfix="throughput")
+                           file_postfix="throughput")
 
         plt.plot_fixed_arg(
             self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
             ylabel="l1 cache misses in %",
             title="Larson cache misses: {arg} {arg_value}",
-            filepostfix="cachemisses")
+            file_postfix="cachemisses")
 
 
 larson = BenchmarkLarson()

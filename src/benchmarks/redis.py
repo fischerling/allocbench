@@ -84,12 +84,12 @@ class BenchmarkRedis(Benchmark):
         plt.barplot_single_arg(self, "{requests}",
                                 ylabel='"requests per s"',
                                 title='"redis throughput"',
-                                filepostfix="requests")
+                                file_postfix="requests")
 
         plt.barplot_single_arg(self, "{redis_vmhwm}",
                                 ylabel='"VmHWM in KB"',
                                 title='"redis memusage"',
-                                filepostfix="vmhwm")
+                                file_postfix="vmhwm")
 
         plt.export_stats_to_dataref(self, "requests")
 

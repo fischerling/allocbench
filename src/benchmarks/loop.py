@@ -65,7 +65,7 @@ class BenchmarkLoop(Benchmark):
                            "{mops}",
                            ylabel="MOPS/cpu-second",
                            title="Loop: {arg} {arg_value}",
-                           filepostfix="time",
+                           file_postfix="time",
                            autoticks=False)
 
         # L1 cache misses
@@ -74,21 +74,21 @@ class BenchmarkLoop(Benchmark):
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
             ylabel="L1 misses in %",
             title="Loop l1 cache misses: {arg} {arg_value}",
-            filepostfix="l1misses",
+            file_postfix="l1misses",
             autoticks=False)
 
         # Speed Matrix
         plt.write_best_doublearg_tex_table(
             self,
             "{mops}",
-            filepostfix="time.matrix")
+            file_postfix="time.matrix")
 
         plt.write_tex_table(self, [{
             "label": "MOPS/s",
             "expression": "{mops}",
             "sort": ">"
         }],
-                            filepostfix="mops.table")
+                            file_postfix="mops.table")
 
         # plt.export_stats_to_csv(self, "task-clock")
         # plt.export_stats_to_dataref(self, "task-clock")

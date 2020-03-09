@@ -58,7 +58,7 @@ class BenchmarkBlowup(Benchmark):
                                "{VmHWM}/1000",
                                ylabel="VmHWM in MB",
                                title="blowup test",
-                               filepostfix="vmhwm")
+                               file_postfix="vmhwm")
 
         plt.pgfplot(self,
                     self.iterate_args(self.results["args"]),

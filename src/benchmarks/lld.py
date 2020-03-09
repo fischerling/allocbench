@@ -294,7 +294,7 @@ class BenchmarkLld(Benchmark):
             "expression": "{task-clock}",
             "sort": "<"
         }],
-                                  filepostfix="table")
+                                  file_postfix="table")
 
 
 lld = BenchmarkLld()

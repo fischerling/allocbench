@@ -205,7 +205,7 @@ class BenchmarkMYSQL(Benchmark):
                              xlabel='"threads"',
                              ylabel='"transactions"',
                              title='"sysbench oltp read only"',
-                             filepostfix="l")
+                             file_postfix="l")
 
         # normalized linear plot
         ref_alloc = list(allocators)[0]
@@ -213,7 +213,7 @@ class BenchmarkMYSQL(Benchmark):
                              xlabel='"threads"',
                              ylabel='"transactions scaled at " + scale',
                              title='"sysbench oltp read only"',
-                             filepostfix="norm.l",
+                             file_postfix="norm.l",
                              scale=ref_alloc)
 
         # bar plot
@@ -221,14 +221,14 @@ class BenchmarkMYSQL(Benchmark):
                                 xlabel='"threads"',
                                 ylabel='"transactions"',
                                 title='"sysbench oltp read only"',
-                                filepostfix="b")
+                                file_postfix="b")
 
         # normalized bar plot
         plt.barplot_single_arg(self, "{transactions}",
                                 xlabel='"threads"',
                                 ylabel='"transactions scaled at " + scale',
                                 title='"sysbench oltp read only"',
-                                filepostfix="norm.b",
+                                file_postfix="norm.b",
                                 scale=ref_alloc)
 
         # Memusage
@@ -236,7 +236,7 @@ class BenchmarkMYSQL(Benchmark):
                                 xlabel='"threads"',
                                 ylabel='"VmHWM in kB"',
                                 title='"Memusage sysbench oltp read only"',
-                                filepostfix="mem")
+                                file_postfix="mem")
 
         plt.write_tex_table(self, [{
             "label": "Transactions",
@@ -247,7 +247,7 @@ class BenchmarkMYSQL(Benchmark):
             "expression": "{mysqld_vmhwm}",
             "sort": "<"
         }],
-                             filepostfix="table")
+                             file_postfix="table")
 
         # Colored latex table showing transactions count
         d = {allocator: {} for allocator in allocators}

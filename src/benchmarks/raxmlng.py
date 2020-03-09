@@ -86,7 +86,7 @@ class BenchmarkRaxmlng(Benchmark):
                                "{runtime}",
                                ylabel='"runtime in s"',
                                title='"raxml-ng tree inference benchmark"',
-                               filepostfix="runtime")
+                               file_postfix="runtime")
 
         plt.export_stats_to_dataref(self, "runtime")
 
@@ -94,7 +94,7 @@ class BenchmarkRaxmlng(Benchmark):
                                "{VmHWM}",
                                ylabel='"VmHWM in KB"',
                                title='"raxml-ng memusage"',
-                               filepostfix="memusage")
+                               file_postfix="memusage")
 
         plt.export_stats_to_dataref(self, "VmHWM")
 

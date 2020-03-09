@@ -83,7 +83,7 @@ class BenchmarkFalsesharing(Benchmark):
                            "{speedup}",
                            ylabel="Speedup",
                            title="Speedup: {arg} {arg_value}",
-                           filepostfix="speedup",
+                           file_postfix="speedup",
                            autoticks=False,
                            fixed=["bench"])
 
@@ -92,7 +92,7 @@ class BenchmarkFalsesharing(Benchmark):
             "{l1chache_misses}",
             ylabel="l1 cache misses in %",
             title="cache misses: {arg} {arg_value}",
-            filepostfix="l1-misses",
+            file_postfix="l1-misses",
             autoticks=False,
             fixed=["bench"])
 
@@ -100,7 +100,7 @@ class BenchmarkFalsesharing(Benchmark):
                            # "({LLC-load-misses}/{LLC-loads})*100",
                            # ylabel="llc cache misses in %",
                            # title="LLC misses: {arg} {arg_value}",
-                           # filepostfix="llc-misses",
+                           # file_postfix="llc-misses",
                            # autoticks=False,
                            # fixed=["bench"])
 
@@ -109,7 +109,7 @@ class BenchmarkFalsesharing(Benchmark):
             "expression": "{speedup}",
             "sort": ">"
         }],
-                            filepostfix="speedup.table")
+                            file_postfix="speedup.table")
 
         # plt.export_stats_to_csv(self, "speedup", "time")
         # plt.export_stats_to_csv(self, "l1chache_misses", "l1-misses")

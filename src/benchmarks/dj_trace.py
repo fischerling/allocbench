@@ -200,7 +200,7 @@ class BenchmarkDJTrace(Benchmark):
                                  "{cputime}/1000",
                                  ylabel="time in ms",
                                  title="total runtime",
-                                 filepostfix="runtime")
+                                 file_postfix="runtime")
 
         # Function Times
         func_times_means = {allocator: {} for allocator in allocators}
@@ -262,12 +262,12 @@ class BenchmarkDJTrace(Benchmark):
                                  "{Max_RSS}/1000",
                                  ylabel="Max RSS in MB",
                                  title="Max RSS (VmHWM)",
-                                 filepostfix="newrss")
+                                 file_postfix="newrss")
 
         # self.barplot_fixed_arg("{Max_RSS}/1000",
         # ylabel='"Max RSS in MB"',
         # title='"Highwatermark of Vm (VmHWM)"',
-        # filepostfix="newrss")
+        # file_postfix="newrss")
 
         del allocators["Ideal_RSS"]
         del self.results["stats"]["Ideal_RSS"]
@@ -312,7 +312,7 @@ class BenchmarkDJTrace(Benchmark):
             "expression": "{Max_RSS}/1000",
             "sort": "<"
         }],
-                              filepostfix="table")
+                              file_postfix="table")
 
         # Tables
         for perm in self.iterate_args(args=args):

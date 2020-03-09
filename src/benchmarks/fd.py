@@ -71,7 +71,7 @@ class BenchmarkFd(Benchmark):
                                "{task-clock}",
                                ylabel="runtime in ms",
                                title="fd runtime",
-                               filepostfix="runtime")
+                               file_postfix="runtime")
 
         plt.export_stats_to_dataref(self, "task-clock")
 
@@ -79,7 +79,7 @@ class BenchmarkFd(Benchmark):
                                "{VmHWM}",
                                ylabel="VmHWM in KB",
                                title="fd memusage",
-                               filepostfix="memusage")
+                               file_postfix="memusage")
 
         plt.export_stats_to_dataref(self, "VmHWM")
 
