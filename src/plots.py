@@ -144,7 +144,7 @@ def plot_single_arg(bench,
     plt.title(title.format(**label_substitutions))
 
     _save_figure(bench, fig, sumdir, file_postfix, file_ext)
-    fig.close()
+    plt.close(fig)
 
     return fig
 
@@ -213,7 +213,7 @@ def barplot_single_arg(bench,
     plt.title(title.format(**label_substitutions))
 
     _save_figure(bench, fig, sumdir, file_postfix, file_ext)
-    fig.close()
+    plt.close(fig)
 
 
 def plot_fixed_arg(bench,
@@ -269,7 +269,7 @@ def plot_fixed_arg(bench,
             plt.title(title.format(**label_substitutions))
 
             _save_figure(bench, fig, sumdir, file_postfix, file_ext)
-            fig.close()
+            plt.close(fig)
 
 
 def export_facts_to_file(bench, comment_symbol, output_file):
