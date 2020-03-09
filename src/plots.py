@@ -82,17 +82,16 @@ def _get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
     return y_data
 
 
-def _save_figure(bench,
-                 fig,
+def _save_figure(fig,
+                 fig_name,
                  sumdir='',
-                 file_postfix='',
                  file_ext=src.globalvars.summary_file_ext):
-    figname = os.path.join(sumdir, f"{bench.name}.{file_postfix}.{file_ext}")
-    if figname.endswith(".tex"):
+    fig_path = os.path.join(sumdir, f"{fig_name}.{file_ext}")
+    if file_ext == "tex":
         import tikzplotlib
-        tikzplotlib.save(figname)
+        tikzplotlib.save(fig_path)
     else:
-        fig.savefig(figname)
+        fig.savefig(fig_path)
 
 
 def plot_single_arg(bench,
@@ -113,7 +112,8 @@ def plot_single_arg(bench,
 
     arg = arg or list(args.keys())[0]
 
-    fig = plt.figure()
+    fig_name = f'{bench.name}.{file_postfix}'
+    fig = plt.figure(fig_name)
 
     if not autoticks:
         x_vals = list(range(1, len(args[arg]) + 1))
@@ -143,7 +143,7 @@ def plot_single_arg(bench,
     plt.ylabel(ylabel.format(**label_substitutions))
     plt.title(title.format(**label_substitutions))
 
-    _save_figure(bench, fig, sumdir, file_postfix, file_ext)
+    _save_figure(fig, sumdir, fig_name, file_ext)
     plt.close(fig)
 
     return fig
@@ -175,7 +175,8 @@ def barplot_single_arg(bench,
 
     narg = len(arg)
 
-    fig = plt.figure()
+    fig_name = f'{bench.name}.{file_postfix}'
+    fig = plt.figure(fig_name)
 
     for i, allocator in enumerate(allocators):
         x_vals = list(range(i, narg * (nallocators + 1), nallocators + 1))
@@ -212,7 +213,7 @@ def barplot_single_arg(bench,
     plt.ylabel(ylabel.format(**label_substitutions))
     plt.title(title.format(**label_substitutions))
 
-    _save_figure(bench, fig, sumdir, file_postfix, file_ext)
+    _save_figure(fig, sumdir, fig_name, file_ext)
     plt.close(fig)
 
 
@@ -240,7 +241,8 @@ def plot_fixed_arg(bench,
             x_vals = args[loose_arg]
 
         for arg_value in args[arg]:
-            fig = plt.figure()
+            fig_name = f'{bench.name}.{arg}.{arg_value}.{file_postfix}'
+            fig = plt.figure(fig_name)
 
             for allocator in allocators:
                 y_vals = _get_y_data(bench,
@@ -268,7 +270,7 @@ def plot_fixed_arg(bench,
             plt.ylabel(ylabel.format(**label_substitutions))
             plt.title(title.format(**label_substitutions))
 
-            _save_figure(bench, fig, sumdir, file_postfix, file_ext)
+            _save_figure(fig, sumdir, fig_name, file_ext)
             plt.close(fig)
 
 
