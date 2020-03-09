@@ -318,28 +318,27 @@ def write_best_doublearg_tex_table(bench, expr, sort=">", file_postfix="", sumdi
                 elif mean == best_val:
                     best.append(allocator)
 
-            row.append("{}: {:.3f}".format(best[0], best_val))
-        cell_text.append(row)
+            row.append(f"{best[0]}: {best_val:.3f}")
+        cell_text.append(" & ".join(row))
 
-    fname = os.path.join(sumdir, ".".join([bench.name, filepostfix, "tex"]))
+    table_layout = " l |" * len(headers)
+    header_line = " & ".join(headers)
+    cell_text = "\\\\\n".join(cell_text)
+
+    tex =\
+f"""\\documentclass{{standalone}}
+\\begin{{document}}
+\\begin{{tabular}}{{|{table_layout}}}
+{header_arg}/{row_arg} & {header_line} \\\\
+{cell_text}
+\\end{{tabular}}
+\\end{{document}}
+"""
+
+    fname = os.path.join(sumdir, f"{bench.name}.{file_postfix}.tex")
     with open(fname, "w") as tex_file:
-        print("\\documentclass{standalone}", file=tex_file)
-        print("\\begin{document}", file=tex_file)
-        print("\\begin{tabular}{|", end="", file=tex_file)
-        print(" l |" * len(headers), "}", file=tex_file)
+        print(tex, file=tex_file)
 
-        print(header_arg+"/"+row_arg, end=" & ", file=tex_file)
-        for header in headers[:-1]:
-            print(header, end="& ", file=tex_file)
-        print(headers[-1], "\\\\", file=tex_file)
-
-        for i, row in enumerate(cell_text):
-            print(rows[i], end=" & ", file=tex_file)
-            for entry in row[:-1]:
-                print(entry, end=" & ", file=tex_file)
-            print(row[-1], "\\\\", file=tex_file)
-        print("\\end{tabular}", file=tex_file)
-        print("\\end{document}", file=tex_file)
 
 def write_tex_table(bench, entries, file_postfix="", sumdir=""):
     """generate a latex standalone table from an list of entries dictionaries
