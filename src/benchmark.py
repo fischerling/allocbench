@@ -457,7 +457,7 @@ class Benchmark:
                     substitutions.update(alloc)
                     if perm:
                         substitutions.update(perm._asdict())
-                        substitutions["perm"] = ("{}-"*(len(perm)-1) + "{}").format(*perm)
+                        substitutions["perm"] = "-".join(*perm)
                     else:
                         substitutions["perm"] = ""
 
