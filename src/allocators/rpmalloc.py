@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """rpmalloc definition for allocbench"""
 
 from src.allocator import Allocator
@@ -29,10 +28,11 @@ class Rpmalloc(Allocator):
     def __init__(self, name, **kwargs):
 
         self.LD_PRELOAD = "{dir}/librpmalloc.so"
-        self.build_cmds = ["cd {srcdir}; ./configure.py",
-                           "cd {srcdir}; ninja",
-                           "mkdir -p {dir}",
-                           'ln -f -s $(find {srcdir}/bin -path "*release*librpmalloc.so") {dir}/librpmalloc.so']
+        self.build_cmds = [
+            "cd {srcdir}; ./configure.py", "cd {srcdir}; ninja",
+            "mkdir -p {dir}",
+            'ln -f -s $(find {srcdir}/bin -path "*release*librpmalloc.so") {dir}/librpmalloc.so'
+        ]
 
         super().__init__(name, **kwargs)
 

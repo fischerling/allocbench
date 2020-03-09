@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Collection containing all allocators used in Florian's BA thesis"""
 
 from src.allocators.glibc import glibc, glibc_notc

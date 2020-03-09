@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Glibc definitions"""
 
 from multiprocessing import cpu_count
@@ -36,10 +35,12 @@ class Glibc(Allocator):
             configure_args = kwargs["configure_args"]
             del kwargs["configure_args"]
 
-        self.build_cmds = ["mkdir -p glibc-build",
-                           "cd glibc-build; {srcdir}/configure --prefix={dir} " + configure_args,
-                           "cd glibc-build; make",
-                           f"cd glibc-build; make -l {cpu_count()} install"]
+        self.build_cmds = [
+            "mkdir -p glibc-build",
+            "cd glibc-build; {srcdir}/configure --prefix={dir} " +
+            configure_args, "cd glibc-build; make",
+            f"cd glibc-build; make -l {cpu_count()} install"
+        ]
 
         self.cmd_prefix = "{dir}/lib/ld-linux-x86-64.so.2 --library-path {dir}/lib:" + LIBRARY_PATH
 
@@ -53,12 +54,14 @@ glibc_notc = Glibc("glibc-noThreadCache",
                    version="glibc-2.29",
                    color="xkcd:maroon")
 
-glibc_nofs = Glibc("glibc-noFalsesharing",
-                   patches=["{patchdir}/glibc_2.29_no_passive_falsesharing.patch"],
-                   version="glibc-2.29",
-                   color="xkcd:pink")
+glibc_nofs = Glibc(
+    "glibc-noFalsesharing",
+    patches=["{patchdir}/glibc_2.29_no_passive_falsesharing.patch"],
+    version="glibc-2.29",
+    color="xkcd:pink")
 
-glibc_nofs_fancy = Glibc("glibc-noFalsesharingClever",
-                         patches=["{patchdir}/glibc_2.29_no_passive_falsesharing_fancy.patch"],
-                         version="glibc-2.29",
-                         color="xkcd:orange")
+glibc_nofs_fancy = Glibc(
+    "glibc-noFalsesharingClever",
+    patches=["{patchdir}/glibc_2.29_no_passive_falsesharing_fancy.patch"],
+    version="glibc-2.29",
+    color="xkcd:orange")

@@ -14,10 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Collection containing all glibc variants"""
 
 from src.allocators.glibc import glibc, glibc_notc, glibc_nofs, glibc_nofs_fancy
-
 
 allocators = [glibc, glibc_notc, glibc_nofs, glibc_nofs_fancy]

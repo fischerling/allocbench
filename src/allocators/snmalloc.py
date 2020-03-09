@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """Snmalloc definition for allocbench"""
 
 from src.allocator import Allocator
@@ -28,9 +27,11 @@ class Snmalloc(Allocator):
 
     def __init__(self, name, **kwargs):
         self.LD_PRELOAD = "{dir}/libsnmallocshim.so"
-        self.build_cmds = ["mkdir -p {dir}",
-                           "cd {dir}; cmake -G Ninja {srcdir} -DCMAKE_BUILD_TYPE=Release",
-                           "cd {dir}; ninja"]
+        self.build_cmds = [
+            "mkdir -p {dir}",
+            "cd {dir}; cmake -G Ninja {srcdir} -DCMAKE_BUILD_TYPE=Release",
+            "cd {dir}; ninja"
+        ]
         self.requirements = ["cmake", "ninja", "clang"]
 
         super().__init__(name, **kwargs)

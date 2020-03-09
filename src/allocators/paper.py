@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Collection containing  all available allocators"""
 
 from src.allocators.glibc import glibc
@@ -27,5 +26,8 @@ from src.allocators.mimalloc import mimalloc
 from src.allocators.bumpptr import bumpptr
 from src.allocators.speedymalloc import speedymalloc
 
-
-allocators = [glibc, tcmalloc, tcmalloc_align, tcmalloc_gperftools, tcmalloc_gperftools_align, jemalloc, llalloc, mimalloc, bumpptr, speedymalloc]
+allocators = [
+    glibc, tcmalloc, tcmalloc_align, tcmalloc_gperftools,
+    tcmalloc_gperftools_align, jemalloc, llalloc, mimalloc, bumpptr,
+    speedymalloc
+]

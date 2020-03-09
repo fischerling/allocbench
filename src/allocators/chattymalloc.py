@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """chattymalloc allocator
 
 This shared library is no functional allocator. It is used to retrieve a trace
@@ -26,6 +25,7 @@ See src/chattymalloc.c and chattyparser.py for its implementation and usage.
 import os
 from src.allocator import Allocator, BUILDDIR
 
-chattymalloc = Allocator("chattymalloc",
-                         LD_PRELOAD=os.path.join(BUILDDIR, "chattymalloc.so"),
-                         cmd_prefix="env CHATTYMALLOC_FILE={{result_dir}}/{{perm}}.trace")
+chattymalloc = Allocator(
+    "chattymalloc",
+    LD_PRELOAD=os.path.join(BUILDDIR, "chattymalloc.so"),
+    cmd_prefix="env CHATTYMALLOC_FILE={{result_dir}}/{{perm}}.trace")

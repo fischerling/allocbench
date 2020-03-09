@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """jemalloc definition for allocbench"""
 
 from src.allocator import Allocator
@@ -24,15 +23,17 @@ from src.artifact import GitArtifact
 class Jemalloc(Allocator):
     """jemalloc allocator"""
 
-    sources = GitArtifact("jemalloc", "https://github.com/jemalloc/jemalloc.git")
+    sources = GitArtifact("jemalloc",
+                          "https://github.com/jemalloc/jemalloc.git")
 
     def __init__(self, name, **kwargs):
         self.LD_PRELOAD = "{dir}/libjemalloc.so"
         self.prepare_cmds = ["./autogen.sh"]
-        self.build_cmds = ["cd {srcdir}; ./configure --prefix={dir}",
-                           "cd {srcdir}; make -j4",
-                           "mkdir -p {dir}",
-                           "ln -f -s {srcdir}/lib/libjemalloc.so {dir}/libjemalloc.so"]
+        self.build_cmds = [
+            "cd {srcdir}; ./configure --prefix={dir}", "cd {srcdir}; make -j4",
+            "mkdir -p {dir}",
+            "ln -f -s {srcdir}/lib/libjemalloc.so {dir}/libjemalloc.so"
+        ]
 
         super().__init__(name, **kwargs)
 

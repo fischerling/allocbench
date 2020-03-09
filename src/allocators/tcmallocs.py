@@ -14,14 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Collection containing all glibc variants"""
 
 import src.allocators.tcmalloc as tcm
 
-
-allocators = [tcm.tcmalloc,
-              tcm.tcmalloc_align,
-              tcm.tcmalloc_gperftools_nofs,
-              tcm.tcmalloc_gperftools_align,
-              tcm.tcmalloc_gperftools_cacheline_exclusive]
+allocators = [
+    tcm.tcmalloc, tcm.tcmalloc_align, tcm.tcmalloc_gperftools_nofs,
+    tcm.tcmalloc_gperftools_align, tcm.tcmalloc_gperftools_cacheline_exclusive
+]

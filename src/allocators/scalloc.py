@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """Scalloc definition for allocbench"""
 
 from src.allocator import Allocator
@@ -24,14 +23,17 @@ from src.artifact import GitArtifact
 class Scalloc(Allocator):
     """Scalloc allocator"""
 
-    sources = GitArtifact("scalloc", "https://github.com/cksystemsgroup/scalloc")
+    sources = GitArtifact("scalloc",
+                          "https://github.com/cksystemsgroup/scalloc")
 
     def __init__(self, name, **kwargs):
-        self.prepare_cmds = ["tools/make_deps.sh",
-                             "build/gyp/gyp --depth=. scalloc.gyp"]
+        self.prepare_cmds = [
+            "tools/make_deps.sh", "build/gyp/gyp --depth=. scalloc.gyp"
+        ]
 
-        self.build_cmds = ["cd {srcdir}; BUILDTYPE=Release make",
-                           "mkdir -p {dir}"]
+        self.build_cmds = [
+            "cd {srcdir}; BUILDTYPE=Release make", "mkdir -p {dir}"
+        ]
 
         self.LD_PRELOAD = "{srcdir}/out/Release/lib.target/libscalloc.so"
 

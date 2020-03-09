@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """Hoard allocator definition for allocbench"""
 
 from src.allocator import Allocator
@@ -28,12 +27,15 @@ class Hoard(Allocator):
 
     def __init__(self, name, **kwargs):
         self.LD_PRELOAD = "{dir}/libhoard.so"
-        self.build_cmds = ["cd {srcdir}/src; make",
-                           "mkdir -p {dir}",
-                           "ln -f -s {srcdir}/src/libhoard.so {dir}/libhoard.so"]
+        self.build_cmds = [
+            "cd {srcdir}/src; make", "mkdir -p {dir}",
+            "ln -f -s {srcdir}/src/libhoard.so {dir}/libhoard.so"
+        ]
         self.requirements = ["clang"]
 
         super().__init__(name, **kwargs)
 
 
-hoard = Hoard("Hoard", version="aa6d31700d5368a9f5ede3d62731247c8d9f0ebb", color="xkcd:brown")
+hoard = Hoard("Hoard",
+              version="aa6d31700d5368a9f5ede3d62731247c8d9f0ebb",
+              color="xkcd:brown")

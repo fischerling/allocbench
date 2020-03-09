@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """Mesh definition for allocbench"""
 
 from src.allocator import Allocator
@@ -28,12 +27,14 @@ class Mesh(Allocator):
 
     def __init__(self, name, **kwargs):
         self.LD_PRELOAD = "{dir}/libmesh.so"
-        self.build_cmds = ["cd {srcdir}; ./configure",
-                           "cd {srcdir}; make -j 4",
-                           "mkdir -p {dir}",
-                           "ln -f -s {srcdir}/libmesh.so {dir}/libmesh.so"]
+        self.build_cmds = [
+            "cd {srcdir}; ./configure", "cd {srcdir}; make -j 4",
+            "mkdir -p {dir}", "ln -f -s {srcdir}/libmesh.so {dir}/libmesh.so"
+        ]
 
         super().__init__(name, **kwargs)
 
 
-mesh = Mesh("Mesh", version="4a1012cee990cb98cc1ea0294a836f467b29be02", color="xkcd:mint")
+mesh = Mesh("Mesh",
+            version="4a1012cee990cb98cc1ea0294a836f467b29be02",
+            color="xkcd:mint")

@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Collection containing  all available allocators"""
 
 import src.allocators.glibcs
@@ -30,8 +29,17 @@ from src.allocators.mimalloc import mimalloc
 from src.allocators.snmalloc import snmalloc
 from src.allocators.rpmalloc import rpmalloc
 
-
-allocators = [*src.allocators.glibcs.allocators,
-              *src.allocators.tcmallocs.allocators,
-              jemalloc, hoard, mesh, supermalloc, scalloc, tbbmalloc, llalloc, # streamflow,
-              mimalloc, snmalloc, rpmalloc]
+allocators = [
+    *src.allocators.glibcs.allocators,
+    *src.allocators.tcmallocs.allocators,
+    jemalloc,
+    hoard,
+    mesh,
+    supermalloc,
+    scalloc,
+    tbbmalloc,
+    llalloc,  # streamflow,
+    mimalloc,
+    snmalloc,
+    rpmalloc
+]

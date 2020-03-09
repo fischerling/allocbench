@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """Lockless allocator definition for allocbench"""
 
 from src.allocator import Allocator
@@ -25,14 +24,15 @@ class LocklessAllocator(Allocator):
     """Lockless allocator"""
     def __init__(self, name, **kwargs):
 
-        self.sources = ArchiveArtifact("llalloc",
-                                  "https://locklessinc.com/downloads/lockless_allocator_src.tgz",
-                                  "tar",
-                                  "c6cb5a57882fa4775b5227a322333a6126b61f7c")
+        self.sources = ArchiveArtifact(
+            "llalloc",
+            "https://locklessinc.com/downloads/lockless_allocator_src.tgz",
+            "tar", "c6cb5a57882fa4775b5227a322333a6126b61f7c")
 
-        self.build_cmds = ["cd {srcdir}/lockless_allocator; make",
-                           "mkdir -p {dir}",
-                           "ln -f -s {srcdir}/lockless_allocator/libllalloc.so.1.3 {dir}/libllalloc.so"]
+        self.build_cmds = [
+            "cd {srcdir}/lockless_allocator; make", "mkdir -p {dir}",
+            "ln -f -s {srcdir}/lockless_allocator/libllalloc.so.1.3 {dir}/libllalloc.so"
+        ]
 
         self.LD_PRELOAD = "{dir}/libllalloc.so"
 
@@ -40,4 +40,3 @@ class LocklessAllocator(Allocator):
 
 
 llalloc = LocklessAllocator("llalloc", color="purple")
-

@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Bumpptr allocator
 
 The bumpptr allocator makes the biggest possible tradeoff between speed and
@@ -25,5 +24,6 @@ See src/bumpptr.c for the actual implementation.
 import os
 from src.allocator import Allocator, BUILDDIR
 
-bumpptr = Allocator("bumpptr", LD_PRELOAD=os.path.join(BUILDDIR, "bumpptr_alloc.so"),
+bumpptr = Allocator("bumpptr",
+                    LD_PRELOAD=os.path.join(BUILDDIR, "bumpptr_alloc.so"),
                     color="xkcd:black")

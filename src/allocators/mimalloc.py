@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """mimalloc definition for allocbench"""
 
 from src.allocator import Allocator
@@ -28,9 +27,9 @@ class Mimalloc(Allocator):
 
     def __init__(self, name, **kwargs):
         self.LD_PRELOAD = "{dir}/libmimalloc.so"
-        self.build_cmds = ["mkdir -p {dir}",
-                           "cd {dir}; cmake {srcdir}",
-                           "cd {dir}; make"]
+        self.build_cmds = [
+            "mkdir -p {dir}", "cd {dir}; cmake {srcdir}", "cd {dir}; make"
+        ]
         self.requirements = ["cmake"]
 
         super().__init__(name, **kwargs)

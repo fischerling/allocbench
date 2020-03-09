@@ -14,13 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Collection containing all glibc variants"""
 
 import src.allocators.speedymalloc as sm
 
-
-allocators = [sm.speedymalloc,
-              sm.speedymalloc_dont_madv_free,
-              sm.speedymalloc_dont_madv_willneed,
-              sm.speedymalloc_4095_sc_32]
+allocators = [
+    sm.speedymalloc, sm.speedymalloc_dont_madv_free,
+    sm.speedymalloc_dont_madv_willneed, sm.speedymalloc_4095_sc_32
+]

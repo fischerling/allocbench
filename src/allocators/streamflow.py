@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """Streamflow allocator definition for allocbench"""
 
 from src.allocator import Allocator
@@ -29,12 +28,14 @@ class Streamflow(Allocator):
     def __init__(self, name, **kwargs):
 
         self.LD_PRELOAD = "{dir}/libstreamflow.so"
-        self.build_cmds = ["cd {srcdir}; make",
-                           "mkdir -p {dir}",
-                           "ln -f -s {srcdir}/libstreamflow.so {dir}/libstreamflow.so"]
+        self.build_cmds = [
+            "cd {srcdir}; make", "mkdir -p {dir}",
+            "ln -f -s {srcdir}/libstreamflow.so {dir}/libstreamflow.so"
+        ]
 
         super().__init__(name, **kwargs)
 
 
-streamflow = Streamflow("Streamflow", version="8ac345c0f69ec9e7af02f3555c2c97eaa07a442e",
+streamflow = Streamflow("Streamflow",
+                        version="8ac345c0f69ec9e7af02f3555c2c97eaa07a442e",
                         color="xkcd:light brown")

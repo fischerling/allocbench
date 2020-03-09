@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """tbbmalloc definition for allocbench"""
 
 from src.allocator import Allocator
@@ -28,9 +27,10 @@ class TBBMalloc(Allocator):
 
     def __init__(self, name, **kwargs):
         self.LD_PRELOAD = "{dir}/libtbbmalloc.so"
-        self.build_cmds = ["cd {srcdir}; make tbbmalloc -j4",
-                           "mkdir -p {dir}",
-                           'ln -f -s $(find {srcdir} -executable -name "*libtbbmalloc_proxy.so*" | head -1) {dir}/libtbbmalloc.so']
+        self.build_cmds = [
+            "cd {srcdir}; make tbbmalloc -j4", "mkdir -p {dir}",
+            'ln -f -s $(find {srcdir} -executable -name "*libtbbmalloc_proxy.so*" | head -1) {dir}/libtbbmalloc.so'
+        ]
 
         super().__init__(name, **kwargs)
 

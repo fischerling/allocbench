@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.
-
 """malt allocator definition
 
 Malt is a malloc tracker and used to capture and analyse the allocation profile
@@ -24,4 +23,6 @@ of a program. See https://github.com/memtt/malt for more details
 from src.allocator import Allocator
 
 # result_dir and perm are substituted during Benchmark.run
-malt = Allocator("malt", cmd_prefix="malt -q -o output:name={{result_dir}}/malt.{{perm}}.%3")
+malt = Allocator(
+    "malt",
+    cmd_prefix="malt -q -o output:name={{result_dir}}/malt.{{perm}}.%3")
