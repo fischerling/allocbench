@@ -43,7 +43,7 @@ class Artifact:
         self.name = name
         self.basedir = os.path.join(ARTIFACT_STORE_DIR, name)
 
-    def retrieve(self, cmd):
+    def _retrieve(self, cmd):
         """Run cmd to retrieve the artifact"""
         os.makedirs(self.basedir, exist_ok=True)
 
@@ -61,7 +61,7 @@ class GitArtifact(Artifact):
 
     def retrieve(self):
         """clone the git repo"""
-        super().retrieve(
+        super()._retrieve(
             ["git", "clone", "--recursive", "--bare", self.url, "repo"])
 
     def provide(self, checkout, location=None):
@@ -73,12 +73,12 @@ class GitArtifact(Artifact):
         if os.path.exists(location):
             try:
                 run_cmd(["git", "fetch"], output_verbosity=1, cwd=location)
-            except CalledProcessError as e:
+            except CalledProcessError:
                 print_error(f"Failed to update {location}")
                 raise
             try:
                 run_cmd(["git", "reset", "--hard", checkout], output_verbosity=1, cwd=location)
-            except CalledProcessError as e:
+            except CalledProcessError:
                 print_error(f"Failed to update {location}")
                 raise
             return location
@@ -91,7 +91,7 @@ class GitArtifact(Artifact):
         print_status(f'Updating git repository "{self.name}" ...')
         try:
             run_cmd(["git", "fetch"], output_verbosity=1, cwd=self.repo)
-        except CalledProcessError as e:
+        except CalledProcessError:
             print_error(f"Failed to update {self.name}")
             raise
 
@@ -100,7 +100,7 @@ class GitArtifact(Artifact):
                     f"in {self.repo}")
         try:
             run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
-        except CalledProcessError as e:
+        except CalledProcessError:
             print_error(f"Failed to provide {self.name}")
             raise
 
@@ -117,20 +117,20 @@ class ArchiveArtifact(Artifact):
     """External archive"""
     supported_formats = ["tar"]
 
-    def __init__(self, name, url, format, checksum):
+    def __init__(self, name, url, archive_format, checksum):
         super().__init__(name)
         self.url = url
-        if format not in self.supported_formats:
+        if archive_format not in self.supported_formats:
             raise Exception(
                 f'Archive format "{format}" not in supported list {self.supported_formats}'
             )
-        self.format = format
-        self.archive = os.path.join(self.basedir, f"{self.name}.{self.format}")
+        self.archive_format = archive_format
+        self.archive = os.path.join(self.basedir, f"{self.name}.{self.archive_format}")
         self.checksum = checksum
 
     def retrieve(self):
         """download the archive"""
-        super().retrieve(["wget", "-O", self.archive, self.url])
+        super()._retrieve(["wget", "-O", self.archive, self.url])
 
     def provide(self, location=None):
         """extract the archive"""
@@ -155,7 +155,7 @@ class ArchiveArtifact(Artifact):
         os.makedirs(location, exist_ok=True)
 
         # Extract archive
-        if self.format == "tar":
+        if self.archive_format == "tar":
             cmd = ["tar", "Cxf", location, self.archive]
 
         print_debug(f"extract archive by running: {cmd} in {self.basedir}")
