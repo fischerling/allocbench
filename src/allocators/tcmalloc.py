@@ -43,8 +43,8 @@ tcmalloc = TCMalloc("TCMalloc",
                     version="1676100265bd189df6b5513feac15f102542367e")
 
 tcmalloc_align = TCMalloc("TCMalloc-Aligned",
-                         version="1676100265bd189df6b5513feac15f102542367e",
-                         color="xkcd:light blue")
+                          version="1676100265bd189df6b5513feac15f102542367e",
+                          color="xkcd:light blue")
 
 tcmalloc_align.LD_PRELOAD = f"{BUILDDIR}/align_to_cl.so {tcmalloc_align.LD_PRELOAD}"
 
@@ -71,19 +71,20 @@ tcmalloc_gperftools = TCMallocGperftools("TCMalloc-gperftools",
                                          color="xkcd:dark blue",
                                          version="gperftools-2.7")
 
-tcmalloc_gperftools_nofs = TCMallocGperftools("TCMalloc-Gperftools-NoFalsesharing",
-                         patches=["{patchdir}/tcmalloc_2.7_no_active_falsesharing.patch"],
-                         version="gperftools-2.7",
-                         color="xkcd:navy")
+tcmalloc_gperftools_nofs = TCMallocGperftools(
+    "TCMalloc-Gperftools-NoFalsesharing",
+    patches=["{patchdir}/tcmalloc_2.7_no_active_falsesharing.patch"],
+    version="gperftools-2.7",
+    color="xkcd:navy")
 
 tcmalloc_gperftools_align = TCMallocGperftools("TCMalloc-Gperftools-Aligned",
-                         version="gperftools-2.7",
-                         color="xkcd:navy blue")
+                                               version="gperftools-2.7",
+                                               color="xkcd:navy blue")
 
 tcmalloc_gperftools_align.LD_PRELOAD = f"{BUILDDIR}/align_to_cl.so {tcmalloc_gperftools_align.LD_PRELOAD}"
 
-tcmalloc_gperftools_cacheline_exclusive = TCMallocGperftools("TCMalloc-Gperftools-Cacheline-Exclusive",
-                         patches=["{patchdir}/tcmalloc_2.7_cacheline_exclusive.patch"],
-                         version="gperftools-2.7",
-                         color="xkcd:royal blue")
-
+tcmalloc_gperftools_cacheline_exclusive = TCMallocGperftools(
+    "TCMalloc-Gperftools-Cacheline-Exclusive",
+    patches=["{patchdir}/tcmalloc_2.7_cacheline_exclusive.patch"],
+    version="gperftools-2.7",
+    color="xkcd:royal blue")

@@ -21,4 +21,4 @@ from src.allocators.tcmalloc import tcmalloc, tcmalloc_nofs
 from src.allocators.glibc import glibc, glibc_nofs, glibc_nofs_fancy
 
 
-allocators = [glibc, glibc_nofs, glibc_nofs_fancy, tcmalloc, tcmalloc_nofs]
+allocators = [glibc, glibc_nofs, glibc_nofs_fancy, tcmalloc_gperftools, tcmalloc_gperftools_nofs]
