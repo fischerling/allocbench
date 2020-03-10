@@ -14,17 +14,17 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-"""Bumpptr allocator
+"""Speedymalloc
 
-The bumpptr allocator makes the biggest possible tradeoff between speed and
+Speedymalloc is a cached bump pointer allocator.
+A bump pointer allocator makes the biggest possible tradeoff between speed and
 memory in speeds favor. Memory is mmapped per thread and never freed.
-See src/bumpptr.c for the actual implementation.
 """
 
 from src.artifact import GitArtifact
 from src.allocator import Allocator
 
-VERSION = "7b73dc51bba043d6b3269dd497263f03d52fc1ca"
+VERSION = "cad9cd091b38cd68779c9229e38d72082dd46b57"
 
 
 class Speedymalloc(Allocator):
@@ -49,16 +49,16 @@ class Speedymalloc(Allocator):
 
 speedymalloc = Speedymalloc("speedymalloc", version=VERSION)
 
-speedymalloc_dont_madv_free = Speedymalloc("speedymalloc_dont_madv_free",
-                                           options={"madvise_free": "false"},
-                                           version=VERSION)
+speedymalloc_no_madv_free = Speedymalloc("speedymalloc_no_madv_free",
+                                         options={"madvise_free": "false"},
+                                         version=VERSION)
 
-speedymalloc_dont_madv_willneed = Speedymalloc(
-    "speedymalloc_dont_madv_willneed",
+speedymalloc_no_madv_willneed = Speedymalloc(
+    "speedymalloc_no_madv_willneed",
     options={"madvise_willneed": "false"},
     version=VERSION)
 
-speedymalloc_4095_sc_32 = Speedymalloc("speedymalloc_dont_madv_willneed",
+speedymalloc_4095_sc_32 = Speedymalloc("speedymalloc_4095_sc_32",
                                        options={
                                            "cache_bins": 4095,
                                            "cache_bin_seperation": 32
@@ -66,6 +66,10 @@ speedymalloc_4095_sc_32 = Speedymalloc("speedymalloc_dont_madv_willneed",
                                        version=VERSION)
 
 speedymalloc_no_glab = Speedymalloc(
-    "speedymalloc_dont_madv_willneed",
+    "speedymalloc_no_glab",
     options={"max_local_allocation_buffer_size": 0},
     version=VERSION)
+
+speedymalloc_70d9d160 = Speedymalloc(
+    "speedymalloc_70d9d160",
+    version="70d9d16052fdd482d24940ea56d2ac57485941f8")
