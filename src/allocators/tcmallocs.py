@@ -19,6 +19,7 @@
 import src.allocators.tcmalloc as tcm
 
 allocators = [
-    tcm.tcmalloc, tcm.tcmalloc_align, tcm.tcmalloc_gperftools_nofs,
-    tcm.tcmalloc_gperftools_align, tcm.tcmalloc_gperftools_cacheline_exclusive
+    tcm.tcmalloc, tcm.tcmalloc_align, tcm.tcmalloc_gperftools,
+    tcm.tcmalloc_gperftools_nofs, tcm.tcmalloc_gperftools_align,
+    tcm.tcmalloc_gperftools_cacheline_exclusive
 ]
