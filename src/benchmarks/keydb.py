@@ -112,12 +112,12 @@ class BenchmarkKeyDB(Benchmark):
     def summary(self):
         plt.plot_fixed_arg(self, "{totals_ops}",
                             ylabel="'OPS/second'",
-                            title="KeyDB Operations: {perm}",
+                            title="KeyDB Operations - {arg}: {arg_value}",
                             file_postfix="total_ops")
 
         plt.plot_fixed_arg(self, "{keydb_vmhwm}",
                             ylabel="'VmHWM [KB]'",
-                            title="KeyDB Memusage: {perm}",
+                            title="KeyDB Memusage - {arg}: {arg_value}",
                             file_postfix="vmhwm")
 
 keydb = BenchmarkKeyDB()
