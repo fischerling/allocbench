@@ -412,7 +412,7 @@ def write_best_doublearg_tex_table(bench,
         cell_text.append(" & ".join(row))
 
     table_layout = " l |" * len(headers)
-    header_line = " & ".join(headers)
+    header_line = " & ".join([str(x) for x in headers])
     cell_text = "\\\\\n".join(cell_text)
 
     tex =\
