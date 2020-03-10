@@ -143,7 +143,7 @@ def plot_single_arg(bench,
     plt.ylabel(ylabel.format(**label_substitutions))
     plt.title(title.format(**label_substitutions))
 
-    _save_figure(fig, sumdir, fig_name, file_ext)
+    _save_figure(fig, fig_name, sumdir, file_ext)
     plt.close(fig)
 
     return fig
@@ -213,7 +213,7 @@ def barplot_single_arg(bench,
     plt.ylabel(ylabel.format(**label_substitutions))
     plt.title(title.format(**label_substitutions))
 
-    _save_figure(fig, sumdir, fig_name, file_ext)
+    _save_figure(fig, fig_name, sumdir, file_ext)
     plt.close(fig)
 
 
@@ -270,7 +270,7 @@ def plot_fixed_arg(bench,
             plt.ylabel(ylabel.format(**label_substitutions))
             plt.title(title.format(**label_substitutions))
 
-            _save_figure(fig, sumdir, fig_name, file_ext)
+            _save_figure(fig, fig_name, sumdir, file_ext)
             plt.close(fig)
 
 
