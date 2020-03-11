@@ -457,7 +457,7 @@ class Benchmark:
                     substitutions.update(alloc)
                     if perm:
                         substitutions.update(perm._asdict())
-                        substitutions["perm"] = "-".join(*perm)
+                        substitutions["perm"] = "-".join([str(v) for v in perm])
                     else:
                         substitutions["perm"] = ""
 
@@ -591,7 +591,7 @@ class Benchmark:
                     try:
                         data = [float(m[dp]) for m in self.results[alloc][perm]]
                     except (TypeError, ValueError) as e:
-                        print_debug(e)
+                        print_debug(dp, e)
                         continue
                     stats["min"][dp] = np.min(data)
                     stats["max"][dp] = np.max(data)
