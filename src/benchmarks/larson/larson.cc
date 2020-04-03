@@ -117,7 +117,7 @@ void * operator new( unsigned int cb )
   return pRet;
 }
 
-void operator delete(void *pUserData )
+void operator delete[](void *pUserData )
 {
   theFastHeap.Delete (pUserData) ;
 }
@@ -133,7 +133,7 @@ void * operator new( unsigned int cb )
   return pRet;
 }
 
-void operator delete(void *pUserData )
+void operator delete[](void *pUserData )
 {
   hdfree(pUserData) ;
 }
@@ -359,7 +359,7 @@ void runloops(long sleep_cnt, int num_chunks )
     for( cblks=0; cblks<num_chunks; cblks++){
       victim = lran2(&rgen)%num_chunks ;
 #ifdef CPP
-      delete blkp[victim] ;
+      delete[] blkp[victim] ;
 #else
       free(blkp[victim]) ;
 #endif
@@ -567,7 +567,7 @@ static void * exercise_heap( void *pinput)
   for( cblks=0; cblks<pdea->NumBlocks; cblks++){
     victim = lran2(&pdea->rgen)%pdea->asize ;
 #ifdef CPP
-    delete pdea->array[victim] ;
+    delete[] pdea->array[victim] ;
 #else
     free(pdea->array[victim]) ;
 #endif
@@ -653,7 +653,7 @@ static void warmup(char **blkp, int num_chunks )
   for( cblks=0; cblks<4*num_chunks; cblks++){
     victim = lran2(&rgen)%num_chunks ;
 #ifdef CPP
-    delete blkp[victim] ;
+    delete[] blkp[victim] ;
 #else
     free(blkp[victim]) ;
 #endif
