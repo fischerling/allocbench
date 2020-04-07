@@ -60,29 +60,35 @@ class BenchmarkHTTPD(Benchmark):
             "Requests per second:\\s*(\\d*\\.\\d*) .*", stdout).group(1)
 
     def summary(self):
-        plt.plot_fixed_arg(self,
-                           "{requests}",
-                           xlabel="threads",
-                           ylabel="requests/s",
-                           autoticks=False,
-                           file_postfix="requests",
-                           title="{perm.site}: requests/s")
+        plt.plot(self,
+                 "{requests}",
+                 fig_options={
+                     'xlabel': "threads",
+                     'ylabel': "requests/s",
+                     'title': "{perm.site}: requests/s"
+                     'autoticks': False,
+                 },
+                 file_postfix="requests")
 
-        plt.plot_fixed_arg(self,
-                           "{nginx_vmhwm}",
-                           xlabel="threads",
-                           ylabel="VmHWM in KB",
-                           title="{perm.site}: nginx memory usage",
-                           file_postfix="httpd_vmhwm",
-                           autoticks=False)
+        plt.plot(self,
+                 "{nginx_vmhwm}",
+                 fig_options={
+                    'xlabel': "threads",
+                    'ylabel': "VmHWM in KB",
+                    'title': "{perm.site}: nginx memory usage",
+                    'autoticks': False,
+                 },
+                 file_postfix="httpd_vmhwm")
 
-        plt.plot_fixed_arg(self,
-                           "{php-fpm_vmhwm}",
-                           xlabel="threads",
-                           ylabel="VmHWM in KB",
-                           title="{perm.site}: php-fpm memory usage",
-                           file_postfix="php-fpm_vmhwm",
-                           autoticks=False)
+        plt.plot(self,
+                 "{php-fpm_vmhwm}",
+                 fig_options={
+                     'xlabel': "threads",
+                     'ylabel': "VmHWM in KB",
+                     'title': "{perm.site}: php-fpm memory usage",
+                     'autoticks': False,
+                 },
+                 file_postfix="php-fpm_vmhwm")
 
 
 httpd = BenchmarkHTTPD()

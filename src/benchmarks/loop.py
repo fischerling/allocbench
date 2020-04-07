@@ -61,19 +61,20 @@ class BenchmarkLoop(Benchmark):
 
     def summary(self):
         # Speed
-        plt.plot_fixed_arg(self,
-                           "{mops}",
-                           ylabel="MOPS/cpu-second",
-                           title="Loop: {arg} {arg_value}",
-                           file_postfix="time",
-                           autoticks=False)
+        plt.plot(
+            self,
+            "{mops}",
+            ylabel="MOPS/cpu-second",
+            title="Loop: {fixed_part_str}",
+            file_postfix="time",
+            autoticks=False)
 
         # L1 cache misses
-        plt.plot_fixed_arg(
+        plt.plot(
             self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
             ylabel="L1 misses in %",
-            title="Loop l1 cache misses: {arg} {arg_value}",
+            title="Loop l1 cache misses: {fixed_part_str}",
             file_postfix="l1misses",
             autoticks=False)
 
@@ -83,20 +84,21 @@ class BenchmarkLoop(Benchmark):
             "{mops}",
             file_postfix="time.matrix")
 
-        plt.write_tex_table(self, [{
-            "label": "MOPS/s",
-            "expression": "{mops}",
-            "sort": ">"
-        }],
-                            file_postfix="mops.table")
+        plt.write_tex_table(
+            self, 
+            [{
+                "label": "MOPS/s",
+                "expression": "{mops}",
+                "sort": ">"
+            }],
+            file_postfix="mops.table")
 
-        # plt.export_stats_to_csv(self, "task-clock")
-        # plt.export_stats_to_dataref(self, "task-clock")
+        plt.export_stats_to_csv(self, "task-clock")
+        plt.export_stats_to_dataref(self, "task-clock")
 
         # pgfplot test
         plt.pgfplot(self,
-                    self.iterate_args_fixed({"maxsize": 1024},
-                    args=self.results["args"]),
+                    self.iterate_args({"maxsize": 1024}, self.results["args"]),
                     "int(perm.threads)",
                     "{mops}",
                     xlabel="Threads",

@@ -16,12 +16,13 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Plot different graphs from allocbench results"""
 
-import os
-import traceback
-
+import copy
+import itertools
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import os
+import traceback
 
 import src.globalvars
 from src.util import print_debug, print_warn
@@ -29,6 +30,38 @@ from src.util import print_debug, print_warn
 # This is useful when evaluating strings in the plot functions. str(np.NaN) == "nan"
 nan = np.NaN
 
+DEFAULT_PLOT_OPTIONS = {
+    'plot': {
+        'marker': '.',
+        'linestyle': '-',
+    },
+    'errorbar': {
+        'marker': '.',
+        'linestyle': '-',
+        'yerr': True,
+    },
+    'bar': {
+        'yerr': True,
+    }
+}
+
+DEFAULT_FIG_OPTIONS = {
+    'plot': {
+        'legend': True,
+        'legend_pos': 'best',
+        'autoticks': True,
+    },
+    'errorbar': {
+        'legend': True,
+        'legend_pos': 'best',
+        'autoticks': True,
+    },
+    'bar': {
+        'legend': True,
+        'legend_pos': 'lower center',
+        'autoticks': False,
+    }
+}
 
 def _get_alloc_color(bench, alloc):
     """Populate all not set allocator colors with matplotlib 'C' colors"""
@@ -81,197 +114,246 @@ def _get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
 
     return y_data
 
+def _create_plot_options(plot_type, **kwargs):
+    """
+    Create a plot options dictionary.
 
-def _save_figure(fig,
-                 fig_name,
-                 sumdir='',
-                 file_ext=src.globalvars.summary_file_ext):
-    fig_path = os.path.join(sumdir, f"{fig_name}.{file_ext}")
-    if file_ext == "tex":
+    Parameters
+    ----------
+    plot_type : str
+        The plot type for which the options should be created.
+        Possible values: {'bar', 'errorbar', 'plot'}
+
+    **kwargs : plot properties, optional
+        *kwargs* are used to specify properties like a line label (for
+        auto legends), linewidth, antialiasing, marker face color.
+
+    Returns
+    -------
+    options : dict
+        Dict holding the specified options and all default values for plot type
+    """
+
+    options = copy.deepcopy(DEFAULT_PLOT_OPTIONS[plot_type])
+    for key, value in kwargs.items():
+        options[key] = value
+
+    return options
+
+def _create_figure_options(plot_type, fig_label, **kwargs):
+    """
+    Create a figure options dictionary
+
+    Parameters
+    ----------
+    plot_type : str
+        The plot type for which the options should be created.
+        Possible values: {'bar', 'errorbar', 'plot'}
+
+    **kwargs : figure properties, optional
+        *kwargs* are used to specify properties like legends, legend position,
+        x-/ and ylabel, and title.
+
+    Returns
+    -------
+    options : dict
+        Dict holding the specified options and all default values for plot type
+    """
+
+    options = copy.deepcopy(DEFAULT_FIG_OPTIONS[plot_type])
+
+    options['fig_label'] = fig_label
+
+    for key, value in kwargs.items():
+        options[key] = value
+
+    return options
+
+def _plot(bench,
+          allocators,
+          y_expression,
+          x_data,
+          perms,
+          plot_type,
+          plot_options,
+          fig_options,
+          scale=None,
+          file_postfix="",
+          sumdir="",
+          file_ext=src.globalvars.summary_file_ext):
+    """
+    Create a plot for a given expression
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    figure : :rc:`~matplotlib.figure.Figure`
+        The new :rc:`.Figure` instance wrapping our plot.
+
+    Notes
+    -----
+    If you are creating many figures, make sure you explicitly call
+    :rc:`.pyplot.close` on the figures you are not using, because this will
+    enable pyplot to properly clean up the memory.
+    """
+
+    fig = plt.figure(fig_options['fig_label'])
+    for allocator in allocators:
+        y_data = _get_y_data(bench,
+                             y_expression,
+                             allocator,
+                             perms,
+                             stat='mean',
+                             scale=scale)
+
+        if plot_options.get('yerr', False):
+            plot_options['yerr'] = _get_y_data(bench,
+                                               y_expression,
+                                               allocator,
+                                               perms,
+                                               stat='mean')
+        try:
+            plot_func = getattr(plt, plot_type)
+        except AttributeError:
+            print_debug(f'Unknown plot type: {plot_type}')
+            raise
+
+        _x_data = x_data
+        if not fig_options['autoticks']:
+            _x_data = list(range(1, len(x_data) + 1))
+
+        plot_func(_x_data,
+                  y_data,
+                  label=allocator,
+                  color=_get_alloc_color(bench, allocator),
+                  **plot_options)
+
+    if fig_options['legend']:
+        plt.legend(loc=fig_options['legend_pos'])
+
+    if not fig_options['autoticks']:
+        plt.xticks(_x_data, x_data)
+
+    plt.xlabel(fig_options['xlabel'])
+    plt.ylabel(fig_options['ylabel'])
+    plt.title(fig_options['title'])
+
+    fig_path = os.path.join(sumdir, f'{fig_options["fig_label"]}.{file_ext}')
+    if file_ext == 'tex':
         import tikzplotlib
         tikzplotlib.save(fig_path)
     else:
         fig.savefig(fig_path)
 
-
-def plot_single_arg(bench,
-                    yval,
-                    ylabel="y-label",
-                    xlabel="x-label",
-                    autoticks=True,
-                    title="default title",
-                    file_postfix="",
-                    sumdir="",
-                    arg="",
-                    scale=None,
-                    file_ext=src.globalvars.summary_file_ext):
-    """plot line graphs for each permutation of the benchmark's command arguments"""
-
-    args = bench.results["args"]
-    allocators = bench.results["allocators"]
-
-    arg = arg or list(args.keys())[0]
-
-    fig_name = f'{bench.name}.{file_postfix}'
-    fig = plt.figure(fig_name)
-
-    if not autoticks:
-        x_vals = list(range(1, len(args[arg]) + 1))
-    else:
-        x_vals = args[arg]
-
-    for allocator in allocators:
-        y_vals = _get_y_data(bench,
-                             yval,
-                             allocator,
-                             bench.iterate_args(args=args),
-                             stat='mean',
-                             scale=scale)
-        plt.plot(x_vals,
-                 y_vals,
-                 marker='.',
-                 linestyle='-',
-                 label=allocator,
-                 color=_get_alloc_color(bench, allocator))
-
-    plt.legend(loc="best")
-    if not autoticks:
-        plt.xticks(x_vals, args[arg])
-    label_substitutions = vars()
-    label_substitutions.update(vars(bench))
-    plt.xlabel(xlabel.format(**label_substitutions))
-    plt.ylabel(ylabel.format(**label_substitutions))
-    plt.title(title.format(**label_substitutions))
-
-    _save_figure(fig, fig_name, sumdir, file_ext)
-    plt.close(fig)
-
     return fig
 
+def plot(bench,
+         y_expression,
+         plot_type='errorbar',
+         x_args=None,
+         scale=None,
+         plot_options=None,
+         fig_options=None,
+         file_postfix="",
+         sumdir="",
+         file_ext=src.globalvars.summary_file_ext):
+    """
+    Create plots for a given expression for the y axis.
 
-def barplot_single_arg(bench,
-                       yval,
-                       ylabel="y-label",
-                       xlabel="x-label",
-                       title="default title",
-                       file_postfix="",
-                       sumdir="",
-                       arg="",
-                       scale=None,
-                       file_ext=src.globalvars.summary_file_ext,
-                       yerr=True):
-    """plot bar plots for each permutation of the benchmark's command arguments"""
+    Parameters
+    ----------
 
-    args = bench.results["args"]
-    allocators = bench.results["allocators"]
-    nallocators = len(allocators)
+    y_expression : str
 
-    if arg:
-        arg = args[arg]
-    elif args.keys():
-        arg = args[list(args.keys())[0]]
-    else:
-        arg = [""]
+    plot_type : str, optional, default='errorbar'
+        The plot type for which the options should be created.
+        Possible values: {'bar', 'errorbar', 'plot'}
 
-    narg = len(arg)
+    x_args : [str], optional, default=None
+        The benchmark arguments for which a plot should be created.
+        If not provided, defaults to :rc:`bench.arguments.keys()`
 
-    fig_name = f'{bench.name}.{file_postfix}'
-    fig = plt.figure(fig_name)
+    scale : str, optional, default=None
+        Name of the allocator which should be used to normalize the results.
 
-    for i, allocator in enumerate(allocators):
-        x_vals = list(range(i, narg * (nallocators + 1), nallocators + 1))
-        y_vals = _get_y_data(bench,
-                             yval,
-                             allocator,
-                             bench.iterate_args(args=args),
-                             stat='mean',
-                             scale=scale)
-        y_errs = None
-        if yerr:
-            y_vals = _get_y_data(bench,
-                                 yval,
-                                 allocator,
-                                 bench.iterate_args(args=args),
-                                 stat='std')
+    plot_options : dict, optional, default None
+        Dictionary containing plot options which should be passed to the plot
+        type function. If not provided the default plot type options are used.
+        Possible options:
+            * yerr: bool - Plot the standard deviation as errorbars
+            * marker: str - Style of the used markers
+            * line: str - Style of the drawn lines
 
-        plt.bar(x_vals,
-                y_vals,
-                width=1,
-                label=allocator,
-                yerr=y_errs,
-                color=_get_alloc_color(bench, allocator))
+    fig_options : dict, optional, default None
+        Dictionary containing figure options.
+        If not provided the default plot type options are used.
+        Possible options:
+            * ylabel : str - The label of the y axis.
+            * xlabel : str - The label of the x axis.
+            * title : str - The title of the plot.
+            * legend : bool - Should the plot have a legend.
+            * legend_pos : str - Location of the legend.
+                For possible values see :rc:`help(matplotlib.pyploy.legend)`.
+            * autoticks : bool - Let matplotlib set the xticks automatically.
 
-    plt.legend(loc="best")
-    plt.xticks(
-        list(
-            range(int(np.floor(nallocators / 2)), narg * (nallocators + 1),
-                  nallocators + 1)), arg)
+    file_postfix: str, optional, default=""
+        Postfix which is appended to the plot's file name.
 
-    label_substitutions = vars()
-    label_substitutions.update(vars(bench))
-    plt.xlabel(xlabel.format(**label_substitutions))
-    plt.ylabel(ylabel.format(**label_substitutions))
-    plt.title(title.format(**label_substitutions))
+    sumdir : path or str, optional, default=""
+        Directory where the plot should be saved. If not provided defaults
+        to the current working directory.
 
-    _save_figure(fig, fig_name, sumdir, file_ext)
-    plt.close(fig)
+    file_ext : str, optional, default=:rc:`src.globalvars.summary_file_ext`
+        File extension of the saved plot. If not provided defaults to the
+        value of :rc:`src.globalvars.summary_file_ext`
 
-
-def plot_fixed_arg(bench,
-                   yval,
-                   ylabel="y-label",
-                   xlabel="{loose_arg}",
-                   autoticks=True,
-                   title="default title",
-                   file_postfix="",
-                   sumdir="",
-                   fixed=None,
-                   file_ext=src.globalvars.summary_file_ext,
-                   scale=None):
+    """
 
     args = bench.results["args"]
     allocators = bench.results["allocators"]
 
-    for arg in fixed or args:
-        loose_arg = [a for a in args if a != arg][0]
+    if not x_args:
+        x_args = args
 
-        if not autoticks:
-            x_vals = list(range(1, len(args[loose_arg]) + 1))
-        else:
-            x_vals = args[loose_arg]
+    for loose_arg in x_args:
+        x_data = args[loose_arg]
 
-        for arg_value in args[arg]:
-            fig_name = f'{bench.name}.{arg}.{arg_value}.{file_postfix}'
-            fig = plt.figure(fig_name)
+        fixed_args = [[(k, v) for v in args[k]] for k in args if k != loose_arg]
+        for fixed_part in itertools.product(*fixed_args):
+            fixed_part = {k:v for k, v in fixed_part}
 
-            for allocator in allocators:
-                y_vals = _get_y_data(bench,
-                                     yval,
-                                     allocator,
-                                     bench.iterate_args_fixed({arg: arg_value},
-                                                              args=args),
-                                     stat='mean',
-                                     scale=scale)
+            fixed_part_str = ".".join([f'{k}={v}' for k, v in fixed_part.items()])
+            fig_label = f'{bench.name}.{fixed_part_str}.{file_postfix}'
 
-                plt.plot(x_vals,
-                         y_vals,
-                         marker='.',
-                         linestyle='-',
-                         label=allocator,
-                         color=_get_alloc_color(bench, allocator))
+            plot_options = _create_plot_options(plot_type, **plot_options or {})
 
-            plt.legend(loc="best")
-            if not autoticks:
-                plt.xticks(x_vals, args[loose_arg])
+            substitutions = vars()
+            substitutions.update(vars(bench))
+            for option, value in fig_options.items():
+                if isinstance(value, str):
+                    fig_options[option] = value.format(**substitutions)
 
-            label_substitutions = vars()
-            label_substitutions.update(vars(bench))
-            plt.xlabel(xlabel.format(**label_substitutions))
-            plt.ylabel(ylabel.format(**label_substitutions))
-            plt.title(title.format(**label_substitutions))
+            # plot specific defaults
+            fig_options.setdefault("ylabel", y_expression)
+            fig_options.setdefault("xlabel", loose_arg)
+            fig_options.setdefault("titel", fig_label)
 
-            _save_figure(fig, fig_name, sumdir, file_ext)
-            plt.close(fig)
+            fig_options = _create_figure_options(
+                plot_type,
+                fig_label,
+                **fig_options or {},
+            )
+
+            _plot(bench,
+                  allocators,
+                  y_expression,
+                  x_data,
+                  list(bench.iterate_args(args=args, fixed=fixed_part)),
+                  plot_type,
+                  plot_options,
+                  fig_options)
 
 
 def export_facts_to_file(bench, comment_symbol, output_file):
@@ -392,7 +474,7 @@ def write_best_doublearg_tex_table(bench,
     cell_text = []
     for arg_value in rows:
         row = []
-        for perm in bench.iterate_args_fixed({row_arg: arg_value}, args=args):
+        for perm in bench.iterate_args(args=args, fixed={row_arg: arg_value}):
             best = []
             best_val = None
             for allocator in allocators:

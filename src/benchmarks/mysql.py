@@ -201,42 +201,60 @@ class BenchmarkMYSQL(Benchmark):
         args = self.results["args"]
 
         # linear plot
-        plt.plot_single_arg(self, "{transactions}",
-                             xlabel='"threads"',
-                             ylabel='"transactions"',
-                             title='"sysbench oltp read only"',
-                             file_postfix="l")
+        plt.plot(self,
+                 "{transactions}",
+                 fig_options={
+                     'xlabel': 'threads',
+                     'ylabel': 'transactions',
+                     'title': 'sysbench oltp read only',
+                 },
+                 file_postfix="l")
 
         # normalized linear plot
         ref_alloc = list(allocators)[0]
-        plt.plot_single_arg(self, "{transactions}",
-                             xlabel='"threads"',
-                             ylabel='"transactions scaled at " + scale',
-                             title='"sysbench oltp read only"',
-                             file_postfix="norm.l",
-                             scale=ref_alloc)
+        plt.plot(self,
+                 "{transactions}",
+                 fig_options={
+                     'xlabel': 'threads',
+                     'ylabel': 'transactions scaled at {scale}',
+                     'title': 'sysbench oltp read only',
+                 },
+                 file_postfix="norm.l",
+                 scale=ref_alloc)
 
         # bar plot
-        plt.barplot_single_arg(self, "{transactions}",
-                                xlabel='"threads"',
-                                ylabel='"transactions"',
-                                title='"sysbench oltp read only"',
-                                file_postfix="b")
+        plt.plot(self, 
+                 "{transactions}",
+                 plot_type='bar',
+                 fig_options={
+                     'xlabel': 'threads',
+                     'ylabel': 'transactions',
+                     'title': 'sysbench oltp read only',
+                 },
+                 file_postfix="b")
 
         # normalized bar plot
-        plt.barplot_single_arg(self, "{transactions}",
-                                xlabel='"threads"',
-                                ylabel='"transactions scaled at " + scale',
-                                title='"sysbench oltp read only"',
-                                file_postfix="norm.b",
-                                scale=ref_alloc)
+        plt.plot(self,
+                 "{transactions}",
+                 plot_type='bar',
+                 fig_options={
+                     'xlabel': 'threads',
+                     'ylabel': 'transactions scaled at {scale}',
+                     'title': 'sysbench oltp read only',
+                 },
+                 file_postfix="norm.b",
+                 scale=ref_alloc)
 
         # Memusage
-        plt.barplot_single_arg(self, "{mysqld_vmhwm}",
-                                xlabel='"threads"',
-                                ylabel='"VmHWM in kB"',
-                                title='"Memusage sysbench oltp read only"',
-                                file_postfix="mem")
+        plt.plot(self,
+                 "{mysqld_vmhwm}",
+                 plot_type='bar',
+                 fig_options={
+                     'xlabel': 'threads',
+                     'ylabel': 'VmHWM in kB',
+                     'title': 'Memusage sysbench oltp read only',
+                 },
+                 file_postfix="mem")
 
         plt.write_tex_table(self, [{
             "label": "Transactions",

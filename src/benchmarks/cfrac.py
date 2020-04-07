@@ -76,27 +76,36 @@ class BenchmarkCfrac(Benchmark):
 
     def summary(self):
         # Speed
-        plt.barplot_single_arg(self,
-                               "{task-clock}/1000",
-                               ylabel='"cpu-second"',
-                               title='"Cfrac: runtime"',
-                               file_postfix="time")
+        plt.plot(self,
+                 "{task-clock}/1000",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': 'cpu-second',
+                     'title': 'Cfrac: runtime',
+                 },
+                 file_postfix="time")
 
         # L1 cache misses
-        plt.barplot_single_arg(
+        plt.plot(
             self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel="L1 misses in %",
-            title="Cfrac l1 cache misses",
-            file_postfix="l1misses",
-            yerr=False)
+            plot_type='bar',
+            fig_options={
+                'ylabel': "L1 misses in %",
+                'title': "Cfrac l1 cache misses",
+                'yerr': False
+            },
+            file_postfix="l1misses")
 
         # Memusage
-        plt.barplot_single_arg(self,
-                               "{VmHWM}",
-                               ylabel="VmHWM in KB",
-                               title="Cfrac VmHWM",
-                               file_postfix="vmhwm")
+        plt.plot(self,
+                 "{VmHWM}",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': "VmHWM in KB",
+                     'title': "Cfrac VmHWM",
+                 },
+                 file_postfix="vmhwm")
 
         plt.write_tex_table(self, [{
             "label": "Runtime [ms]",

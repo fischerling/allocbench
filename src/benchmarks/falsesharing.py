@@ -62,8 +62,7 @@ class BenchmarkFalsesharing(Benchmark):
             for allocator in allocators:
 
                 sequential_perm = self.Perm(bench=bench, threads=1)
-                for perm in self.iterate_args_fixed({"bench": bench},
-                                                    args=args):
+                for perm in self.iterate_args({"bench": bench}, args=args):
                     speedup = []
                     l1chache_misses = []
                     for i, measure in enumerate(self.results[allocator][perm]):
@@ -79,30 +78,25 @@ class BenchmarkFalsesharing(Benchmark):
         del self.results["stats"]
         self.calc_desc_statistics()
 
-        plt.plot_fixed_arg(self,
-                           "{speedup}",
-                           ylabel="Speedup",
-                           title="Speedup: {arg} {arg_value}",
-                           file_postfix="speedup",
-                           autoticks=False,
-                           fixed=["bench"])
+        plt.plot(self,
+                 "{speedup}",
+                 x_args=["bench"],
+                 fig_options={
+                 'ylabel': "Speedup",
+                 'title': "Speedup: {arg} {arg_value}",
+                 'autoticks': False,
+                 },
+                 file_postfix="speedup")
 
-        plt.plot_fixed_arg(
-            self,
-            "{l1chache_misses}",
-            ylabel="l1 cache misses in %",
-            title="cache misses: {arg} {arg_value}",
-            file_postfix="l1-misses",
-            autoticks=False,
-            fixed=["bench"])
-
-        # plt.plot_fixed_arg(self,
-                           # "({LLC-load-misses}/{LLC-loads})*100",
-                           # ylabel="llc cache misses in %",
-                           # title="LLC misses: {arg} {arg_value}",
-                           # file_postfix="llc-misses",
-                           # autoticks=False,
-                           # fixed=["bench"])
+        plt.plot(self,
+                 "{l1chache_misses}",
+                 x_args=["bench"]
+                 fig_options={
+                     'ylabel': "l1 cache misses in %",
+                     'title': "cache misses: {arg} {arg_value}",
+                     'autoticks': False,
+                 },
+            file_postfix="l1-misses")
 
         plt.write_tex_table(self, [{
             "label": "Speedup",
@@ -117,7 +111,7 @@ class BenchmarkFalsesharing(Benchmark):
         # pgfplots
         for bench in args["bench"]:
             plt.pgfplot(self,
-                        self.iterate_args_fixed({"bench": bench}, args=args),
+                        self.iterate_args({"bench": bench}, args=args),
                         "int(perm.threads)",
                         "{speedup}",
                         xlabel="Threads",

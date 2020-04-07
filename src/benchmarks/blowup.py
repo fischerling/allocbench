@@ -54,11 +54,14 @@ class BenchmarkBlowup(Benchmark):
                 }
             }
 
-        plt.barplot_single_arg(self,
-                               "{VmHWM}/1000",
-                               ylabel="VmHWM in MB",
-                               title="blowup test",
-                               file_postfix="vmhwm")
+        plt.plot(self,
+                 "{VmHWM}/1000",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': "VmHWM in MB",
+                     'title': "blowup test"
+                 },
+                 file_postfix="vmhwm")
 
         plt.pgfplot(self,
                     self.iterate_args(self.results["args"]),

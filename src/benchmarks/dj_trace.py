@@ -173,34 +173,14 @@ class BenchmarkDJTrace(Benchmark):
         args = self.results["args"]
         allocators = self.results["allocators"]
 
-        cpu_time_means = {allocator: {} for allocator in allocators}
-        cycles_means = {allocator: {} for allocator in allocators}
-        for perm in self.iterate_args(args=args):
-            for i, allocator in enumerate(allocators):
-                data = [x["cputime"] for x in self.results[allocator][perm]]
-                # data is in milliseconds
-                cpu_time_means[allocator][perm] = np.mean(data) / 1000
-
-                data = [x["cycles"] for x in self.results[allocator][perm]]
-                cycles_means[allocator][perm] = np.mean(data)
-
-                plt.bar([i],
-                        cpu_time_means[allocator][perm],
-                        label=allocator,
-                        color=allocators[allocator]["color"])
-
-            plt.legend(loc="best")
-            plt.ylabel("time in ms")
-            plt.title(f"Runtime {perm.workload}")
-            plt.savefig(".".join(
-                [self.name, perm.workload, "runtime", summary_file_ext]))
-            plt.clf()
-
-        abplt.barplot_single_arg(self,
-                                 "{cputime}/1000",
-                                 ylabel="time in ms",
-                                 title="total runtime",
-                                 file_postfix="runtime")
+        abplt.plot(self,
+                   "{cputime}/1000",
+                   plot_type='bar',
+                   fig_options={
+                       'ylabel': "time in ms",
+                       'title': "total runtime",
+                   },
+                   file_postfix="runtime")
 
         # Function Times
         func_times_means = {allocator: {} for allocator in allocators}
@@ -258,11 +238,14 @@ class BenchmarkDJTrace(Benchmark):
                 }
             }
 
-        abplt.barplot_single_arg(self,
-                                 "{Max_RSS}/1000",
-                                 ylabel="Max RSS in MB",
-                                 title="Max RSS (VmHWM)",
-                                 file_postfix="newrss")
+        abplt.plot(self,
+                   "{Max_RSS}/1000",
+                   plot_type='bar',
+                   fig_options={
+                       'ylabel': "Max RSS in MB",
+                       'title': "Max RSS (VmHWM)",
+                   }
+                   file_postfix="newrss")
 
         # self.barplot_fixed_arg("{Max_RSS}/1000",
         # ylabel='"Max RSS in MB"',
@@ -394,7 +377,7 @@ class BenchmarkDJTrace(Benchmark):
                       file=f)
 
                 for perm in self.iterate_args(args=args):
-                    cycles = cycles_means[allocator][perm]
+                    cycles = abplt._get_y_data(self, "{cycles}", allocator, perm)[0]
                     times = [t for t in func_times_means[allocator][perm]]
                     rss = rss_means[allocator][perm]
                     print(fmt.format(perm.workload, cycles, times[0], times[1],

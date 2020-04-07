@@ -82,19 +82,25 @@ class BenchmarkRaxmlng(Benchmark):
         result["runtime"] = RUNTIME_RE.search(stdout).group("runtime")
 
     def summary(self):
-        plt.barplot_single_arg(self,
-                               "{runtime}",
-                               ylabel='"runtime in s"',
-                               title='"raxml-ng tree inference benchmark"',
-                               file_postfix="runtime")
+        plt.plot(self,
+                 "{runtime}",
+                 plot_type='bar',
+                 fig_options={
+                    'ylabel': 'runtime in s',
+                    'title': 'raxml-ng tree inference benchmark',
+                 },
+                 file_postfix="runtime")
 
         plt.export_stats_to_dataref(self, "runtime")
 
-        plt.barplot_single_arg(self,
-                               "{VmHWM}",
-                               ylabel='"VmHWM in KB"',
-                               title='"raxml-ng memusage"',
-                               file_postfix="memusage")
+        plt.plot(self,
+                 "{VmHWM}",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': 'VmHWM in KB',
+                     'title': 'raxml-ng memusage',
+                 },
+                 file_postfix="memusage")
 
         plt.export_stats_to_dataref(self, "VmHWM")
 

@@ -42,19 +42,24 @@ class BenchmarkTTest1(Benchmark):
         # mops / per second
         yval = "perm.nthreads / ({task-clock}/1000)"
         # Speed
-        plt.plot_fixed_arg(self, yval,
-                            ylabel='"Mops / CPU second"',
-                            title='"T-Ttest1: " + arg + " " + str(arg_value)',
-                            file_postfix="time",
-                            autoticks=False)
+        plt.plot(self,
+                 yval,
+                 fig_options={
+                     'ylabel': 'Mops / CPU second',
+                     'title': 't-test1: {fixed_part_str}',
+                     'autoticks': False,
+                 },
+                 file_postfix="time")
 
         # L1 cache misses
-        plt.plot_fixed_arg(self,
+        plt.plot(self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel='"L1 misses in %"',
-            title='"T-Test1 l1 cache misses: " + arg + " " + str(arg_value)',
-            file_postfix="l1misses",
-            autoticks=False)
+            fig_options={
+                'ylabel': 'L1 misses in %',
+                'title': 't-test1 l1 cache misses: {fixed_part_str}',
+                'autoticks': False,
+            },
+            file_postfix="l1misses")
 
         # Speed Matrix
         plt.write_best_doublearg_tex_table(self, yval, file_postfix="mops.matrix")
@@ -64,7 +69,7 @@ class BenchmarkTTest1(Benchmark):
             "expression": yval,
             "sort": ">"
         }],
-                             file_postfix="mops.table")
+                            file_postfix="mops.table")
 
         plt.export_stats_to_csv(self, "task-clock")
 

@@ -248,28 +248,45 @@ class Benchmark:
             else:
                 raise Exception("Requirement: {} not found".format(r))
 
-    def iterate_args(self, args=None):
-        """Iterator over each possible combination of args"""
+    def iterate_args(self, args=None, fixed=None):
+        """Iterator over each possible combination of args
+
+        Parameters
+        ----------
+        args : dict, optional, default=None
+            Dictionary of arguments and iterables with their possible values.
+            If not provided defaults to :rc:`self.args`
+
+        fixed : dict, optional, default=None
+            Mapping of arguments to one of their values. The yielded result
+            contains this value. If not provided defaults to :rc:`{}`.
+
+        Returns
+        -------
+        perm : :rc:`self.Perm`
+            A namedtuple containing one permutation of the benchmark's arguments.
+
+        Examples
+        --------
+        args = {"a1": [1,2], "a2": ["foo", "bar"]}
+
+        self.iterate_args(args=args) yields [(1, "foo"), (2, "foo"), (1, "bar"), (2,"bar")]
+        self.iterate_args(args, {"a2":"bar"}) yields [(1, "bar"), (2, "bar")]
+        self.iterate_args(args, {"a1":2, "a2":"foo"}) yields [(2, "foo")]"""
         if not args:
             args = self.args
-        for p in itertools.product(*[args[k] for k in args.keys()]):
-            yield self.Perm(*p)
+        if not fixed:
+            fixed = {}
 
-    def iterate_args_fixed(self, fixed, args=None):
-        """Iterator over each possible combination of args containing all fixed values
-
-        self.args = {"a1": [1,2], "a2": ["foo", "bar"]}
-        self.iterate_args_fixed({"a1":1}) yields [(1, "foo"), (1, "bar")
-        self.iterate_args_fixed({"a2":"bar"}) yields [(1, "bar"), (2, "bar")
-        self.iterate_args_fixed({"a1":2, "a2":"foo"}) yields only [(2, "foo")]"""
-
-        for perm in self.iterate_args(args=args):
+        for perm in itertools.product(*[args[k] for k in args]):
+            perm = self.Perm(*perm)
             p_dict = perm._asdict()
             is_fixed = True
             for arg in fixed:
                 if p_dict[arg] != fixed[arg]:
                     is_fixed = False
                     break
+
             if is_fixed:
                 yield perm
 
@@ -581,7 +598,7 @@ class Benchmark:
 
             self.results["stats"][alloc] = {}
 
-            for perm in self.iterate_args(self.results["args"]):
+            for perm in self.iterate_args(args=self.results["args"]):
                 stats = {s: {} for s in ["min", "max", "mean", "median", "std",
                                          "std_perc",
                                          "lower_quartile", "upper_quartile",

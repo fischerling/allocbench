@@ -110,14 +110,20 @@ class BenchmarkKeyDB(Benchmark):
             os.remove("dump.rdb")
 
     def summary(self):
-        plt.plot_fixed_arg(self, "{totals_ops}",
-                            ylabel="'OPS/second'",
-                            title="KeyDB Operations - {arg}: {arg_value}",
-                            file_postfix="total_ops")
+        plt.plot(self,
+                 "{totals_ops}",
+                 fig_options={
+                     'ylabel': "'OPS/second'",
+                     'title': "KeyDB Operations - {arg}: {arg_value}",
+                 },
+                 file_postfix="total_ops")
 
-        plt.plot_fixed_arg(self, "{keydb_vmhwm}",
-                            ylabel="'VmHWM [KB]'",
-                            title="KeyDB Memusage - {arg}: {arg_value}",
-                            file_postfix="vmhwm")
+        plt.plot(self,
+                 "{keydb_vmhwm}",
+                 fig_options={
+                     'ylabel': "'VmHWM [KB]'",
+                     'title': "KeyDB Memusage - {arg}: {arg_value}",
+                 },
+                 file_postfix="vmhwm")
 
 keydb = BenchmarkKeyDB()

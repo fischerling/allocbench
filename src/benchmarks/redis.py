@@ -81,15 +81,23 @@ class BenchmarkRedis(Benchmark):
             os.remove("dump.rdb")
 
     def summary(self):
-        plt.barplot_single_arg(self, "{requests}",
-                                ylabel='"requests per s"',
-                                title='"redis throughput"',
-                                file_postfix="requests")
+        plt.plot(self,
+                 "{requests}",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': 'requests per s',
+                     'title': 'redis throughput',
+                 },
+                 file_postfix="requests")
 
-        plt.barplot_single_arg(self, "{redis_vmhwm}",
-                                ylabel='"VmHWM in KB"',
-                                title='"redis memusage"',
-                                file_postfix="vmhwm")
+        plt.plot(self,
+                 "{redis_vmhwm}",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': '"VmHWM in KB"',
+                     'title': '"redis memusage"',
+                 },
+                 file_postfix="vmhwm")
 
         plt.export_stats_to_dataref(self, "requests")
 

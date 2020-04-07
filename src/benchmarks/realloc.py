@@ -34,10 +34,14 @@ class BenchmarkRealloc(Benchmark):
         super().__init__(name)
 
     def summary(self):
-        plt.barplot_single_arg(self, "{task-clock}",
-                                ylabel='"task-clock in ms"',
-                                title='"realloc micro benchmark"',
-                                file_postfix="time")
+        plt.plot(self,
+                 "{task-clock}",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': 'task-clock in ms',
+                     'title': 'realloc micro benchmark',
+                 },
+                 file_postfix="time")
 
         plt.export_stats_to_csv(self, "task-clock")
         plt.export_stats_to_dataref(self, "task-clock")

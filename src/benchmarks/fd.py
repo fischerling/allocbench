@@ -67,19 +67,25 @@ class BenchmarkFd(Benchmark):
             os.link(src, dest)
 
     def summary(self):
-        plt.barplot_single_arg(self,
-                               "{task-clock}",
-                               ylabel="runtime in ms",
-                               title="fd runtime",
-                               file_postfix="runtime")
+        plt.plot(self,
+                 "{task-clock}",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': "runtime in ms",
+                     'title': "fd runtime",
+                 },
+                 file_postfix="runtime")
 
         plt.export_stats_to_dataref(self, "task-clock")
 
-        plt.barplot_single_arg(self,
-                               "{VmHWM}",
-                               ylabel="VmHWM in KB",
-                               title="fd memusage",
-                               file_postfix="memusage")
+        plt.plot(self,
+                 "{VmHWM}",
+                 plot_type='bar',
+                 fig_options={
+                     'ylabel': "VmHWM in KB",
+                     'title': "fd memusage"
+                 },
+                 file_postfix="memusage")
 
         plt.export_stats_to_dataref(self, "VmHWM")
 
