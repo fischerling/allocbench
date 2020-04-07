@@ -105,7 +105,7 @@ class BenchmarkEspresso(Benchmark):
                  fig_options={
                      'ylabel': "VmHWM in KB",
                      'title': "Espresso VmHWM",
-                 }
+                 },
                  file_postfix="vmhwm")
 
         plt.write_tex_table(self, [{

@@ -244,7 +244,7 @@ class BenchmarkDJTrace(Benchmark):
                    fig_options={
                        'ylabel': "Max RSS in MB",
                        'title': "Max RSS (VmHWM)",
-                   }
+                   },
                    file_postfix="newrss")
 
         # self.barplot_fixed_arg("{Max_RSS}/1000",

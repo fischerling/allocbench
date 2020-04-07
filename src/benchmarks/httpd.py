@@ -65,7 +65,7 @@ class BenchmarkHTTPD(Benchmark):
                  fig_options={
                      'xlabel': "threads",
                      'ylabel': "requests/s",
-                     'title': "{perm.site}: requests/s"
+                     'title': "{perm.site}: requests/s",
                      'autoticks': False,
                  },
                  file_postfix="requests")

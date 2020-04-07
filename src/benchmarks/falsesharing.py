@@ -90,7 +90,7 @@ class BenchmarkFalsesharing(Benchmark):
 
         plt.plot(self,
                  "{l1chache_misses}",
-                 x_args=["bench"]
+                 x_args=["bench"],
                  fig_options={
                      'ylabel': "l1 cache misses in %",
                      'title': "cache misses: {arg} {arg_value}",
@@ -121,7 +121,6 @@ class BenchmarkFalsesharing(Benchmark):
 
         # create pgfplot legend
         plt.pgfplot_legend(self)
-
 
 
 falsesharing = BenchmarkFalsesharing()
