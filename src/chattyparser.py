@@ -62,12 +62,11 @@ def update_cache_lines(cache_lines, trace, size):
         return ""
 
     start = trace.ptr
-    # print(hex(start), "allocs" if trace.func != Function.free else "frees", "cache lines: ", end="")
     end = start + abs(size)
     msg = ""
 
     cache_line = start & ~(64 - 1)
-    assert(cache_line % 64 == 0)
+    assert cache_line % 64 == 0
     while cache_line < end:
         if trace.func != Function.free:
             if cache_line not in cache_lines or cache_lines[cache_line] == []:
@@ -75,7 +74,8 @@ def update_cache_lines(cache_lines, trace, size):
             # false sharing
             else:
                 if trace.tid not in cache_lines[cache_line]:
-                    msg += f"WARNING: cache line {hex(cache_line)} is shared between {cache_lines[cache_line] + [trace.tid]}\n"
+                    msg += (f"WARNING: cache line {hex(cache_line)} is shared "
+                            f"between {set(cache_lines[cache_line] + [trace.tid])}\n")
                 cache_lines[cache_line].append(trace.tid)
         else:
             if trace.tid in cache_lines[cache_line]:
@@ -104,9 +104,10 @@ def record_allocation(trace, context):
        context - dict holding all data structures used for parsing
            allocations - dict of life allocations mapping their pointer to their size
            hist - dict mapping allocation sizes to their occurrence
+           realloc_hist - dict mapping the two realloc sizes to their occurence
            total_size - list of total requested memory till last recorded function call
            cache_lines - dict of cache lines mapped to the owning tids
-           realloc_hist - dict mapping the two realloc sizes to their occurence
+           req_size - dict mapping sizes to their individual total requested memory
     """
 
     # mandatory
@@ -117,7 +118,7 @@ def record_allocation(trace, context):
     realloc_hist = context.get("realloc_hist", None)
     total_size = context.get("total_size", None)
     cache_lines = context.get("cache_lines", None)
-    req_size = context.get("cache_lines", None)
+    req_sizes = context.get("req_sizes", {})
 
     size = 0
     msg = ""
@@ -136,7 +137,8 @@ def record_allocation(trace, context):
         # check for alignment
         if CHECK_ALIGNMENT:
             if (trace.ptr - CHECK_ALIGNMENT[1]) % CHECK_ALIGNMENT[0] != 0:
-                msg += f"WARNING: ptr: {trace.ptr:x} is not aligned to {CHECK_ALIGNMENT[0]} with offset {CHECK_ALIGNMENT[1]}\n"
+                msg += (f"WARNING: ptr: {trace.ptr:x} is not aligned to"
+                        f" {CHECK_ALIGNMENT[0]} with offset {CHECK_ALIGNMENT[1]}\n")
 
         if trace.func == Function.calloc:
             size = trace.var_arg * trace.size
@@ -165,10 +167,13 @@ def record_allocation(trace, context):
 
     # update total size
     if total_size is not None:
-        if not req_size or size == req_size:
-            total_size.append(total_size[-1] + size)
-        elif req_size:
-            total_size.append(total_size[-1])
+        total_size.append(total_size[-1] + size)
+
+    for req_size in req_sizes:
+        if size == req_size:
+            req_sizes[req_size].append(req_sizes[req_size][-1] + size)
+        else:
+            req_sizes[req_size].append(req_sizes[req_size][-1])
 
     return msg
 
@@ -179,7 +184,7 @@ def parse(path="chattymalloc.txt",
           track_calls=True,
           realloc_hist=True,
           cache_lines=True,
-          req_size=None):
+          req_sizes=None):
     """parse a chattymalloc trace
 
     :returns: a context dict containing the histogram, a realloc histogram,
@@ -199,8 +204,10 @@ def parse(path="chattymalloc.txt",
     if track_total:
         # List of total live memory per operation
         context["total_size"] = [0]
-        # allocation size to track
-        context["req_size"] = req_size
+
+    if req_sizes:
+        # allocation sizes to track
+        context["req_sizes"] = req_sizes
 
     if hist:
         # Dictionary mapping allocation sizes to the count
@@ -220,13 +227,15 @@ def parse(path="chattymalloc.txt",
     with open(path, "rb") as trace_file:
         total_entries = os.stat(trace_file.fileno()).st_size // Trace.size
         update_interval = int(total_entries * 0.0005)
+        if update_interval == 0:
+            update_interval = 1
 
         i = 0
         entry = trace_file.read(Trace.size)
         while entry != b'':
             # print process
             if i % update_interval == 0:
-                print(f"\r[{i} / {total_entries}] {(i / total_entries) * 100:.2f}% parsed ...", end="")
+                print(f"\r[{i} / {total_entries}] {(i/total_entries)*100:.2f}% parsed ...", end="")
 
             try:
                 trace = Trace(entry)
@@ -236,15 +245,12 @@ def parse(path="chattymalloc.txt",
                 if msg:
                     print(f"entry {i}: {msg}", file=sys.stderr, end="")
 
-            except ValueError as e:
-                print(f"ERROR: {e} in entry {i}: {entry}", file=sys.stderr)
-
-            except IndexError as e:
-                print(f"ERROR: uknown function {e} in entry {i}: {entry}", file=sys.stderr)
+            except ValueError as err:
+                print(f"ERROR: {err} in entry {i}: {entry}", file=sys.stderr)
 
             if EXPORT_TXT:
                 print((f"{trace.tid}: {trace.func.name} "
-                      f"{hex(trace.ptr)} {trace.size} {trace.var_arg}"),
+                       f"{hex(trace.ptr)} {trace.size} {trace.var_arg}"),
                       file=plain_file)
 
             i += 1
@@ -264,33 +270,34 @@ def plot(path):
     plot_hist_ascii(f"{path}.hist", hist, result["calls"])
 
     top5 = [t[1] for t in sorted([(n, s) for s, n in hist.items()])[-5:]]
-    del result["hist"]
-    del result["calls"]
 
-    total_size = np.array(result["total_size"])
-    del result["total_size"]
-    plot_profile(total_size, path, path + ".profile.png", top5)
+    plot_profile(path, path + ".profile.png", top5)
 
 
-def plot_profile(total_sizes, trace_path, plot_path, sizes):
+def plot_profile(trace_path, plot_path, sizes):
     """Plot a memory profile of the total memory and the top 5 sizes"""
-    x_vals = range(0, len(total_sizes))
+
+    res = parse(path=trace_path,
+                hist=False,
+                realloc_hist=False,
+                cache_lines=False,
+                req_sizes={s: [0] for s in sizes})
+
+    total_size = np.array(res["total_size"])
+    del res["total_size"]
+
+    x_vals = range(0, len(total_size))
 
     plt.plot(x_vals,
-             total_sizes / 1000,
+             total_size / 1000,
              marker='',
              linestyle='-',
              label="Total requested")
 
     for size in sizes:
-        res = parse(path=trace_path,
-                    hist=False,
-                    realloc_hist=False,
-                    cache_lines=False,
-                    req_size=size)
-        total_size = np.array(res["total_size"])
-        del res["total_size"]
-        plt.plot(x_vals, total_size / 1000, label=size)
+        req_size = np.array(res["req_sizes"][size])
+        del res["req_sizes"][size]
+        plt.plot(x_vals, req_size / 1000, label=size)
 
     plt.legend(loc="lower center")
     plt.xlabel("Allocations")
