@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -64,19 +64,23 @@ class BenchmarkLoop(Benchmark):
         plt.plot(
             self,
             "{mops}",
-            ylabel="MOPS/cpu-second",
-            title="Loop: {fixed_part_str}",
-            file_postfix="time",
-            autoticks=False)
+            fig_options={
+                'ylabel': 'MOPS/cpu-second',
+                'title': 'Loop: {fixed_part_str}',
+                'autoticks': False,
+            },
+            file_postfix="time")
 
         # L1 cache misses
         plt.plot(
             self,
             "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            ylabel="L1 misses in %",
-            title="Loop l1 cache misses: {fixed_part_str}",
-            file_postfix="l1misses",
-            autoticks=False)
+            fig_options={
+                'ylabel': "L1 misses in %",
+                'title': "Loop l1 cache misses: {fixed_part_str}",
+                'autoticks': False,
+            },
+            file_postfix="l1misses")
 
         # Speed Matrix
         plt.write_best_doublearg_tex_table(
@@ -98,7 +102,7 @@ class BenchmarkLoop(Benchmark):
 
         # pgfplot test
         plt.pgfplot(self,
-                    self.iterate_args({"maxsize": 1024}, self.results["args"]),
+                    self.iterate_args(fixed={"maxsize": 1024}, args=self.results["args"]),
                     "int(perm.threads)",
                     "{mops}",
                     xlabel="Threads",

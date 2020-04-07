@@ -114,7 +114,7 @@ class BenchmarkKeyDB(Benchmark):
                  "{totals_ops}",
                  fig_options={
                      'ylabel': "'OPS/second'",
-                     'title': "KeyDB Operations - {arg}: {arg_value}",
+                     'title': "KeyDB Operations - {fixed_part_str}",
                  },
                  file_postfix="total_ops")
 
@@ -122,7 +122,7 @@ class BenchmarkKeyDB(Benchmark):
                  "{keydb_vmhwm}",
                  fig_options={
                      'ylabel': "'VmHWM [KB]'",
-                     'title': "KeyDB Memusage - {arg}: {arg_value}",
+                     'title': "KeyDB Memusage - {fixed_part_str}",
                  },
                  file_postfix="vmhwm")
 
