@@ -355,19 +355,28 @@ def plot(bench,
                   plot_options,
                   fig_options)
 
-
-def export_facts_to_file(bench, comment_symbol, output_file):
-    """Write collected facts about used system and benchmark to file"""
-    print(comment_symbol, bench.name, file=output_file)
-    print(file=output_file)
-    print(comment_symbol, "Common facts:", file=output_file)
+def print_common_facts(comment_symbol="", file=None):
+    print(comment_symbol, "Common facts:", file=file)
     for fact, value in src.facter.FACTS.items():
-        print("f{comment_symbol}  {fact}: {value}", file=output_file)
-    print(file=output_file)
-    print(comment_symbol, "Benchmark facts:", file=output_file)
+        print(f"{comment_symbol}  {fact}: {value}", file=file)
+    print(file=file)
+
+def print_facts(bench, comment_symbol="", print_common=True, print_allocators=False, file=None):
+    """Write collected facts about used system and benchmark to file"""
+    print(comment_symbol, bench.name, file=file)
+    print(file=file)
+
+    if print_common:
+        print_common_facts(comment_symbol=comment_symbol, file=file)
+
+    print(comment_symbol, "Benchmark facts:", file=file)
     for fact, value in bench.results["facts"].items():
-        print(f"{comment_symbol} {fact}: {value}", file=output_file)
-    print(file=output_file)
+        print(comment_symbol, f"{fact}: {value}", file=file)
+
+    if print_allocators:
+        print(comment_symbol, f'allocators: {" ".join(bench.results["allocators"])}', file=file)
+
+    print(file=file)
 
 
 def export_stats_to_csv(bench, datapoint, path=None):
@@ -439,7 +448,7 @@ def export_stats_to_dataref(bench, datapoint, path=None):
 
     with open(path, "w") as dataref_file:
         # Write facts to file
-        export_facts_to_file(bench, "%", dataref_file)
+        print_facts(bench, comment_symbol="%", file=dataref_file)
 
         for alloc in bench.results["allocators"]:
             for perm in bench.iterate_args(args=bench.results["args"]):
