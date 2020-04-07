@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -62,6 +62,8 @@ DEFAULT_FIG_OPTIONS = {
         'autoticks': False,
     }
 }
+
+FIGURES = {}
 
 def _get_alloc_color(bench, alloc):
     """Populate all not set allocator colors with matplotlib 'C' colors"""
@@ -198,8 +200,8 @@ def _plot(bench,
     :rc:`.pyplot.close` on the figures you are not using, because this will
     enable pyplot to properly clean up the memory.
     """
-
     fig = plt.figure(fig_options['fig_label'])
+    FIGURES[fig_options['fig_label']] = fig
     for allocator in allocators:
         y_data = _get_y_data(bench,
                              y_expression,
@@ -314,8 +316,7 @@ def plot(bench,
     args = bench.results["args"]
     allocators = bench.results["allocators"]
 
-    if not x_args:
-        x_args = args
+    x_args = x_args or args
 
     for loose_arg in x_args:
         x_data = args[loose_arg]
@@ -327,24 +328,22 @@ def plot(bench,
             fixed_part_str = ".".join([f'{k}={v}' for k, v in fixed_part.items()])
             fig_label = f'{bench.name}.{fixed_part_str}.{file_postfix}'
 
-            plot_options = _create_plot_options(plot_type, **plot_options or {})
+            cur_plot_options = _create_plot_options(plot_type, **plot_options or {})
+
+            cur_fig_options = {}
 
             substitutions = vars()
             substitutions.update(vars(bench))
-            for option, value in fig_options.items():
+            for option, value in (fig_options or {}).items():
                 if isinstance(value, str):
-                    fig_options[option] = value.format(**substitutions)
+                    cur_fig_options[option] = value.format(**substitutions)
+
+            cur_fig_options = _create_figure_options(plot_type, fig_label, **cur_fig_options)
 
             # plot specific defaults
-            fig_options.setdefault("ylabel", y_expression)
-            fig_options.setdefault("xlabel", loose_arg)
-            fig_options.setdefault("titel", fig_label)
-
-            fig_options = _create_figure_options(
-                plot_type,
-                fig_label,
-                **fig_options or {},
-            )
+            cur_fig_options.setdefault("ylabel", y_expression)
+            cur_fig_options.setdefault("xlabel", loose_arg)
+            cur_fig_options.setdefault("titel", fig_label)
 
             _plot(bench,
                   allocators,
@@ -352,8 +351,8 @@ def plot(bench,
                   x_data,
                   list(bench.iterate_args(args=args, fixed=fixed_part)),
                   plot_type,
-                  plot_options,
-                  fig_options)
+                  cur_plot_options,
+                  cur_fig_options)
 
 def print_common_facts(comment_symbol="", file=None):
     print(comment_symbol, "Common facts:", file=file)
