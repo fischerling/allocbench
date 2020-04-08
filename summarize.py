@@ -172,6 +172,9 @@ if __name__ == "__main__":
     parser.add_argument("--latex-preamble",
                         help="latex code to include in the preamble of generated standalones",
                         type=str)
+    parser.add_argument("-i", "--interactive",
+                        help="drop into repl after summarizing the results",
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -197,3 +200,7 @@ if __name__ == "__main__":
 
     summarize(benchmarks=args.benchmarks,
               exclude_benchmarks=args.exclude_benchmarks)
+
+    if args.interactive:
+        import code
+        code.InteractiveConsole(locals=globals()).interact()
