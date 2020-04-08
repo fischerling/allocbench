@@ -608,7 +608,6 @@ class Benchmark:
                     try:
                         data = [float(m[dp]) for m in self.results[alloc][perm]]
                     except (TypeError, ValueError) as e:
-                        print_debug(dp, e)
                         continue
                     stats["min"][dp] = np.min(data)
                     stats["max"][dp] = np.max(data)
