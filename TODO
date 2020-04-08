@@ -14,10 +14,6 @@
 - fix mysqld termination with malt
 - add mysql warmup in preallocator_hook
 
-- revisit redis benchmark
-  - use KeyDB instead ?
-  - use memtier_benchmark instead of redis-benchmark ?
-
 - rethink colors
 
 - check dependencies
@@ -34,3 +30,5 @@
 - possible benchmarks:
    - https://github.com/GraphChi/graphchi-cpp
    - http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
+
+- implement allocator selection using wildcards
