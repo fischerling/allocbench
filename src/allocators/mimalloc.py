@@ -35,4 +35,4 @@ class Mimalloc(Allocator):
         super().__init__(name, **kwargs)
 
 
-mimalloc = Mimalloc("mimalloc", version="v1.0.8")
+mimalloc = Mimalloc("mimalloc", version="v1.6.0")
