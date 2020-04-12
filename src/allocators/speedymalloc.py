@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -24,7 +24,7 @@ memory in speeds favor. Memory is mmapped per thread and never freed.
 from src.artifact import GitArtifact
 from src.allocator import Allocator
 
-VERSION = "dc8b2430ed55702abeb0fab1b931141b9d6f7128"
+VERSION = "443e12e0413c843a1df331c87992bff3f6be6be2"
 
 
 class Speedymalloc(Allocator):
