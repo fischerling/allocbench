@@ -202,5 +202,9 @@ if __name__ == "__main__":
               exclude_benchmarks=args.exclude_benchmarks)
 
     if args.interactive:
-        import code
-        code.InteractiveConsole(locals=globals()).interact()
+        try:
+            import IPython
+            IPython.embed()
+        except ModuleNotFoundError:
+            import code
+            code.InteractiveConsole(locals=globals()).interact()
