@@ -17,9 +17,11 @@
 """Alloactor related class definitions and helpers"""
 
 from datetime import datetime
+import fnmatch
 import inspect
 import importlib
 import os
+from pathlib import Path
 import shutil
 from subprocess import CalledProcessError
 import sys
@@ -179,16 +181,64 @@ class Allocator:
         print_debug("Resulting dictionary:", res_dict)
         return res_dict
 
+def collect_installed_allocators():
+    """Collect allocators using installed system libraries"""
+
+    # TODO: add more allocators
+    MAYBE_ALLOCATORS = ["tcmalloc", "jemalloc", "hoard"]
+
+    allocators = {
+        "libc": {
+            "cmd_prefix": "",
+            "binary_suffix": "",
+            "LD_PRELOAD": "",
+            "LD_LIBRARY_PATH": "",
+            "color": "C1"
+        }
+    }
+
+    for i, alloc in enumerate(MAYBE_ALLOCATORS):
+        try:
+            path = run_cmd(f'whereis lib{alloc} | cut -d":" -f2',
+                                  shell=True,
+                                  capture=True).stdout.strip()
+        except CalledProcessError:
+            continue
+
+        if path != "":
+            allocators[alloc] = {
+                "cmd_prefix": "",
+                "binary_suffix": "",
+                "LD_PRELOAD": path,
+                "LD_LIBRARY_PATH": "",
+                "color": None,
+            }
+
+    return allocators
+
+def collect_available_allocators():
+    """Collect all allocator definitions shipped with allocbench"""
+
+    available_allocators = {}
+
+    for alloc_def_path in Path(ALLOCDEFDIR).glob('*.py'):
+            alloc_module_name = '.'.join(alloc_def_path.parts[:-1] + (alloc_def_path.stem,))
+            module = importlib.import_module(alloc_module_name)
+            for name, obj in module.__dict__.items():
+                if issubclass(obj.__class__, src.allocator.Allocator):
+                    available_allocators[name] = obj
+
+    return available_allocators
 
 def read_allocators_collection_file(alloc_path):
     """Read and evaluate a python file looking for an exported dict called allocators"""
 
     exec_globals = {"__file__": alloc_path}
     with open(alloc_path, "r") as alloc_file:
-        exec(compile(alloc_file.read()), exec_globals)
+        exec(compile(alloc_file.read(), alloc_path, 'exec'), exec_globals)
 
     if "allocators" in exec_globals:
-        return exec_globals["allocators"]
+        return {a.name: a.build() for a in exec_globals["allocators"]}
 
     print_error("No global dictionary 'allocators' in", alloc_path)
     return {}
@@ -216,26 +266,20 @@ def collect_allocators(allocators):
     for name in allocators:
         if name == "installed":
             print_status("Using system-wide installed allocators ...")
-            importlib.import_module('src.allocators.installed_allocators')
-            ret.update(src.allocators.installed_allocators.allocators)
+            ret.update(collect_installed_allocators())
         # file exists -> interpret as python file with a global variable allocators
         elif os.path.isfile(name):
             print_status("Sourcing allocators definitions at", name, "...")
             ret.update(read_allocators_collection_file(name))
 
-        # file is one of our allocator definitions import it
-        elif os.path.isfile("src/allocators/" + name.split('_')[0] + ".py"):
-            module = importlib.import_module('src.allocators.' + name.split('_')[0])
-            # name is collection
-            if hasattr(module, "allocators"):
-                for alloc in module.allocators:
-                    ret[alloc.name] = alloc.build()
-            # name is single allocator
-            elif issubclass(
-                    getattr(module, name).__class__, src.allocator.Allocator):
-                ret[name] = getattr(module, name).build()
+        # interpret name as allocator name or wildcard
         else:
-            print_error(
-                name,
-                "is neither a python file or a known allocator definition.")
+            available_allocators = collect_available_allocators()
+            matched_allocators = fnmatch.filter(available_allocators.keys(), name)
+            if matched_allocators:
+                ret.update({a: available_allocators[a].build() for a in matched_allocators})
+            else:
+                print_error(
+                    name,
+                    "is neither a python file or a known allocator definition.")
     return ret
