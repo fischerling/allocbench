@@ -202,7 +202,11 @@ def _plot(bench,
     """
     fig = plt.figure(fig_options['fig_label'])
     FIGURES[fig_options['fig_label']] = fig
-    for allocator in allocators:
+    if plot_type == 'bar' and 'width' not in plot_options:
+        n_allocators = len(allocators)
+        width = 1 / (n_allocators + 1)
+        plot_options['width'] = width
+    for i, allocator in enumerate(allocators):
         y_data = _get_y_data(bench,
                              y_expression,
                              allocator,
@@ -215,7 +219,7 @@ def _plot(bench,
                                                y_expression,
                                                allocator,
                                                perms,
-                                               stat='mean')
+                                               stat='std')
         try:
             plot_func = getattr(plt, plot_type)
         except AttributeError:
@@ -224,7 +228,9 @@ def _plot(bench,
 
         _x_data = x_data
         if not fig_options['autoticks']:
-            _x_data = list(range(1, len(x_data) + 1))
+            _x_data = np.arange(1, len(x_data) + 1)
+            if plot_type == 'bar':
+                _x_data = _x_data + width / 2 + (i * plot_options['width'])
 
         plot_func(_x_data,
                   y_data,
@@ -236,7 +242,7 @@ def _plot(bench,
         plt.legend(loc=fig_options['legend_pos'])
 
     if not fig_options['autoticks']:
-        plt.xticks(_x_data, x_data)
+        plt.xticks(_x_data - (i / 2 * plot_options['width']), x_data)
 
     plt.xlabel(fig_options['xlabel'])
     plt.ylabel(fig_options['ylabel'])
