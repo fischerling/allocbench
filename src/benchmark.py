@@ -363,7 +363,7 @@ class Benchmark:
             # Register termination of the server
             atexit.register(Benchmark.shutdown_server, self=self, server=server)
 
-            self.results["servers"].setdefault(alloc_name, {s["name"]: {"stdout": [], "stderr": []} for s in self.servers})
+            self.results["servers"].setdefault(alloc_name, {s["name"]: {"stdout": [], "stderr": [], "returncode": []} for s in self.servers})
 
             if not "prepare_cmds" in server:
                 continue
@@ -382,31 +382,33 @@ class Benchmark:
 
     def shutdown_server(self, server):
         """Terminate a started server running its shutdown_cmds in advance"""
-        if server["popen"].poll() != None:
-            return
+        if server["popen"].poll() == None:
+            server_name = server.get("name", "Server")
+            print_info(f"Shutting down {server_name}")
 
-        server_name = server.get("name", "Server")
-        print_info(f"Shutting down {server_name}")
+            substitutions = {}
+            substitutions.update(self.__dict__)
+            substitutions.update(server)
 
-        substitutions = {}
-        substitutions.update(self.__dict__)
-        substitutions.update(server)
+            if "shutdown_cmds" in server:
+                for shutdown_cmd in server["shutdown_cmds"]:
+                    shutdown_cmd = shutdown_cmd.format(**substitutions)
+                    print_debug(shutdown_cmd)
 
-        if "shutdown_cmds" in server:
-            for shutdown_cmd in server["shutdown_cmds"]:
-                shutdown_cmd = shutdown_cmd.format(**substitutions)
-                print_debug(shutdown_cmd)
+                    proc = subprocess.run(shutdown_cmd.split(), universal_newlines=True,
+                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-                proc = subprocess.run(shutdown_cmd.split(), universal_newlines=True,
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    print_debug("Stdout:", proc.stdout)
+                    print_debug("Stderr:", proc.stderr)
 
-                print_debug("Stdout:", proc.stdout)
-                print_debug("Stderr:", proc.stderr)
+                # wait for server termination
+                sleep(5)
 
-            # wait for server termination
-            sleep(5)
+            outs, errs = Benchmark.terminate_subprocess(server["popen"])
+        else:
+            outs = server["popen"].stdout.read()
+            errs = server["popen"].stderr.read()
 
-        outs, errs = Benchmark.terminate_subprocess(server["popen"])
         server["stdout"] = outs
         server["stderr"] = errs
 
@@ -566,8 +568,10 @@ class Benchmark:
                     self.shutdown_servers()
 
                     for server in self.servers:
-                        self.results["servers"][alloc_name][server['name']]["stdout"].append(server["stdout"])
-                        self.results["servers"][alloc_name][server['name']]["stderr"].append(server["stderr"])
+                        server_result = self.results["servers"][alloc_name][server['name']]
+                        server_result["stdout"].append(server["stdout"])
+                        server_result["stderr"].append(server["stderr"])
+                        server_result["returncode"].append(server["popen"].returncode)
 
                 if hasattr(self, "postallocator_hook"):
                     self.postallocator_hook((alloc_name, alloc), run)
