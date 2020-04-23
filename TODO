@@ -1,6 +1,5 @@
 - chattymalloc
   - trace thread termination
-  - don't serialize through the log file
 
 - chattyparser
   - fix passed allocations
@@ -25,10 +24,8 @@
 
 - merge measurements if facts match
 
-- implement verbosity aware system() wrapper
-
 - possible benchmarks:
    - https://github.com/GraphChi/graphchi-cpp
    - http://glaros.dtc.umn.edu/gkhome/metis/metis/overview
 
-- implement allocator selection using wildcards
+- TESTS!!
