@@ -37,11 +37,11 @@ for line in run_cmd(["ldconfig", "-v", "-N"],
     if not line.startswith('\t'):
         LIBRARY_PATH += line
 
-BUILDDIR = src.globalvars.allocbuilddir
-SRCDIR = os.path.join(src.globalvars.allocbuilddir, "src")
+BUILDDIR = Path(src.globalvars.allocbuilddir)
+SRCDIR = BUILDDIR / "src"
+ALLOCDEFDIR = Path('src/allocators')
 
-if not os.path.isdir(SRCDIR):
-    os.makedirs(SRCDIR)
+SRCDIR.mkdir(parents=True, exist_ok=True)
 
 
 class Allocator:
@@ -68,11 +68,11 @@ class Allocator:
     build_cmds = []
 
     def __init__(self, name, **kwargs):
-        self.class_file = inspect.getfile(self.__class__)
+        self.class_file = Path(inspect.getfile(self.__class__))
         self.name = name
-        self.srcdir = os.path.join(SRCDIR, self.name)
-        self.dir = os.path.join(BUILDDIR, self.name)
-        self.patchdir = os.path.join(os.path.splitext(self.class_file)[0])
+        self.srcdir = SRCDIR / self.name
+        self.dir = BUILDDIR / self.name
+        self.patchdir = Path(self.class_file.parent, self.class_file.stem)
 
         # Update attributes
         for attr, value in kwargs.items():
@@ -80,7 +80,7 @@ class Allocator:
 
     def prepare(self):
         """Prepare the allocators sources"""
-        if not self.sources and os.path.exists(self.srcdir):
+        if not self.sources and self.srcdir.exists():
             return
 
         print_status("Preparing", self.name, "...")
@@ -90,7 +90,7 @@ class Allocator:
             self.sources.provide(self.srcdir)
 
         if self.patches:
-            cwd = os.path.join(SRCDIR, self.name)
+            cwd = self.srcdir
 
             print_status(f"Patching {self.name} ...")
             for patch in self.patches:
@@ -124,8 +124,8 @@ class Allocator:
 
     def build(self):
         """Build the allocator if needed and produce an allocator dict"""
-        build_needed = not os.path.isdir(self.dir)
-        buildtimestamp_path = os.path.join(self.dir, ".buildtime")
+        build_needed = not self.dir.is_dir()
+        buildtimestamp_path = self.dir / ".buildtime"
 
         if not build_needed:
             print_info2("Old build found. Comparing build time with mtime")
@@ -185,7 +185,7 @@ def collect_installed_allocators():
     """Collect allocators using installed system libraries"""
 
     # TODO: add more allocators
-    MAYBE_ALLOCATORS = ["tcmalloc", "jemalloc", "hoard"]
+    maybe_allocators = ["tcmalloc", "jemalloc", "hoard"]
 
     allocators = {
         "libc": {
@@ -197,11 +197,11 @@ def collect_installed_allocators():
         }
     }
 
-    for i, alloc in enumerate(MAYBE_ALLOCATORS):
+    for alloc in maybe_allocators:
         try:
             path = run_cmd(f'whereis lib{alloc} | cut -d":" -f2',
-                                  shell=True,
-                                  capture=True).stdout.strip()
+                           shell=True,
+                           capture=True).stdout.strip()
         except CalledProcessError:
             continue
 
@@ -222,11 +222,11 @@ def collect_available_allocators():
     available_allocators = {}
 
     for alloc_def_path in Path(ALLOCDEFDIR).glob('*.py'):
-            alloc_module_name = '.'.join(alloc_def_path.parts[:-1] + (alloc_def_path.stem,))
-            module = importlib.import_module(alloc_module_name)
-            for name, obj in module.__dict__.items():
-                if issubclass(obj.__class__, src.allocator.Allocator):
-                    available_allocators[name] = obj
+        alloc_module_name = '.'.join(alloc_def_path.parts[:-1] + (alloc_def_path.stem,))
+        module = importlib.import_module(alloc_module_name)
+        for name, obj in module.__dict__.items():
+            if issubclass(obj.__class__, src.allocator.Allocator):
+                available_allocators[name] = obj
 
     return available_allocators
 
