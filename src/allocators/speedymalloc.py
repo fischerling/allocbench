@@ -24,11 +24,11 @@ memory in speeds favor. Memory is mmapped per thread and never freed.
 from src.artifact import GitArtifact
 from src.allocator import Allocator
 
-VERSION = "c1e61e6a4c9ed24de8dd18dd29037dea89668b98"
+VERSION = "33d05bda26fbb9cf6351b604b292af664e5f51b4"
 
 
 class Speedymalloc(Allocator):
-    """ Speedymalloc definition for allocbench"""
+    """Speedymalloc definition for allocbench"""
 
     sources = GitArtifact("speedymalloc",
                           "https://gitlab.cs.fau.de/flow/speedymalloc.git")
@@ -85,7 +85,3 @@ speedymalloc_no_glab = Speedymalloc(
 # speedymalloc_rseq = Speedymalloc(
     # "speedymalloc_rseq",
     # version="e1549fa2a2833deba0ba53504a6c67ee31a0e42a")
-
-speedymalloc_thread_free = Speedymalloc(
-    "speedymalloc_thread_free",
-    version='c57e2f0ebb0326eb2d12570e03595e30896a2474')
