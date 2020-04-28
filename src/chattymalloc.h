@@ -19,7 +19,17 @@ along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <sys/types.h>
 
-enum functions{MALLOC, FREE, REALLOC, CALLOC, MEMALIGN, POSIX_MEMALIGN, VALLOC, PVALLOC, ALIGNED_ALLOC};
+enum functions {
+  MALLOC,
+  FREE,
+  REALLOC,
+  CALLOC,
+  MEMALIGN,
+  POSIX_MEMALIGN,
+  VALLOC,
+  PVALLOC,
+  ALIGNED_ALLOC,
+  THREAD_TERMINATION};
 
 typedef struct trace {
   pid_t tid;

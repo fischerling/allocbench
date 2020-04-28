@@ -60,7 +60,42 @@ static volatile uint64_t total_entries = 0;
 static pthread_cond_t growing;
 static pthread_mutex_t growth_mutex;
 
-__thread pid_t tid = 0;
+static __thread pid_t tid = 0;
+
+// thread specific key to register a destructor
+static pthread_key_t tls_key;
+static pthread_once_t tls_key_once = PTHREAD_ONCE_INIT;
+
+// log_thread_termination forward declaration because it uses trace_write
+static void log_thread_termination(void* key __attribute__ ((unused)));
+
+static void make_tls_key()
+{
+  int err = pthread_key_create(&tls_key, log_thread_termination);
+  if (err) {
+    abort();
+  }
+}
+
+static void init_thread()
+{
+  tid = syscall(SYS_gettid);
+
+  // init our thread destructor
+  int err = pthread_once(&tls_key_once, make_tls_key);
+  if (err) {
+    abort();
+  }
+
+  // set the key to something != NULL to execute the destructor on thread exit
+  // NOLINTNEXTLINE(readability-magic-numbers)
+  err = pthread_setspecific(tls_key, (void*)42);
+  if (err) {
+    abort();
+  }
+}
+
+
 
 /*=========================================================
  * intercepted functions
@@ -124,7 +159,7 @@ static void
 write_trace(char func, void* ptr, size_t size, size_t var_arg)
 {
   if (unlikely(tid == 0)) {
-    tid = syscall(SYS_gettid);;
+    init_thread();
   }
 
   uint64_t idx = __atomic_fetch_add (&next_entry, 1, __ATOMIC_SEQ_CST); 
@@ -145,6 +180,11 @@ write_trace(char func, void* ptr, size_t size, size_t var_arg)
   trace->ptr = ptr;
   trace->size = size;
   trace->var_arg = var_arg;
+}
+
+static void log_thread_termination(void* key __attribute__ ((unused)))
+{
+  write_trace(THREAD_TERMINATION, NULL, 0, 0);
 }
 
 static void

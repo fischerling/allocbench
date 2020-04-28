@@ -1,6 +1,3 @@
-- chattymalloc
-  - trace thread termination
-
 - chattyparser
   - fix passed allocations
 

@@ -41,6 +41,7 @@ class Function(Enum):
     valloc = 6
     pvalloc = 7
     aligned_alloc = 8
+    thread_termination = 9
 
 
 class Trace:
