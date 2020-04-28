@@ -72,7 +72,7 @@ class GitArtifact(Artifact):
         # check if we have already provided this checkout
         if os.path.exists(location):
             try:
-                run_cmd(["git", "fetch"], output_verbosity=1, cwd=location)
+                run_cmd(["git", "fetch", "--force"], output_verbosity=1, cwd=location)
             except CalledProcessError:
                 print_error(f"Failed to update {location}")
                 raise
