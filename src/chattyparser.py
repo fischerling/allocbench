@@ -124,6 +124,9 @@ def record_allocation(trace, context):
     size = 0
     msg = ""
 
+    if trace.func == Function.thread_termination:
+        return ""
+
     # get size
     if trace.func == Function.free:
         # get size and delete old pointer
