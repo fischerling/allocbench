@@ -244,7 +244,8 @@ def parse(path="chattymalloc.txt",
             try:
                 trace = Trace(entry)
 
-                context["calls"][trace.func] += 1
+                if track_calls:
+                    context["calls"][trace.func] += 1
                 msg = record_allocation(trace, context)
                 if msg:
                     print(f"entry {i}: {msg}", file=sys.stderr, end="")
