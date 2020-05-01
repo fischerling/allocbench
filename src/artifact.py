@@ -90,7 +90,7 @@ class GitArtifact(Artifact):
         # update repo
         print_status(f'Updating git repository "{self.name}" ...')
         try:
-            run_cmd(["git", "fetch"], output_verbosity=1, cwd=self.repo)
+            run_cmd(["git", "fetch", "--force"], output_verbosity=1, cwd=self.repo)
         except CalledProcessError:
             print_error(f"Failed to update {self.name}")
             raise
