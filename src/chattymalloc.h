@@ -17,9 +17,11 @@ You should have received a copy of the GNU General Public License
 along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <sys/types.h>
+#include <stdint.h>    // uint8_t
+#include <sys/types.h> // pid_t
 
 enum functions {
+  UNINITIALIZED,
   MALLOC,
   FREE,
   REALLOC,
@@ -32,10 +34,10 @@ enum functions {
   THREAD_TERMINATION};
 
 typedef struct trace {
-  pid_t tid;
   void* ptr;
   size_t size;
   size_t var_arg;
+  pid_t tid;
   char func;
 } __attribute__((packed)) trace_t;
 

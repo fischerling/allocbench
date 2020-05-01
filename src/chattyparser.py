@@ -21,6 +21,7 @@
 import argparse
 from enum import Enum
 import os
+import struct
 import sys
 
 import matplotlib.pyplot as plt
@@ -32,30 +33,49 @@ EXPORT_TXT = False
 
 class Function(Enum):
     """Enum holding all trace events of chattymalloc"""
-    malloc = 0
-    free = 1
-    realloc = 2
-    calloc = 3
-    memalign = 4
-    posix_memalign = 5
-    valloc = 6
-    pvalloc = 7
-    aligned_alloc = 8
-    thread_termination = 9
+    uninitialized = 0
+    malloc = 1
+    free = 2
+    realloc = 3
+    calloc = 4
+    memalign = 5
+    posix_memalign = 6
+    valloc = 7
+    pvalloc = 8
+    aligned_alloc = 9
+    thread_termination = 10
 
 
 class Trace:
     """Class representing the chattymalloc trace_t struct"""
 
-    size = 29
+    fmt = 'Pnnib'
+    size = struct.calcsize(fmt)
 
-    def __init__(self, line):
-        self.tid = int.from_bytes(line[0:4], "little")
-        self.ptr = int.from_bytes(line[4:12], "little")
-        self.size = int.from_bytes(line[12:20], "little")
-        self.var_arg = int.from_bytes(line[20:28], "little")
-        self.func = Function(line[28])
+    def __init__(self, ptr, size, var_arg, tid, func):
+        self.ptr = ptr
+        self.size = size
+        self.var_arg = var_arg
+        self.tid = tid
+        self.func = Function(func)
 
+    @classmethod
+    def unpack(cls, buf):
+        """Create a new Trace object from bytes"""
+        return Trace(*struct.unpack(Trace.fmt, buf))
+
+    @classmethod
+    def iter_unpack(cls, buf):
+        """Create a iterator returning Trace object from bytes"""
+        for values in struct.iter_unpack(Trace.fmt, buf):
+            yield Trace(*values)
+
+    def __str__(self):
+        if self.func == Function.realloc:
+            var_arg = hex(self.var_arg)
+        else:
+            var_arg = self.var_arg
+        return f"{self.tid}: {self.depth} {self.func.name} {hex(self.ptr)} {self.size} {var_arg}"
 
 def update_cache_lines(cache_lines, trace, size):
     """mark or unmark all cache lines spanned by this allocation"""
@@ -127,17 +147,26 @@ def record_allocation(trace, context):
     if trace.func == Function.thread_termination:
         return ""
 
-    # get size
-    if trace.func == Function.free:
+    if trace.func == Function.uninitialized:
+        return "WARNING: empty entry\n"
+
+    # (potential) free of a pointer
+    if trace.func in (Function.free, Function.realloc):
+        if trace.func == Function.realloc:
+            freed_ptr = trace.var_arg
+        else:
+            freed_ptr = trace.ptr
+
         # get size and delete old pointer
-        if trace.ptr != 0:
-            if trace.ptr not in allocations:
-                msg = f"WARNING: free of invalid pointer {trace.ptr:x}\n"
+        if freed_ptr != 0:
+            if freed_ptr not in allocations:
+                msg = f"WARNING: free of invalid pointer {freed_ptr:x}\n"
             else:
-                size = allocations.pop(trace.ptr) * -1
+                size = allocations.pop(freed_ptr) * -1
                 msg = update_cache_lines(cache_lines, trace, size)
 
-    else:
+    # allocations
+    if trace.func != Function.free and trace.ptr != 0:
         # check for alignment
         if CHECK_ALIGNMENT:
             if (trace.ptr - CHECK_ALIGNMENT[1]) % CHECK_ALIGNMENT[0] != 0:
@@ -145,29 +174,29 @@ def record_allocation(trace, context):
                         f" {CHECK_ALIGNMENT[0]} with offset {CHECK_ALIGNMENT[1]}\n")
 
         if trace.func == Function.calloc:
-            size = trace.var_arg * trace.size
+            allocation_size = trace.var_arg * trace.size
         else:
-            size = trace.size
+            allocation_size = trace.size
 
-        allocations[trace.ptr] = size
+        # realloc returning the same pointer will not be reported because it has been freed already
+        if trace.ptr in allocations:
+            msg += f"WARNING: returned ptr {trace.ptr:x} is already a live allocation\n"
 
-        msg += update_cache_lines(cache_lines, trace, size)
+        allocations[trace.ptr] = allocation_size
+
+        msg += update_cache_lines(cache_lines, trace, allocation_size)
 
         # update hist
         if hist is not None and trace.func != Function.free:
-            hist[size] = hist.get(size, 0) + 1
+            hist[allocation_size] = hist.get(allocation_size, 0) + 1
 
         # special case realloc
         if trace.func == Function.realloc:
-            # free old pointer
-            old_size = allocations.pop(trace.var_arg, 0)
-
             if realloc_hist is not None:
-                realloc_hist[(old_size, size)] = realloc_hist.get(
-                    (old_size, size), 0)
+                realloc_hist[(size, allocation_size)] = realloc_hist.get(
+                    (size, allocation_size), 0)
 
-            # size delta after realloc
-            size -= old_size
+        size += allocation_size
 
     # update total size
     if total_size is not None:
@@ -242,7 +271,7 @@ def parse(path="chattymalloc.txt",
                 print(f"\r[{i} / {total_entries}] {(i/total_entries)*100:.2f}% parsed ...", end="")
 
             try:
-                trace = Trace(entry)
+                trace = Trace.unpack(entry)
 
                 if track_calls:
                     context["calls"][trace.func] += 1
@@ -250,13 +279,12 @@ def parse(path="chattymalloc.txt",
                 if msg:
                     print(f"entry {i}: {msg}", file=sys.stderr, end="")
 
+                if EXPORT_TXT:
+                    print(trace, file=plain_file)
+
             except ValueError as err:
                 print(f"ERROR: {err} in entry {i}: {entry}", file=sys.stderr)
 
-            if EXPORT_TXT:
-                print((f"{trace.tid}: {trace.func.name} "
-                       f"{hex(trace.ptr)} {trace.size} {trace.var_arg}"),
-                      file=plain_file)
 
             i += 1
             entry = trace_file.read(Trace.size)

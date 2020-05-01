@@ -95,8 +95,6 @@ static void init_thread()
   }
 }
 
-
-
 /*=========================================================
  * intercepted functions
  */
@@ -158,11 +156,12 @@ grow_trace()
 static void
 write_trace(char func, void* ptr, size_t size, size_t var_arg)
 {
+
   if (unlikely(tid == 0)) {
     init_thread();
   }
 
-  uint64_t idx = __atomic_fetch_add (&next_entry, 1, __ATOMIC_SEQ_CST); 
+  uint64_t idx = __atomic_fetch_add (&next_entry, 1, __ATOMIC_SEQ_CST);
   if (idx == total_entries - GROWTH_THRESHOLD) {
     grow_trace();
   // wait for growth completion
@@ -253,7 +252,6 @@ init()
 void*
 malloc(size_t size)
 {
-
   if (next_malloc == NULL) {
     if (!initializing) {
       init();
