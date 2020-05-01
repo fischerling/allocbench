@@ -42,8 +42,7 @@ static void* test_thread_func(void* arg) {
 	int my_cpu_num = (tid % (num_cpus-1))+1;
 
 	CPU_ZERO (&my_cpu);
-	/* CPU_SET (my_cpu_num, &my_cpu); */
-	CPU_SET (3, &my_cpu);
+	CPU_SET (my_cpu_num, &my_cpu);
 	if (sched_setaffinity (0, sizeof(my_cpu), &my_cpu) == -1)
 	  perror ("setaffinity failed");
 
@@ -77,7 +76,9 @@ int main(int argc, char* argv[]) {
 		return 1;
 	}
 
-	if (argc > 1 && strncmp(argv[1], "cached", strlen("cached"))) mode = 1;
+	if (argc > 1) {
+		if (strncmp(argv[1], "cached", strlen("cached")) == 0) mode = 1;
+	}
 	if (argc > 2) iterations = atoi(argv[2]);
 	if (argc > 3) size = atoi(argv[3]);
 	if (argc > 4) num_threads = atoi(argv[4]);
