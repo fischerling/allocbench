@@ -1,4 +1,4 @@
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -16,16 +16,37 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """chattymalloc allocator
 
-This shared library is no functional allocator. It is used to retrieve a trace
-of the allocator usage of the executed programm. It overrides the malloc API
-and writes each call and its result to an output file.
-See src/chattymalloc.c and chattyparser.py for its implementation and usage.
+This shared library is not a functional allocator. It is used to trace
+the allocator usage and the executed program. It overrides the malloc API
+and saves each call and its result to a memory mapped output file.
 """
 
 import os
-from src.allocator import Allocator, BUILDDIR
 
-chattymalloc = Allocator(
-    "chattymalloc",
-    LD_PRELOAD=os.path.join(BUILDDIR, "chattymalloc.so"),
-    cmd_prefix="env CHATTYMALLOC_FILE={{result_dir}}/{{perm}}.trace")
+from src.artifact import GitArtifact
+from src.allocator import Allocator
+
+VERSION = "1a09b144eb18919014ecf86da3442344b0eaa5b2"
+
+class Chattymalloc(Allocator):
+    """Chattymalloc definition for allocbench"""
+
+    sources = GitArtifact("chattymalloc",
+                          "https://github.com/fischerling/chattymalloc")
+
+    def __init__(self, name, **kwargs):
+
+        configuration = "--buildtype=release "
+        for option, value in kwargs.get("options", {}).items():
+            configuration += f"-D{option}={value} "
+
+        self.build_cmds = [
+            f"meson {{srcdir}} {{dir}} {configuration}", "ninja -C {dir}"
+        ]
+
+        self.LD_PRELOAD = "{dir}/libchattymalloc.so"
+        self.cmd_prefix="env CHATTYMALLOC_FILE={{result_dir}}/{{perm}}.trace"
+        super().__init__(name, **kwargs)
+
+
+chattymalloc = Chattymalloc("chattymalloc", version=VERSION)

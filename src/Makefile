@@ -14,7 +14,7 @@ MEMSIZE_KB=$(shell free -t | tail -1 | tr -s ' ' | cut -d ' ' -f 2)
 MEMSIZE="$(MEMSIZE_KB) * 1024l"
 
 TOOLS = print_status_on_exit.so exec sig_handlers.so
-ALLOCS = chattymalloc.so bumpptr_alloc.so align_to_cl.so
+ALLOCS = bumpptr_alloc.so align_to_cl.so
 TARGETS = $(addprefix $(OBJDIR)/allocators/,$(ALLOCS)) $(addprefix $(OBJDIR)/,$(TOOLS))
 
 .PHONY: all clean
@@ -28,10 +28,6 @@ $(OBJDIR)/allocators/bumpptr_alloc.so: bumpptr_alloc.c malloc.c Makefile
 $(OBJDIR)/allocators/align_to_cl.so: align_to_cl.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
 	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ $< -ldl
-
-$(OBJDIR)/allocators/chattymalloc.so: chattymalloc.h chattymalloc.c Makefile
-	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
-	$(CC) $(LDFLAGS) -shared $(CFLAGS) -o $@ chattymalloc.c -ldl
 
 $(OBJDIR)/print_status_on_exit.so: print_status_on_exit.c Makefile
 	@if test \( ! \( -d $(@D) \) \) ;then mkdir -p $(@D);fi
