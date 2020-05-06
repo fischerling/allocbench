@@ -51,7 +51,8 @@ class BenchmarkRdtsc(Benchmark):
         all_cycles = []
         for line in stdout.splitlines():
             all_cycles.append(int(line.split()[1]))
-        result["cycles"] = all_cycles
+        result["all_cycles"] = all_cycles
+        result["cycles"] = np.mean(all_cycles)
 
     def summary(self):
         for perm in self.iterate_args(args=self.results['args']):
@@ -62,14 +63,19 @@ class BenchmarkRdtsc(Benchmark):
             axes = plt.axes()
             axes.set_ylim([50, 800])
 
-            for alloc in self.results['allocators']:
-                d = np.sort(self.results[alloc][perm][0]['cycles'])
-                plt.plot(d, label=alloc, color=src.plots._get_alloc_color(self, alloc))
+            for i, alloc in enumerate(self.results['allocators']):
+                d = np.sort(self.results[alloc][perm][0]['all_cycles'])
+                color = src.plots._get_alloc_color(self, alloc)
+                color = f"C{i}"
+                plt.plot(d, label=alloc, color=color)
 
-            fig.savefig(f'{label}.{src.globalvars.summary_file_ext}')
             plt.legend()
             plt.title(str(perm))
+            fig.savefig(f'{label}.{src.globalvars.summary_file_ext}')
             plt.show()
+
+
+        src.plots.export_stats_to_csv(self, "cycles")
 
 
 rdtsc = BenchmarkRdtsc()
