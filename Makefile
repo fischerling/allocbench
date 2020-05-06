@@ -1,6 +1,6 @@
 SRCDIR = allocbench
 
-PYTHONFILES = $(shell find $(SRCDIR)/ -name "*.py")
+PYTHONFILES = $(shell find -name "*.py" -not -path "./cache/*" -not -path "./build/*" -not -path "./.git/*")
 
 MAKEFILES = $(shell dirname $(shell find $(SRCDIR)/ -name Makefile))
 CMAKELISTS = $(shell dirname $(shell find $(SRCDIR)/ -name CMakeLists.txt))
@@ -20,7 +20,7 @@ export CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
 export LDFLAGS = -pthread -static-libgcc
 export LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 
-.PHONY: all clean pylint yapf tags $(MAKEFILES) $(CMAKELISTS)
+.PHONY: all clean pylint yapf tags check $(MAKEFILES) $(CMAKELISTS)
 all: $(OBJDIR)/ccinfo  $(MAKEFILES) $(CMAKELISTS)
 
 $(CMAKELISTS):
@@ -55,3 +55,5 @@ yapf:
 
 tags:
 	ctags -R --exclude="build/*" --exclude="cache/*" --exclude="doc/*" --exclude="results/*"
+
+check: pylint
