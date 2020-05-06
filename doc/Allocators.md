@@ -40,4 +40,4 @@ To reproducible build allocators and patched version you can use the
 classes `Allocator` and `Allocator_Sources` provided in `src/allocator.py`.
 
 See [allocators/no_falsesharing.py](allocators/no_falsesharing.py) or
-[allocators/BA_allocators.py](allocators/BA_allocators.py) for examples.
+[allocators/ba_allocators.py](allocators/ba_allocators.py) for examples.

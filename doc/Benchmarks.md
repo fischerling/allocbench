@@ -46,9 +46,9 @@ Delorie using the tools from dj/malloc branch of the glibc.
 1. Make sure your command is deterministic and allocator behavior is a significant
 	part of your measured results
 2. Create a new Python class for your benchmark. You can inherit from the
-	provided class src.Benchmark.
+	provided class allocbench.Benchmark.
 3. Implement your custom functionality
-4. Export a object of your class in a python file under src/benchmarks named
+4. Export a object of your class in a python file under allocbench/benchmarks named
 	like your exported object and allocbench will find it automatically.
 
 #### loop.py as Example
@@ -73,7 +73,7 @@ Delorie using the tools from dj/malloc branch of the glibc.
 
 """Definition of the loop micro benchmark"""
 
-from src.benchmark import Benchmark
+from allocbench.benchmark import Benchmark
 
 
 class BenchmarkLoop(Benchmark):
@@ -129,7 +129,7 @@ loop = BenchmarkLoop()
 
 ## The Benchmark class
 
-The class Benchmark defined in the src/benchmark.py implements most
+The class Benchmark defined in the allocbench/benchmark.py implements most
 common operations for a benchmark.
 It provides load and save functions using pythons pickle module,
 helpers generating plots using matplotlib and most importantly a run method using

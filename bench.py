@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -26,14 +26,14 @@ import os
 import sys
 import traceback
 
-from src.allocator import collect_allocators
-from src.analyse import analyze_bench, analyze_allocators
-import src.facter
-import src.globalvars
-from src.util import find_cmd, run_cmd
-from src.util import print_status, print_warn, print_error
-from src.util import print_info, print_info2, print_debug
-from src.util import print_license_and_exit
+from allocbench.allocator import collect_allocators
+from allocbench.analyse import analyze_bench, analyze_allocators
+import allocbench.facter as facter
+import allocbench.globalvars
+from allocbench.util import find_cmd, run_cmd
+from allocbench.util import print_status, print_warn, print_error
+from allocbench.util import print_info, print_info2, print_debug
+from allocbench.util import print_license_and_exit
 
 from summarize import summarize
 
@@ -41,15 +41,15 @@ from summarize import summarize
 def epilog():
     """Run tasks on exit"""
     # After early errors resdir may not be set
-    if src.globalvars.resdir is not None:
-        if os.listdir(src.globalvars.resdir) == []:
+    if allocbench.globalvars.RESDIR is not None:
+        if os.listdir(allocbench.globalvars.RESDIR) == []:
             print_warn("Remove empty resultdir")
-            os.removedirs(src.globalvars.resdir)
+            os.removedirs(allocbench.globalvars.RESDIR)
         else:
             endtime = datetime.datetime.now().isoformat()
             endtime = endtime[:endtime.rfind(':')]
-            src.facter.FACTS["endtime"] = endtime
-            src.facter.store_facts(src.globalvars.resdir)
+            facter.FACTS["endtime"] = endtime
+            facter.store_facts(allocbench.globalvars.RESDIR)
 
     # remove a left over status file if some is present
     if os.path.exists("status"):
@@ -62,14 +62,6 @@ def check_dependencies():
     if sys.version_info[0] < 3 or sys.version_info[1] < 6:
         print_error("At least python version 3.6 is required.")
         sys.exit(1)
-
-    # matplotlib is needed by Benchmark.plot_*
-    try:
-        importlib.import_module("matplotlib")
-    except ModuleNotFoundError:
-        print_error("matplotlib not found.")
-        sys.exit(1)
-    # TODO mariadb
 
 
 def main():
@@ -116,7 +108,7 @@ def main():
     parser.add_argument("--version",
                         help="print version info and exit",
                         action='version',
-                        version=f"allocbench {src.facter.allocbench_version()}")
+                        version=f"allocbench {facter.allocbench_version()}")
 
     args = parser.parse_args()
     if args.license:
@@ -131,57 +123,58 @@ def main():
     # 2: Print all infos
     # 3: Print everything
     if args.verbose:
-        src.globalvars.verbosity = args.verbose
+        allocbench.globalvars.VERBOSITY = args.verbose
 
     print_info2("Arguments:", args)
 
     # Prepare allocbench
     print_status("Building allocbench ...")
     make_cmd = ["make"]
-    if src.globalvars.verbosity < 2:
+    if allocbench.globalvars.VERBOSITY < 2:
         make_cmd.append("-s")
     run_cmd(make_cmd, output_verbosity=1)
 
     # allocators to benchmark
-    src.globalvars.allocators = collect_allocators(args.allocators)
+    allocbench.globalvars.ALLOCATORS = collect_allocators(args.allocators)
 
-    print_info("Allocators:", *src.globalvars.allocators.keys())
-    print_debug("Allocators:", *src.globalvars.allocators.items())
+    print_info("Allocators:", *allocbench.globalvars.ALLOCATORS.keys())
+    print_debug("Allocators:", *allocbench.globalvars.ALLOCATORS.items())
 
-    if src.globalvars.allocators == {}:
+    if allocbench.globalvars.ALLOCATORS == {}:
         print_error("Abort because there are no allocators to benchmark")
         sys.exit(1)
 
     # collect facts about benchmark environment
-    src.facter.collect_facts()
+    facter.collect_facts()
 
     # Create result directory
     if args.resultdir:
-        src.globalvars.resdir = os.path.join(args.resultdir)
+        allocbench.globalvars.RESDIR = os.path.join(args.resultdir)
     else:
-        src.globalvars.resdir = os.path.join("results",
-                                             src.facter.FACTS["hostname"],
-                                             src.facter.FACTS["starttime"])
+        allocbench.globalvars.RESDIR = os.path.join("results",
+                                                    facter.FACTS["hostname"],
+                                                    facter.FACTS["starttime"])
 
-    print_status("Writing results to:", src.globalvars.resdir)
-    os.makedirs(src.globalvars.resdir, exist_ok=True)
+    print_status("Writing results to:", allocbench.globalvars.RESDIR)
+    os.makedirs(allocbench.globalvars.RESDIR, exist_ok=True)
 
     cwd = os.getcwd()
 
     # warn about unknown benchmarks
     for bench in (args.benchmarks or []) + (args.exclude_benchmarks or []):
-        if bench not in src.globalvars.benchmarks:
+        if bench not in allocbench.globalvars.BENCHMARKS:
             print_error(f'Benchmark "{bench}" unknown!')
 
     # Run actual benchmarks
-    for bench in src.globalvars.benchmarks:
+    for bench in allocbench.globalvars.BENCHMARKS:
         if args.benchmarks and bench not in args.benchmarks:
             continue
 
         if args.exclude_benchmarks and bench in args.exclude_benchmarks:
             continue
 
-        bench_module = importlib.import_module(f"src.benchmarks.{bench}")
+        bench_module = importlib.import_module(
+            f"allocbench.benchmarks.{bench}")
 
         if not hasattr(bench_module, bench):
             print_error(f"{bench_module} has no member {bench}.")
@@ -202,7 +195,7 @@ def main():
             analyze_bench(bench)
 
         if args.analyze_allocators:
-            analyze_allocators(bench, src.globalvars.allocators)
+            analyze_allocators(bench, allocbench.globalvars.ALLOCATORS)
 
         if args.runs > 0:
             print_status("Running", bench.name, "...")
@@ -223,7 +216,7 @@ def main():
                                                   start_time).total_seconds()
 
         # Save results in resultdir
-        bench.save(src.globalvars.resdir)
+        bench.save(allocbench.globalvars.RESDIR)
 
         if hasattr(bench, "cleanup"):
             print_status("Cleaning up", bench.name, "...")

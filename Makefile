@@ -1,7 +1,9 @@
-PYTHONFILES = $(shell find src/ -name "*.py")
+SRCDIR = allocbench
 
-MAKEFILES = $(shell dirname $(shell find src/ -name Makefile))
-CMAKELISTS = $(shell dirname $(shell find src/ -name CMakeLists.txt))
+PYTHONFILES = $(shell find $(SRCDIR)/ -name "*.py")
+
+MAKEFILES = $(shell dirname $(shell find $(SRCDIR)/ -name Makefile))
+CMAKELISTS = $(shell dirname $(shell find $(SRCDIR)/ -name CMakeLists.txt))
 
 OBJDIR = $(PWD)/build
 
@@ -22,7 +24,7 @@ export LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 all: $(OBJDIR)/ccinfo  $(MAKEFILES) $(CMAKELISTS)
 
 $(CMAKELISTS):
-	$(eval BENCHDIR=$(OBJDIR)$(shell echo $@ | sed s/src//))
+	$(eval BENCHDIR=$(OBJDIR)$(shell echo $@ | sed s/$(SRCDIR)//))
 	@if test \( ! \( -d $(BENCHDIR) \) \) ;then mkdir -p $(BENCHDIR);fi
 ifneq (,$(findstring s,$(MAKEFLAGS)))
 	cd $(BENCHDIR); cmake $(PWD)/$@ >/dev/null
@@ -32,9 +34,9 @@ endif
 	$(MAKE) -C $(BENCHDIR)
 
 $(MAKEFILES):
-	$(eval BENCHDIR=$(OBJDIR)$(shell echo $@ | sed s/src//))
+	$(eval BENCHDIR=$(OBJDIR)$(shell echo $@ | sed s/$(SRCDIR)//))
 	@if test \( ! \( -d $(BENCHDIR) \) \) ;then mkdir -p $(BENCHDIR);fi
-	$(MAKE) -C $@ OBJDIR=$(OBJDIR)$(shell echo $@ | sed s/src//)
+	$(MAKE) -C $@ OBJDIR=$(OBJDIR)$(shell echo $@ | sed s/$(SRCDIR)//)
 
 $(OBJDIR)/ccinfo: | $(OBJDIR)
 	$(CC) -v 2> $@

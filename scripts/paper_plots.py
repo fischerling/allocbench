@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -28,17 +28,17 @@ currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
-import src.allocators.paper
-import src.facter
-import src.globalvars
-import src.plots as plt
-from src.util import print_status, print_warn, print_error
-from src.util import print_license_and_exit
+from allocbench.allocators.paper import allocators as paper_allocators
+import allocbench.facter as facter
+import allocbench.globalvars
+import allocbench.plots as plt
+from allocbench.util import print_status, print_warn, print_error
+from allocbench.util import print_license_and_exit
 
-ALLOCATOR_NAMES = [a.name for a in src.allocators.paper.allocators]
-SURVEY_ALLOCATORS = [a.name for a in src.allocators.paper.allocators if not '-' in a.name or a.name not in ["speedymalloc", "bumpptr"]]
-TCMALLOCS = [a.name for a in src.allocators.paper.allocators if a.name.startswith("TCMalloc")]
-ALIGNED_ALLOCATORS = [a.name for a in src.allocators.paper.allocators if a.name.endswith("-Aligned")]
+ALLOCATOR_NAMES = [a.name for a in paper_allocators]
+SURVEY_ALLOCATORS = [a.name for a in paper_allocators if not '-' in a.name or a.name not in ["speedymalloc", "bumpptr"]]
+TCMALLOCS = [a.name for a in paper_allocators if a.name.startswith("TCMalloc")]
+ALIGNED_ALLOCATORS = [a.name for a in paper_allocators if a.name.endswith("-Aligned")]
 
 
 def falsesharing_plots(falsesharing):
@@ -110,8 +110,8 @@ def blowup_plots(blowup):
                 bar=True)
 
 def loop_plots(loop):
-    args = blowup.results["args"]
-    loop.results["allocators"] = {k: v for k, v in blowup.results["allocators"].items() if k in ALLOCATOR_NAMES}
+    args = loop.results["args"]
+    loop.results["allocators"] = {k: v for k, v in loop.results["allocators"].items() if k in ALLOCATOR_NAMES}
 
     plt.pgfplot(loop,
                 loop.iterate_args_fixed({"threads": 40}, args),
@@ -178,7 +178,7 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
         if exclude_benchmarks and benchmark in exclude_benchmarks:
             continue
 
-        bench_module = importlib.import_module(f"src.benchmarks.{benchmark}")
+        bench_module = importlib.import_module(f"allocbench.benchmarks.{benchmark}")
 
         if not hasattr(bench_module, benchmark):
             print_error(f"{benchmark} has no member {benchmark}")
@@ -187,14 +187,14 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
         bench = getattr(bench_module, benchmark)
 
         try:
-            bench.load(src.globalvars.resdir)
+            bench.load(allocbench.globalvars.resdir)
         except FileNotFoundError:
             print_warn(f"Skipping {bench.name}. No results found")
             continue
 
         print_status(f"Summarizing {bench.name} ...")
 
-        res_dir = os.path.join(src.globalvars.resdir, bench.name, "paper")
+        res_dir = os.path.join(allocbench.globalvars.resdir, bench.name, "paper")
         if not os.path.isdir(res_dir):
             os.makedirs(res_dir)
         os.chdir(res_dir)
@@ -212,7 +212,7 @@ if __name__ == "__main__":
     parser.add_argument("--version",
                         help="print version info and exit",
                         action='version',
-                        version=f"allocbench {src.facter.allocbench_version()}")
+                        version=f"allocbench {facter.allocbench_version()}")
     parser.add_argument("-v", "--verbose", help="more output", action='count')
     parser.add_argument("-b",
                         "--benchmarks",
@@ -229,19 +229,19 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.verbose:
-        src.globalvars.verbosity = args.verbose
+        allocbench.globalvars.verbosity = args.verbose
 
     if args.latex_preamble:
-        src.globalvars.latex_custom_preamble = args.latex_preamble
+        allocbench.globalvars.latex_custom_preamble = args.latex_preamble
 
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
         sys.exit(1)
 
-    src.globalvars.resdir = args.results
+    allocbench.globalvars.resdir = args.results
 
     # Load facts
-    src.facter.load_facts(src.globalvars.resdir)
+    facter.load_facts(allocbench.globalvars.resdir)
 
     summarize(benchmarks=args.benchmarks,
               exclude_benchmarks=args.exclude_benchmarks)

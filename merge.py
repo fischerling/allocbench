@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -25,16 +25,16 @@ import os
 import pickle
 import sys
 
-import src.facter
-from src.util import print_license_and_exit
+import allocbench.facter as facter
+from allocbench.util import print_license_and_exit
 
 def load_file(filename):
     if filename.endswith("json"):
-        with open(filename, "r") as f:
-            return json.load(f)
+        with open(filename, "r") as json_file:
+            return json.load(json_file)
     else:
-        with open(filename, "rb") as f:
-            return pickle.load(f)
+        with open(filename, "rb") as pickle_file:
+            return pickle.load(pickle_file)
 
 
 def main():
@@ -46,7 +46,7 @@ def main():
     parser.add_argument("dest", help="results in which src should be merged", type=str)
     parser.add_argument("--license", help="print license info and exit", action='store_true')
     parser.add_argument("--version", help="print version info and exit", action='version',
-                        version=f"allocbench {src.facter.allocbench_version()}")
+                        version=f"allocbench {facter.allocbench_version()}")
     parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
     parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
 

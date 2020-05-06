@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2018-2019 Florian Fischer <florian.fl.fischer@fau.de>
+# Copyright 2018-2020 Florian Fischer <florian.fl.fischer@fau.de>
 #
 # This file is part of allocbench.
 #
@@ -23,10 +23,10 @@ import importlib
 import os
 import sys
 
-import src.facter
-import src.globalvars
-from src.util import print_status, print_debug, print_error
-from src.util import print_license_and_exit
+import allocbench.facter as facter
+import allocbench.globalvars
+from allocbench.util import print_status, print_debug, print_error
+from allocbench.util import print_license_and_exit
 
 ALLOCS_TO_EXCLUDE = []
 
@@ -61,7 +61,7 @@ def specific_summary(bench, sum_dir, allocators):
         if value["color"] is None:
             value["color"] = avail_colors.pop()
 
-    src.globalvars.allocators = allocators
+    allocbench.globalvars.allocators = allocators
 
     bench.summary()
     bench.results["allocators"] = old_allocs
@@ -86,8 +86,11 @@ def bench_sum(bench):
         "research": ["scalloc", "SuperMalloc", "Mesh", "Hoard", "snmalloc"]
     }
 
-    old_allocs = bench.results["allocators"]
-    new_allocs = {an: a for an, a in bench.results["allocators"].items() if an not in ALLOCS_TO_EXCLUDE}
+    new_allocs = {
+        an: a
+        for an, a in bench.results["allocators"].items()
+        if an not in ALLOCS_TO_EXCLUDE
+    }
     bench.results["allocators"] = new_allocs
 
     os.makedirs(bench.name)
@@ -108,15 +111,16 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
     """summarize the benchmarks in the resdir"""
 
     cwd = os.getcwd()
-    os.chdir(src.globalvars.resdir)
+    os.chdir(allocbench.globalvars.resdir)
 
-    for benchmark in src.globalvars.benchmarks:
+    for benchmark in allocbench.globalvars.BENCHMARKS:
         if benchmarks and not benchmark in benchmarks:
             continue
         if exclude_benchmarks and benchmark in exclude_benchmarks:
             continue
 
-        bench_module = importlib.import_module(f"src.benchmarks.{benchmark}")
+        bench_module = importlib.import_module(
+            f"allocbench.benchmarks.{benchmark}")
 
         if not hasattr(bench_module, benchmark):
             print_error(f"{benchmark} has no member {benchmark}")
@@ -132,8 +136,8 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
         print_status(f"Summarizing {bench.name} ...")
         try:
             bench_sum(bench)
-        except FileExistsError as e:
-            print(e)
+        except FileExistsError as err:
+            print(err)
 
     os.chdir(cwd)
 
@@ -155,7 +159,7 @@ if __name__ == "__main__":
     parser.add_argument("--version",
                         help="print version info and exit",
                         action='version',
-                        version=f"allocbench {src.facter.allocbench_version()}")
+                        version=f"allocbench {facter.allocbench_version()}")
     parser.add_argument("-v", "--verbose", help="more output", action='count')
     parser.add_argument("-b",
                         "--benchmarks",
@@ -169,23 +173,25 @@ if __name__ == "__main__":
                         "--exclude-allocators",
                         help="allocators to exclude",
                         nargs='+')
-    parser.add_argument("--latex-preamble",
-                        help="latex code to include in the preamble of generated standalones",
-                        type=str)
-    parser.add_argument("-i", "--interactive",
+    parser.add_argument(
+        "--latex-preamble",
+        help="latex code to include in the preamble of generated standalones",
+        type=str)
+    parser.add_argument("-i",
+                        "--interactive",
                         help="drop into repl after summarizing the results",
                         action='store_true')
 
     args = parser.parse_args()
 
     if args.verbose:
-        src.globalvars.verbosity = args.verbose
+        allocbench.globalvars.verbosity = args.verbose
 
     if args.file_ext:
-        src.globalvars.summary_file_ext = args.file_ext
+        allocbench.globalvars.summary_file_ext = args.file_ext
 
     if args.latex_preamble:
-        src.globalvars.latex_custom_preamble = args.latex_preamble
+        allocbench.globalvars.latex_custom_preamble = args.latex_preamble
 
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
@@ -193,10 +199,10 @@ if __name__ == "__main__":
 
     ALLOCS_TO_EXCLUDE = args.exclude_allocators or []
 
-    src.globalvars.resdir = args.results
+    allocbench.globalvars.resdir = args.results
 
     # Load facts
-    src.facter.load_facts(src.globalvars.resdir)
+    facter.load_facts(allocbench.globalvars.resdir)
 
     summarize(benchmarks=args.benchmarks,
               exclude_benchmarks=args.exclude_benchmarks)

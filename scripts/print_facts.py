@@ -29,9 +29,10 @@ CURRENTDIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentfram
 PARENTDIR = os.path.dirname(CURRENTDIR)
 sys.path.insert(0, PARENTDIR)
 
-import src.facter
-from src.plots import print_facts, print_common_facts
-from src.util import print_error
+import allocbench.facter as facter
+from allocbench.globalvars import BENCHMARKS
+from allocbench.plots import print_facts, print_common_facts
+from allocbench.util import print_error
 
 
 def main():
@@ -40,15 +41,15 @@ def main():
     args = parser.parse_args()
 
     # Load common facts
-    src.facter.load_facts(args.results)
+    facter.load_facts(args.results)
 
     print_common_facts()
 
     cwd = os.getcwd()
     os.chdir(args.results)
 
-    for benchmark in src.globalvars.benchmarks:
-        bench_module = importlib.import_module(f"src.benchmarks.{benchmark}")
+    for benchmark in BENCHMARKS:
+        bench_module = importlib.import_module(f"allocbench.benchmarks.{benchmark}")
 
         if not hasattr(bench_module, benchmark):
             print_error(f"{benchmark} has no member {benchmark}")

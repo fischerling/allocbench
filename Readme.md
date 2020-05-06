@@ -99,7 +99,7 @@ It groups the included allocators into categories to produce readable and not ex
 runs only the loop benchmark for all included allocators and will put its
 results in `$PWD/results/$HOSTNAME/<time>/loop`.
 
-	./bench.py -a BA_allocators
+	./bench.py -a ba_allocators
 
 builds all allocators used in Florian Fischer's [BA thesis](https://muhq.space/ba.html)
 and runs all benchmarks.
