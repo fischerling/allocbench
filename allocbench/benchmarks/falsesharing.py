@@ -68,7 +68,7 @@ class BenchmarkFalsesharing(Benchmark):
                             measure["time"])
                         measure["l1chache_misses"] = (
                             measure['L1-dcache-load-misses'] /
-                            measures['L1-dcache-loads']) * 100
+                            measure['L1-dcache-loads']) * 100
 
         # delete and recalculate stats
         del self.results["stats"]
