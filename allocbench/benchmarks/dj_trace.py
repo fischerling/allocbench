@@ -16,11 +16,7 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Benchmark definition using the traces collected by DJ Delorie"""
 
-import os
-import subprocess
-import sys
 import re
-from urllib.request import urlretrieve
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -28,7 +24,6 @@ from allocbench.artifact import ArchiveArtifact
 from allocbench.benchmark import Benchmark
 from allocbench.globalvars import SUMMARY_FILE_EXT
 import allocbench.plots as abplt
-from allocbench.util import print_status
 
 COMMA_SEP_NUMBER_RE = "(?:\\d*(?:,\\d*)?)*"
 RSS_RE = f"(?P<rss>{COMMA_SEP_NUMBER_RE})"
@@ -147,7 +142,7 @@ class BenchmarkDJTrace(Benchmark):
         self.workload_dir = workloads.provide()
 
     @staticmethod
-    def process_output(result, stdout, stderr, allocator, perm): # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
         def to_int(string):
             return int(string.replace(',', ""))
 
@@ -184,10 +179,13 @@ class BenchmarkDJTrace(Benchmark):
 
         # Function Times
         func_times_means = {allocator: {} for allocator in allocators}
-        xa = np.arange(0, 6, 1.5)
+        xval_start_array = np.arange(0, 6, 1.5)
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
-                x_vals = [x + i / len(allocators) for x in xa]
+                x_vals = [
+                    x_start + i / len(allocators)
+                    for x_start in xval_start_array
+                ]
 
                 func_times_means[allocator][perm] = [0, 0, 0, 0]
 
@@ -208,7 +206,7 @@ class BenchmarkDJTrace(Benchmark):
                         color=allocators[allocator]["color"])
 
             plt.legend(loc="best")
-            plt.xticks(xa + 1 / len(allocators) * 2, [
+            plt.xticks(xval_start_array + 1 / len(allocators) * 2, [
                 "malloc\n" + str(self.results[perm.workload]["malloc"]) +
                 "\ncalls", "calloc\n" +
                 str(self.results[perm.workload]["calloc"]) + "\ncalls",
@@ -258,9 +256,9 @@ class BenchmarkDJTrace(Benchmark):
         rss_means = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
-                d = [x["Max_RSS"] for x in self.results[allocator][perm]]
+                data = [x["Max_RSS"] for x in self.results[allocator][perm]]
                 # data is in kB
-                rss_means[allocator][perm] = np.mean(d) / 1000
+                rss_means[allocator][perm] = np.mean(data) / 1000
 
                 plt.bar([i],
                         rss_means[allocator][perm],
@@ -297,104 +295,116 @@ class BenchmarkDJTrace(Benchmark):
         }],
                               file_postfix="table")
 
+        def get_latex_color(value, minvalue, maxvalue):
+            if value == minvalue:
+                return "green"
+            if value == maxvalue:
+                return "red"
+            return "black"
+
         # Tables
         for perm in self.iterate_args(args=args):
             # collect data
-            d = {allocator: {} for allocator in allocators}
+            data = {allocator: {} for allocator in allocators}
             for i, allocator in enumerate(allocators):
-                d[allocator]["time"] = [
+                data[allocator]["time"] = [
                     x["cputime"] for x in self.results[allocator][perm]
                 ]
-                d[allocator]["rss"] = [
+                data[allocator]["rss"] = [
                     x["Max_RSS"] for x in self.results[allocator][perm]
                 ]
 
             times = {
-                allocator: np.mean(d[allocator]["time"])
+                allocator: np.mean(data[allocator]["time"])
                 for allocator in allocators
             }
             tmin = min(times.values())
             tmax = max(times.values())
 
             rss = {
-                allocator: np.mean(d[allocator]["rss"])
+                allocator: np.mean(data[allocator]["rss"])
                 for allocator in allocators
             }
             rssmin = min(rss.values())
             rssmax = max(rss.values())
 
             fname = ".".join([self.name, perm.workload, "table.tex"])
-            with open(fname, "w") as f:
-                print("\\documentclass{standalone}", file=f)
-                print("\\usepackage{xcolor}", file=f)
-                print("\\begin{document}", file=f)
-                print("\\begin{tabular}{| l | l | l |}", file=f)
+            with open(fname, "w") as table_file:
+                print("\\documentclass{standalone}", file=table_file)
+                print("\\usepackage{xcolor}", file=table_file)
+                print("\\begin{document}", file=table_file)
+                print("\\begin{tabular}{| l | l | l |}", file=table_file)
                 print(
                     "& Zeit (ms) / $\\sigma$ (\\%) & VmHWM (KB) / $\\sigma$ (\\%) \\\\",
-                    file=f)
-                print("\\hline", file=f)
+                    file=table_file)
+                print("\\hline", file=table_file)
 
                 for allocator in allocators:
-                    print(allocator.replace("_", "\\_"), end=" & ", file=f)
+                    print(allocator.replace("_", "\\_"),
+                          end=" & ",
+                          file=table_file)
 
-                    s = "\\textcolor{{{}}}{{{:.2f}}} / {:.4f}"
+                    entry_string = "\\textcolor{{{}}}{{{:.2f}}} / {:.4f}"
 
-                    t = d[allocator]["time"]
-                    m = times[allocator]
-                    if m == tmin:
-                        color = "green"
-                    elif m == tmax:
-                        color = "red"
-                    else:
-                        color = "black"
-                    print(s.format(color, m, np.std(t) / m), end=" & ", file=f)
+                    time_data = data[allocator]["time"]
+                    time_mean = times[allocator]
+                    time_color = get_latex_color(time_mean, tmin, tmax)
+                    print(entry_string.format(time_color, time_mean,
+                                              np.std(time_data) / time_mean),
+                          end=" & ",
+                          file=table_file)
 
-                    t = d[allocator]["rss"]
-                    m = rss[allocator]
-                    if m == rssmin:
-                        color = "green"
-                    elif m == rssmax:
-                        color = "red"
-                    else:
-                        color = "black"
-                    print(s.format(color, m,
-                                   np.std(t) / m if m else 0),
+                    rss_data = data[allocator]["rss"]
+                    rss_mean = rss[allocator]
+                    rss_color = get_latex_color(rss_mean, rssmin, rssmax)
+                    print(entry_string.format(
+                        rss_color, rss_mean,
+                        np.std(rss_data) / rss_mean if rss_mean else 0),
                           "\\\\",
-                          file=f)
+                          file=table_file)
 
-                print("\\end{tabular}", file=f)
-                print("\\end{document}", file=f)
+                print("\\end{tabular}", file=table_file)
+                print("\\end{document}", file=table_file)
 
         # Create summary similar to DJ's at
         # https://sourceware.org/ml/libc-alpha/2017-01/msg00452.html
-        with open(self.name + "_plain.txt", "w") as f:
+        cycles_means = {
+            allocator: {
+                perm: self.results["stats"][allocator][perm]["mean"]
+                for perm in self.iterate_args(args=args)
+            }
+            for allocator in allocators
+        }
+
+        with open(self.name + "_plain.txt", "w") as summary_file:
             # Absolutes
             fmt = "{:<20} {:>15} {:>7} {:>7} {:>7} {:>7} {:>7}"
             for i, allocator in enumerate(allocators):
-                print("{0} {1} {0}".format("-" * 10, allocator), file=f)
+                print("{0} {1} {0}".format("-" * 10, allocator),
+                      file=summary_file)
                 print(fmt.format("Workload", "Total", "malloc", "calloc",
                                  "realloc", "free", "RSS"),
-                      file=f)
+                      file=summary_file)
 
                 for perm in self.iterate_args(args=args):
                     cycles = abplt._get_y_data(self, "{cycles}", allocator,
                                                perm)[0]
-                    times = [t for t in func_times_means[allocator][perm]]
+                    times = func_times_means[allocator][perm]
                     rss = rss_means[allocator][perm]
                     print(fmt.format(perm.workload, cycles, times[0], times[1],
                                      times[2], times[3], rss),
-                          file=f)
+                          file=summary_file)
 
-                print(file=f)
+                print(file=summary_file)
 
             # Changes. First allocator in allocators is the reference
             fmt_changes = "{:<20} {:>14.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}%"
             for allocator in list(allocators)[1:]:
                 print("{0} Changes {1} {0}".format("-" * 10, allocator),
-                      file=f)
+                      file=summary_file)
                 print(fmt.format("Workload", "Total", "malloc", "calloc",
                                  "realloc", "free", "RSS"),
-                      file=f)
+                      file=summary_file)
 
                 ref_alloc = list(allocators)[0]
                 cycles_change_means = []
@@ -430,8 +440,8 @@ class BenchmarkDJTrace(Benchmark):
                     print(fmt_changes.format(perm.workload, cycles, times[0],
                                              times[1], times[2], times[3],
                                              rss),
-                          file=f)
-                print(file=f)
+                          file=summary_file)
+                print(file=summary_file)
                 tmeans = [0, 0, 0, 0]
                 for i in range(0, len(times)):
                     tmeans[i] = np.mean(
@@ -440,7 +450,7 @@ class BenchmarkDJTrace(Benchmark):
                                          tmeans[0], tmeans[1], tmeans[2],
                                          tmeans[3], np.mean(rss_change_means)),
                       '\n',
-                      file=f)
+                      file=summary_file)
 
 
 dj_trace = BenchmarkDJTrace()
