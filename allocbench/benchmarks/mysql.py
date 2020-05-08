@@ -85,7 +85,7 @@ import allocbench.facter as facter
 import allocbench.plots as plt
 from allocbench.util import print_status, print_debug, print_info2, print_warn, run_cmd
 
-MYSQL_USER = "fischerling"
+MYSQL_USER = "root"
 RUN_TIME = 300
 TABLES = 5
 
