@@ -47,7 +47,7 @@ class BenchmarkFalsesharing(Benchmark):
         super().__init__(name)
 
     @staticmethod
-    def process_output(result, stdout, stderr, allocator, perm): # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
         result["time"] = TIME_RE.match(stdout).group("time")
 
     def summary(self):
@@ -66,9 +66,9 @@ class BenchmarkFalsesharing(Benchmark):
                                                 [sequential_perm][i]["time"])
                         measure["speedup"] = sequential_time / float(
                             measure["time"])
-                        measure["l1chache_misses"] = eval(
-                            "({L1-dcache-load-misses}/{L1-dcache-loads})*100".
-                            format(**measure))
+                        measure["l1chache_misses"] = (
+                            measure['L1-dcache-load-misses'] /
+                            measures['L1-dcache-loads']) * 100
 
         # delete and recalculate stats
         del self.results["stats"]
