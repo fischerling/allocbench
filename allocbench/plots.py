@@ -16,8 +16,10 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Plot different graphs from allocbench results"""
 
+import ast
 import copy
 import itertools
+import operator
 import os
 import traceback
 
@@ -91,16 +93,44 @@ def get_alloc_color(bench, alloc):
     return alloc["color"]
 
 
+#https://stackoverflow.com/questions/2371436/evaluating-a-mathematical-expression-in-a-string
 def _eval_with_stat(bench, evaluation, alloc, perm, stat):
-    """Helper to evaluate a datapoint description string"""
+    """Helper to evaluate a datapoint description string as arithmetic operation"""
+
+    def _eval(node):
+        """evaluate a arithmetic ast node"""
+
+        # supported operators
+        operators = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
+                     ast.Div: operator.truediv, ast.Pow: operator.pow, ast.BitXor: operator.xor,
+                     ast.USub: operator.neg}
+
+        if isinstance(node, ast.Num): # <number>
+            return node.n
+        if isinstance(node, ast.BinOp): # <left> <operator> <right>
+            return operators[type(node.op)](_eval(node.left), _eval(node.right))
+        if isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+            return operators[type(node.op)](_eval(node.operand))
+
+        raise TypeError(node)
+
     try:
-        res = evaluation.format(**bench.results["stats"][alloc][perm][stat])
+        expr = evaluation.format(**bench.results["stats"][alloc][perm][stat])
     except KeyError:
         print_debug(traceback.format_exc())
         print_warn(
             f"KeyError while expanding {evaluation} for {alloc} and {perm}")
         return nan
-    return eval(res)
+
+    node = ast.parse(expr, mode='eval')
+
+    try:
+        return _eval(node)
+    except TypeError:
+        print_debug(traceback.format_exc())
+        print_warn(
+            f"{expr} could not be evaluated as arithmetic operation")
+        return nan
 
 
 def _get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
@@ -332,7 +362,9 @@ def plot(bench,
         x_data = args[loose_arg]
 
         fixed_args = [[(k, v) for v in args[k]] for k in args if k != loose_arg]
-        for fixed_part in itertools.product(*fixed_args):
+        for fixed_part_tuple in itertools.product(*fixed_args):
+            fixed_part = {k:v for k, v in fixed_part_tuple}
+
             fixed_part_str = ".".join([f'{k}={v}' for k, v in fixed_part.items()])
             fig_label = f'{bench.name}.{fixed_part_str}.{file_postfix}'
 
@@ -723,7 +755,7 @@ def pgfplot(bench,
     for alloc_name, alloc_dict in allocators.items():
         if colors:
             # define color
-            rgb = matplotlib.colors.to_rgb(get_alloc_color(bench, alloc_dict))
+            rgb = matplotlib.colors.to_rgb(get_alloc_color(bench, alloc_dict)) # pylint: disable=unused-variable
             color_definitions += (f"\\providecolor{{{alloc_name}-color}}"
                                   "{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n")
             style_definitions += (f"\\pgfplotsset{{{alloc_name}/"
@@ -745,7 +777,7 @@ def pgfplot(bench,
 
         for perm in perms:
             xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
-            yval = _eval_with_stat(bench, yexpr, alloc_name, perm, "mean")
+            yval = _get_y_data(bench, yexpr, alloc_name, perm, "mean", scale=scale)
             error = ""
             if error_bars:
                 error = f" {_eval_with_stat(bench, yexpr, alloc_name, perm, 'std')}"
