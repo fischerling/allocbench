@@ -85,7 +85,7 @@ class BenchmarkLarson(Benchmark):
                  "{throughput}/1000000",
                  fig_options={
                      'ylabel': "MOPS/s",
-                     'title': "Larson: {arg} {arg_value}",
+                     'title': "Larson: {fixed_part_str}",
                  },
                  file_postfix="throughput")
 
@@ -93,7 +93,7 @@ class BenchmarkLarson(Benchmark):
                  "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                  fig_options={
                      'ylabel': "l1 cache misses in %",
-                     'title': "Larson cache misses: {arg} {arg_value}",
+                     'title': "Larson cache misses: {fixed_part_str}",
                  },
                  file_postfix="cachemisses")
 
