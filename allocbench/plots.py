@@ -125,7 +125,7 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
     node = ast.parse(expr, mode='eval')
 
     try:
-        return _eval(node)
+        return _eval(node.body)
     except TypeError:
         print_debug(traceback.format_exc())
         print_warn(
