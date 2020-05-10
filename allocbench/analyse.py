@@ -77,7 +77,7 @@ def analyze_bench(bench):
 def analyze_allocators(bench, allocators):
     """Analyse a single benchmark for each allocator in allocators"""
     # build analyzse allocator before globaly setting LD_PRELOAD
-    alloc_name, alloc_dict = build_analyze_alloc()
+    alloc_name, _ = build_analyze_alloc()
 
     for name, alloc in allocators.items():
         print_status(f"Analysing {name} during {bench} ...")
