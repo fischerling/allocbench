@@ -43,7 +43,6 @@ ALIGNED_ALLOCATORS = [a.name for a in paper_allocators if a.name.endswith("-Alig
 
 def falsesharing_plots(falsesharing):
     args = falsesharing.results["args"]
-    nthreads = args["threads"]
 
     falsesharing.results["allocators"] = {k: v for k, v in falsesharing.results["allocators"].items() if k in ALLOCATOR_NAMES}
 
@@ -55,16 +54,11 @@ def falsesharing_plots(falsesharing):
 
             sequential_perm = falsesharing.Perm(bench=bench, threads=1)
             for perm in falsesharing.iterate_args_fixed({"bench": bench}, args=args):
-                speedup = []
-                l1chache_misses = []
                 for i, measure in enumerate(falsesharing.results[allocator][perm]):
                     sequential_time = float(falsesharing.results[allocator]
                             [sequential_perm][i]["time"])
-                    measure["speedup"] = sequential_time / float(
-                            measure["time"])
-                    measure["l1chache_misses"] = eval(
-                            "({L1-dcache-load-misses}/{L1-dcache-loads})*100".
-                            format(**measure))
+                    measure["speedup"] = sequential_time / float(measure["time"])
+                    measure["l1chache_misses"] = float(measure["L1-dcache-load-misses"]) / float(measure["L1-dcache-loads"]) * 100
 
     # delete and recalculate stats
     del falsesharing.results["stats"]
@@ -90,13 +84,13 @@ def blowup_plots(blowup):
     blowup.results["stats"]["Ideal-RSS"] = {}
     for perm in blowup.iterate_args(args=args):
         blowup.results["stats"]["Ideal-RSS"][perm] = {
-                "mean": {
-                    "VmHWM": 1024 * 100
-                    },
-                "std": {
-                    "VmHWM": 0
-                    }
+            "mean": {
+                "VmHWM": 1024 * 100
+                },
+            "std": {
+                "VmHWM": 0
                 }
+            }
 
     plt.pgfplot(blowup,
                 blowup.iterate_args(args),
@@ -202,7 +196,7 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
         os.chdir(cwd)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
@@ -245,3 +239,10 @@ if __name__ == "__main__":
 
     summarize(benchmarks=args.benchmarks,
               exclude_benchmarks=args.exclude_benchmarks)
+
+
+if __name__ == "__main__":
+    if "--license" in sys.argv:
+        print_license_and_exit()
+
+    main()

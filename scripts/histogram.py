@@ -48,7 +48,7 @@ def main():
     if fname.startswith("chatty") and fext == ".txt":
         try:
             chattyparser = importlib.import_module("chattyparser")
-        except ModuleNotFoundError as err:
+        except ModuleNotFoundError:
             print("Can't import chattyparser")
             sys.exit(1)
         hist, calls, _ = chattyparser.parse(args.input_file, coll_size=False)
