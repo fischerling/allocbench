@@ -28,8 +28,6 @@ import allocbench.globalvars
 from allocbench.util import print_status, print_debug, print_error
 from allocbench.util import print_license_and_exit
 
-ALLOCS_TO_EXCLUDE = []
-
 
 def specific_summary(bench, sum_dir, allocators):
     """Summarize bench in sum_dir for allocators"""
@@ -68,28 +66,13 @@ def specific_summary(bench, sum_dir, allocators):
     os.chdir("..")
 
 
-def bench_sum(bench):
+def bench_sum(bench, exclude_allocators=None, sets=False):
     """Create a summary of bench for each set of allocators"""
-    sets = {
-        "glibcs": [
-            "glibc", "glibc-noThreadCache", "glibc-noFalsesharing",
-            "glibc-noFalsesharingClever"
-        ],
-        "tcmalloc": ["TCMalloc", "TCMalloc-NoFalsesharing"],
-        "nofs": [
-            "glibc", "glibc-noFalsesharing", "glibc-noFalsesharingClever",
-            "TCMalloc", "TCMalloc-NoFalsesharing"
-        ],
-        "ba": ["glibc", "TCMalloc", "jemalloc", "Hoard"],
-        "industry":
-        ["glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc", "mimalloc"],
-        "research": ["scalloc", "SuperMalloc", "Mesh", "Hoard", "snmalloc"]
-    }
 
     new_allocs = {
         an: a
         for an, a in bench.results["allocators"].items()
-        if an not in ALLOCS_TO_EXCLUDE
+        if an not in exclude_allocators or {}
     }
     bench.results["allocators"] = new_allocs
 
@@ -101,13 +84,38 @@ def bench_sum(bench):
     bench.summary()
     os.chdir("..")
 
-    for set_name in sets:
-        specific_summary(bench, set_name, sets[set_name])
+    if sets:
+        sets = {
+            "glibcs": [
+                "glibc", "glibc-noThreadCache", "glibc-noFalsesharing",
+                "glibc-noFalsesharingClever"
+            ],
+            "tcmalloc": ["TCMalloc", "TCMalloc-NoFalsesharing"],
+            "nofs": [
+                "glibc", "glibc-noFalsesharing", "glibc-noFalsesharingClever",
+                "TCMalloc", "TCMalloc-NoFalsesharing"
+            ],
+            "ba": ["glibc", "TCMalloc", "jemalloc", "Hoard"],
+            "industry": [
+                "glibc", "llalloc", "TCMalloc", "jemalloc", "tbbmalloc",
+                "mimalloc"
+            ],
+            "research":
+            ["scalloc", "SuperMalloc", "Mesh", "Hoard", "snmalloc"]
+        }
+    else:
+        sets = {}
+
+    for set_name, set_allocators in sets.items():
+        specific_summary(bench, set_name, set_allocators)
 
     os.chdir("..")
 
 
-def summarize(benchmarks=None, exclude_benchmarks=None):
+def summarize(benchmarks=None,
+              exclude_benchmarks=None,
+              exclude_allocators=None,
+              sets=False):
     """summarize the benchmarks in the resdir"""
 
     cwd = os.getcwd()
@@ -126,7 +134,7 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
             print_error(f"{benchmark} has no member {benchmark}")
             print_error(f"Skipping {benchmark}.")
 
-        bench = getattr(bench_module, benchmark)
+        bench = getattr(bench_module, benchmark, sets=sets)
 
         try:
             bench.load()
@@ -135,17 +143,15 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
 
         print_status(f"Summarizing {bench.name} ...")
         try:
-            bench_sum(bench)
+            bench_sum(bench, exclude_allocators=exclude_allocators)
         except FileExistsError as err:
             print(err)
 
     os.chdir(cwd)
 
 
-if __name__ == "__main__":
-    if "--license" in sys.argv:
-        print_license_and_exit()
-
+def main():
+    """Summarize the results of an allocbench run"""
     parser = argparse.ArgumentParser(
         description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)
@@ -181,6 +187,10 @@ if __name__ == "__main__":
                         "--interactive",
                         help="drop into repl after summarizing the results",
                         action='store_true')
+    parser.add_argument("-s",
+                        "--sets",
+                        help="create summary for sets of allocators",
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -197,20 +207,27 @@ if __name__ == "__main__":
         print_error(f"{args.results} is no directory")
         sys.exit(1)
 
-    ALLOCS_TO_EXCLUDE = args.exclude_allocators or []
-
     allocbench.globalvars.resdir = args.results
 
     # Load facts
     facter.load_facts(allocbench.globalvars.resdir)
 
     summarize(benchmarks=args.benchmarks,
-              exclude_benchmarks=args.exclude_benchmarks)
+              exclude_benchmarks=args.exclude_benchmarks,
+              exclude_allocators=args.exclude_allocators,
+              sets=args.sets)
 
     if args.interactive:
         try:
-            import IPython
+            import IPython  # pylint: disable=import-outside-toplevel
             IPython.embed()
         except ModuleNotFoundError:
-            import code
+            import code  # pylint: disable=import-outside-toplevel
             code.InteractiveConsole(locals=globals()).interact()
+
+
+if __name__ == "__main__":
+    if "--license" in sys.argv:
+        print_license_and_exit()
+
+    main()
