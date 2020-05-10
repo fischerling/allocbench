@@ -47,9 +47,6 @@ class BenchmarkRedis(Benchmark):
 
         super().__init__(name)
 
-    def prepare(self):
-        super().prepare()
-
         redis_version = "5.0.5"
         self.results["facts"]["versions"]["redis"] = redis_version
         redis_artifact = ArchiveArtifact(
@@ -100,6 +97,3 @@ class BenchmarkRedis(Benchmark):
                  file_postfix="vmhwm")
 
         plt.export_stats_to_dataref(self, "requests")
-
-
-redis = BenchmarkRedis()

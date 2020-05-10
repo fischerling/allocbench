@@ -96,6 +96,3 @@ class BenchmarkLarson(Benchmark):
                      'title': "Larson cache misses: {fixed_part_str}",
                  },
                  file_postfix="cachemisses")
-
-
-larson = BenchmarkLarson()

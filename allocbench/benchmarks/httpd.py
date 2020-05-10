@@ -44,9 +44,6 @@ class BenchmarkHTTPD(Benchmark):
 
         super().__init__(name)
 
-    def prepare(self):
-        super().prepare()
-
         self.results["facts"]["versions"]["nginx"] = facter.exe_version(
             "nginx", "-v")
         self.results["facts"]["versions"]["ab"] = facter.exe_version(
@@ -89,6 +86,3 @@ class BenchmarkHTTPD(Benchmark):
                      'autoticks': False,
                  },
                  file_postfix="php-fpm_vmhwm")
-
-
-httpd = BenchmarkHTTPD()

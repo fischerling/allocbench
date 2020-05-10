@@ -45,6 +45,3 @@ class BenchmarkRealloc(Benchmark):
 
         plt.export_stats_to_csv(self, "task-clock")
         plt.export_stats_to_dataref(self, "task-clock")
-
-
-realloc = BenchmarkRealloc()

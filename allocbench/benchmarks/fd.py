@@ -28,12 +28,8 @@ class BenchmarkFd(Benchmark):
     """
     def __init__(self):
         name = "fd"
-        super().__init__(name)
-
         self.cmd = "fd -HI -e c '.*[0-9].*' {linux_files}"
-
-    def prepare(self):
-        super().prepare()
+        super().__init__(name)
 
         linux = GitArtifact(
             "linux",
@@ -85,6 +81,3 @@ class BenchmarkFd(Benchmark):
                  file_postfix="memusage")
 
         plt.export_stats_to_dataref(self, "VmHWM")
-
-
-fd = BenchmarkFd()

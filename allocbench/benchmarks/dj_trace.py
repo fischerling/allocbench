@@ -131,9 +131,6 @@ class BenchmarkDJTrace(Benchmark):
         self.requirements = ["trace_run"]
         super().__init__(name)
 
-    def prepare(self):
-        super().prepare()
-
         workloads = ArchiveArtifact(
             "dj_workloads",
             "https://www4.cs.fau.de/~flow/allocbench/dj_workloads.tar.xz",
@@ -451,6 +448,3 @@ class BenchmarkDJTrace(Benchmark):
                                          tmeans[3], np.mean(rss_change_means)),
                       '\n',
                       file=summary_file)
-
-
-dj_trace = BenchmarkDJTrace()

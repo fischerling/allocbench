@@ -72,9 +72,5 @@ class BenchmarkRdtsc(Benchmark):
             plt.legend()
             plt.title(str(perm))
             fig.savefig(f'{label}.{SUMMARY_FILE_EXT}')
-            plt.show()
 
         allocbench.plots.export_stats_to_csv(self, "cycles")
-
-
-rdtsc = BenchmarkRdtsc()

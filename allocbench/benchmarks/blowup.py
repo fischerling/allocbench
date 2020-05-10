@@ -77,6 +77,3 @@ class BenchmarkBlowup(Benchmark):
         del self.results["stats"]["Ideal-RSS"]
 
         # plt.export_stats_to_dataref(self, "VmHWM")
-
-
-blowup = BenchmarkBlowup()

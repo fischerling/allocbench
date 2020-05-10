@@ -74,6 +74,3 @@ class BenchmarkTTest1(Benchmark):
                             file_postfix="mops.table")
 
         plt.export_stats_to_csv(self, "task-clock")
-
-
-t_test1 = BenchmarkTTest1()

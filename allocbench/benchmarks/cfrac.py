@@ -120,6 +120,3 @@ class BenchmarkCfrac(Benchmark):
         plt.export_stats_to_dataref(self, "task-clock")
 
         plt.export_stats_to_dataref(self, "VmHWM")
-
-
-cfrac = BenchmarkCfrac()

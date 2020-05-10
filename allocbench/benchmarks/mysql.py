@@ -121,15 +121,6 @@ class BenchmarkMYSQL(Benchmark):
 
         self.results["facts"]["runtime [s]"] = RUN_TIME
 
-    def reset_preparations(self):
-        """Reset self.build_dir if preparing fails"""
-        if os.path.exists(self.build_dir):
-            print_warn("Reset mysql test directory")
-            shutil.rmtree(self.build_dir, ignore_errors=True)
-
-    def prepare(self):
-        super().prepare()
-
         # save mysqld and sysbench versions
         for exe in self.requirements:
             self.results["facts"]["versions"][exe] = facter.exe_version(
@@ -186,6 +177,12 @@ class BenchmarkMYSQL(Benchmark):
                 raise
 
             self.shutdown_servers()
+
+    def reset_preparations(self):
+        """Reset self.build_dir if preparing fails"""
+        if os.path.exists(self.build_dir):
+            print_warn("Reset mysql test directory")
+            shutil.rmtree(self.build_dir, ignore_errors=True)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm): # pylint: disable=too-many-arguments, unused-argument
@@ -321,6 +318,3 @@ class BenchmarkMYSQL(Benchmark):
 
         plt.export_stats_to_csv(self, "transactions")
         plt.export_stats_to_dataref(self, "transactions")
-
-
-mysql = BenchmarkMYSQL()

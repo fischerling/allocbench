@@ -113,6 +113,3 @@ class BenchmarkLoop(Benchmark):
 
         # create pgfplot legend
         plt.pgfplot_legend(self)
-
-
-loop = BenchmarkLoop()

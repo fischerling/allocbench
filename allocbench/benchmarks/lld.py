@@ -230,9 +230,6 @@ class BenchmarkLld(Benchmark):
         self.requirements = ["ld.lld"]
         super().__init__(name)
 
-    def prepare(self):
-        super().prepare()
-
         # save lld version
         self.results["facts"]["versions"]["lld"] = facter.exe_version(
             "ld.lld", "-v")
@@ -295,6 +292,3 @@ class BenchmarkLld(Benchmark):
             "sort": "<"
         }],
                                          file_postfix="table")
-
-
-lld = BenchmarkLld()

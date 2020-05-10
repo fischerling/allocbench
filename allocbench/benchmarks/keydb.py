@@ -48,9 +48,6 @@ class BenchmarkKeyDB(Benchmark):
 
         super().__init__(name)
 
-    def prepare(self):
-        super().prepare()
-
         keydb_version = "v5.3.1"
         self.results["facts"]["versions"]["keydb"] = keydb_version
         keydb_dir = os.path.join(self.build_dir, "keydb")
@@ -127,6 +124,3 @@ class BenchmarkKeyDB(Benchmark):
                      'title': "KeyDB Memusage - {fixed_part_str}",
                  },
                  file_postfix="vmhwm")
-
-
-keydb = BenchmarkKeyDB()

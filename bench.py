@@ -30,7 +30,7 @@ from allocbench.allocator import collect_allocators
 from allocbench.analyse import analyze_bench, analyze_allocators
 import allocbench.facter as facter
 import allocbench.globalvars
-from allocbench.util import find_cmd, run_cmd
+from allocbench.util import run_cmd
 from allocbench.util import print_status, print_warn, print_error
 from allocbench.util import print_info, print_info2, print_debug
 from allocbench.util import print_license_and_exit
@@ -176,20 +176,21 @@ def main():
         bench_module = importlib.import_module(
             f"allocbench.benchmarks.{bench}")
 
-        if not hasattr(bench_module, bench):
-            print_error(f"{bench_module} has no member {bench}.")
-            print_error(f"Skipping {bench_module}")
-            continue
+        # find Benchmark class
+        for member in bench_module.__dict__.values():
+            if (isinstance(member, type)
+                    or member is allocbench.benchmark.Benchmark
+                    or not issubclass(member, allocbench.benchmark.Benchmark)):
+                continue
 
-        bench = getattr(bench_module, bench)
-
-        print_status("Preparing", bench.name, "...")
-        try:
-            bench.prepare()
-        except Exception:
-            print_error(traceback.format_exc())
-            print_error(f"Skipping {bench}! Preparing failed.")
-            continue
+            try:
+                print_status("Preparing", bench, "...")
+                bench = member()
+                break
+            except Exception:
+                print_error(traceback.format_exc())
+                print_error(f"Skipping {bench}! Preparing failed.")
+                continue
 
         if args.analyze:
             analyze_bench(bench)

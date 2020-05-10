@@ -39,9 +39,6 @@ class BenchmarkRaxmlng(Benchmark):
             f"raxml-ng --msa {self.build_dir}/data/prim.phy --model GTR+G"
             " --redo --threads 2 --seed 2")
 
-    def prepare(self):
-        super().prepare()
-
         if os.path.exists(self.build_dir):
             return
 
@@ -104,6 +101,3 @@ class BenchmarkRaxmlng(Benchmark):
                  file_postfix="memusage")
 
         plt.export_stats_to_dataref(self, "VmHWM")
-
-
-raxmlng = BenchmarkRaxmlng()

@@ -67,8 +67,8 @@ class BenchmarkFalsesharing(Benchmark):
                         measure["speedup"] = sequential_time / float(
                             measure["time"])
                         measure["l1chache_misses"] = (
-                            measure['L1-dcache-load-misses'] /
-                            measure['L1-dcache-loads']) * 100
+                            float(measure['L1-dcache-load-misses']) /
+                            float(measure['L1-dcache-loads'])) * 100
 
         # delete and recalculate stats
         del self.results["stats"]
@@ -79,7 +79,7 @@ class BenchmarkFalsesharing(Benchmark):
                  x_args=["bench"],
                  fig_options={
                      'ylabel': "Speedup",
-                     'title': "Speedup: {arg} {arg_value}",
+                     'title': "Speedup: {fixed_part_str}",
                      'autoticks': False,
                  },
                  file_postfix="speedup")
@@ -89,7 +89,7 @@ class BenchmarkFalsesharing(Benchmark):
                  x_args=["bench"],
                  fig_options={
                      'ylabel': "l1 cache misses in %",
-                     'title': "cache misses: {arg} {arg_value}",
+                     'title': "cache misses: {fixed_part_str}",
                      'autoticks': False,
                  },
                  file_postfix="l1-misses")
@@ -117,6 +117,3 @@ class BenchmarkFalsesharing(Benchmark):
 
         # create pgfplot legend
         plt.pgfplot_legend(self)
-
-
-falsesharing = BenchmarkFalsesharing()
