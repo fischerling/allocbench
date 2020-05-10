@@ -22,6 +22,7 @@ import errno
 import copy
 import csv
 import itertools
+import json
 import multiprocessing
 import os
 import subprocess
@@ -34,7 +35,7 @@ import allocbench.facter as facter
 import allocbench.globalvars as globalvars
 from allocbench.util import print_status, print_error, print_warn
 from allocbench.util import print_info0, print_info, print_debug
-from allocbench.util import find_cmd, prefix_cmd_with_abspath
+from allocbench.util import find_cmd, prefix_cmd_with_abspath, run_cmd
 
 
 class Benchmark:
@@ -99,20 +100,63 @@ class Benchmark:
         """raise an exception if perf is not allowed on this system"""
         if Benchmark.perf_allowed is None:
             print_info("Check if you are allowed to use perf ...")
-            res = subprocess.run(["perf", "stat", "ls"],
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE,
-                                 universal_newlines=True)
-
-            if res.returncode != 0:
-                print_error(f"Test perf run failed with exit status: {res.returncode}")
-                print_debug(res.stderr)
-                Benchmark.perf_allowed = False
-            else:
+            try:
+                run_cmd(["perf", "stat", "ls"], capture=True)
                 Benchmark.perf_allowed = True
+            except subprocess.CalledProcessError as err:
+                print_error(f"Test perf run failed with exit status: {err.returncode}")
+                print_debug(err.stderr)
+                Benchmark.perf_allowed = False
 
         if not Benchmark.perf_allowed:
             raise Exception("You don't have the needed permissions to use perf")
+
+    @staticmethod
+    def save_values_from_proc_status(result, keys, status_file="status", status_content=None, key_prefix=""):
+        """Parse a /proc/status file or its content and extract requested keys from it"""
+        assert(status_file or status_content)
+
+        if status_content is None:
+            if hasattr(status_file, "read"):
+                status_content = status_file.read()
+            else:
+                with open(status_file, "r") as opened_status_file:
+                    status_content = opened_status_file.read()
+
+        for line in status_content.splitlines():
+            key, value = line.split(':')
+            value = value.replace("kB", "")
+            value = value.strip()
+
+            if key in keys:
+                result[f"{key_prefix}{key}"] = value
+
+    @staticmethod
+    def save_server_status_and_values(result, server, keys):
+        """Read, save and extract values from a server process /proc/status file
+
+        The whole status is stored in result with the key {server.name}_status
+        and every extracted key in keys is stored as {server.name}_{key}.
+        """
+        with open(f"/proc/{server['popen'].pid}/status", "r") as status_file:
+            server_name = server.get('name', 'Server')
+            server_status = status_file.read()
+            result[f"{server_name}_status"] = server_status
+
+            Benchmark.save_values_from_proc_status(result, keys, status_content=server_status)
+
+    @staticmethod
+    def parse_and_save_perf_output(result, output, alloc_name, perm):
+        """Parse and store csv output from perf -x,"""
+        csvreader = csv.reader(output.splitlines(), delimiter=',')
+        for row in csvreader:
+            try:
+                # Split of the user/kernel space info to be better portable
+                datapoint = row[2].split(":")[0]
+                value = row[0]
+                result[datapoint] = value
+            except IndexError as err:
+                print_warn(f"Exception {err} occured on {row} for {alloc_name} and {perm}")
 
     def __str__(self):
         return self.name
@@ -151,6 +195,8 @@ class Benchmark:
 
         if not hasattr(self, "requirements"):
             self.requirements = []
+        else:
+            self.check_requirements()
 
         print_debug("Creating benchmark", self.name)
         print_debug("Cmd:", self.cmd)
@@ -160,9 +206,9 @@ class Benchmark:
         print_debug("Results dictionary:", self.results)
         print_debug("Results directory:", self.result_dir)
 
+
     def save(self, path=None):
         """Save benchmark results to a json file"""
-        import json
         if not path:
             path = self.name + ".json"
         elif os.path.isdir(path):
@@ -193,8 +239,8 @@ class Benchmark:
             if "stats" in self.results:
                 save_data["stats"][allocator] = stats
 
-        with open(path, "w") as f:
-            json.dump(save_data, f)
+        with open(path, "w") as save_file:
+            json.dump(save_data, save_file)
 
     def load(self, path=None):
         """Load benchmark results from file"""
@@ -207,15 +253,14 @@ class Benchmark:
                 filename = os.path.splitext(path)
 
         if os.path.exists(filename + ".json"):
-            import json
             filename += ".json"
-            with open(filename, "r") as f:
-                self.results = json.load(f)
+            with open(filename, "r") as load_file:
+                self.results = json.load(load_file)
         elif os.path.exists(filename + ".save"):
-            import pickle
+            import pickle # pylint: disable=import-outside-toplevel
             filename += ".save"
-            with open(filename, "rb") as f:
-                self.results = pickle.load(f)
+            with open(filename, "rb") as load_file:
+                self.results = pickle.load(load_file)
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), filename)
 
@@ -223,31 +268,31 @@ class Benchmark:
 
         # Build new named tuples
         for allocator in self.results["allocators"]:
-            d = {}
+            data = {}
             for perm, measures in self.results[allocator]:
-                d[self.Perm(**perm)] = measures
-            self.results[allocator] = d
+                data[self.Perm(**perm)] = measures
+            self.results[allocator] = data
 
-            d = {}
+            stats = {}
             if "stats" in self.results:
                 for perm, value in self.results["stats"][allocator]:
-                    d[self.Perm(**perm)] = value
-                self.results["stats"][allocator] = d
+                    stats[self.Perm(**perm)] = value
+                self.results["stats"][allocator] = stats
 
         # add eventual missing statistics
         if "stats" not in self.results:
             self.calc_desc_statistics()
 
-    def prepare(self):
-        """default prepare implementation raising an error if a requirement is not found"""
+    def check_requirements(self):
+        """raise an error if a requirement is not found"""
         os.environ["PATH"] += f"{os.pathsep}{globalvars.BUILDDIR}/benchmarks/{self.name}"
 
-        for r in self.requirements:
-            exe = find_cmd(r)
+        for requirement in self.requirements:
+            exe = find_cmd(requirement)
             if exe is not None:
-                self.results["facts"]["libcs"][r] = facter.libc_ver(executable=exe)
+                self.results["facts"]["libcs"][requirement] = facter.libc_ver(executable=exe)
             else:
-                raise Exception("Requirement: {} not found".format(r))
+                raise Exception("Requirement: {} not found".format(requirement))
 
     def iterate_args(self, args=None, fixed=None):
         """Iterator over each possible combination of args
@@ -291,8 +336,15 @@ class Benchmark:
             if is_fixed:
                 yield perm
 
-    def prepare_argv(self, cmd, env={}, alloc={}, substitutions={}, prepend=True):
+    def prepare_argv(self, cmd, env=None, alloc=None, substitutions=None, prepend=True):
         """Prepare an complete argv list for benchmarking"""
+        if env is None:
+            env = {}
+        if alloc is None:
+            alloc = {}
+        if substitutions is None:
+            substitutions = {}
+
         argv = []
         if prepend:
             if "cmd_prefix" in alloc:
@@ -318,20 +370,28 @@ class Benchmark:
             argv.extend(["-p", ld_preload])
 
             if "LD_LIBRARY_PATH" in env or alloc.get("LD_LIBRARY_PATH", ""):
-                argv.extend(["-l", f"{alloc.get('LD_LIBRARY_PATH', '')} {env.get('LD_LIBRARY_PATH', '')}"])
+                old_ld_lib_path = env.get('LD_LIBRARY_PATH', '')
+                ld_lib_path = alloc.get('LD_LIBRARY_PATH', '')
+                argv.extend(["-l", f"{ld_lib_path} {old_ld_lib_path}"])
 
-        cmd_argv = cmd.format(**substitutions)
-        cmd_argv = prefix_cmd_with_abspath(cmd_argv).split()
+        cmd_expanded = cmd.format(**substitutions)
+        cmd_argv = prefix_cmd_with_abspath(cmd_expanded).split()
 
         argv.extend(cmd_argv)
 
         return argv
 
-    def start_servers(self, env={}, alloc_name="None", alloc={"cmd_prefix": ""}):
+    def start_servers(self, env=None, alloc_name="None", alloc=None):
         """Start Servers
 
         Servers are not allowed to deamonize because then they can't
         be terminated using their Popen object."""
+
+        if env is None:
+            env = {}
+
+        if alloc is None:
+            alloc = {"cmd_prefix": ""}
 
         substitutions = {"alloc": alloc_name,
                          "perm": alloc_name,
@@ -372,18 +432,12 @@ class Benchmark:
             print_info(f"Preparing {server_name}")
             for prep_cmd in server["prepare_cmds"]:
                 prep_cmd = prep_cmd.format(**substitutions)
-                print_debug(prep_cmd)
 
-                proc = subprocess.run(prep_cmd.split(), universal_newlines=True,
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-                print_debug("Stdout:", proc.stdout)
-                print_debug("Stderr:", proc.stderr)
-
+                proc = run_cmd(prep_cmd.split(), output_verbosity=3)
 
     def shutdown_server(self, server):
         """Terminate a started server running its shutdown_cmds in advance"""
-        if server["popen"].poll() == None:
+        if server["popen"].poll() is None:
             server_name = server.get("name", "Server")
             print_info(f"Shutting down {server_name}")
 
@@ -394,21 +448,19 @@ class Benchmark:
             if "shutdown_cmds" in server:
                 for shutdown_cmd in server["shutdown_cmds"]:
                     shutdown_cmd = shutdown_cmd.format(**substitutions)
-                    print_debug(shutdown_cmd)
 
-                    proc = subprocess.run(shutdown_cmd.split(), universal_newlines=True,
-                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-                    print_debug("Stdout:", proc.stdout)
-                    print_debug("Stderr:", proc.stderr)
+                    run_cmd(shutdown_cmd.split(), output_verbosity=3)
 
                 # wait for server termination
                 sleep(5)
 
             outs, errs = Benchmark.terminate_subprocess(server["popen"])
         else:
-            outs = server["popen"].stdout.read()
-            errs = server["popen"].stderr.read()
+            outs, errs = "", ""
+            if not server["popen"].stdout.closed:
+                outs = server["popen"].stdout.read()
+            if not server["popen"].stderr.closed:
+                errs = server["popen"].stderr.read()
 
         server["stdout"] = outs
         server["stderr"] = errs
@@ -434,7 +486,7 @@ class Benchmark:
 
         self.results["facts"]["runs"] = runs
 
-        n = len(list(self.iterate_args())) * len(self.allocators)
+        total_executions = len(list(self.iterate_args())) * len(self.allocators)
         for run in range(1, runs + 1):
             print_status(run, ". run", sep='')
 
@@ -446,9 +498,9 @@ class Benchmark:
                 skip = False
                 try:
                     self.start_servers(alloc_name=alloc_name, alloc=alloc, env=os.environ)
-                except Exception as e:
+                except Exception as err:
                     print_debug(traceback.format_exc())
-                    print_error(e)
+                    print_error(err)
                     print_error("Skipping", alloc_name)
                     skip = True
 
@@ -469,7 +521,7 @@ class Benchmark:
                         self.results[alloc_name][perm].append({})
                         continue
 
-                    print_info0(i, "of", n, "\r", end='')
+                    print_info0(i, "of", total_executions, "\r", end='')
 
                     # Available substitutions in cmd
                     substitutions = {"run": run, "alloc": alloc_name}
@@ -494,10 +546,10 @@ class Benchmark:
                         os.chdir(run_dir)
                         print_debug("\nChange cwd to:", run_dir)
 
-                    print_debug("\nCmd:", argv)
-                    res = subprocess.run(argv, stderr=subprocess.PIPE,
-                                         stdout=subprocess.PIPE,
-                                         universal_newlines=True)
+                    try:
+                        res = run_cmd(argv, capture=True)
+                    except subprocess.CalledProcessError as err:
+                        res = err
 
                     result = {}
 
@@ -514,41 +566,20 @@ class Benchmark:
 
                     # parse and store results
                     else:
-                        if not self.servers:
+                        if self.servers:
+                            for server in self.servers:
+                                Benchmark.save_server_status_and_values(result, server, ["VmHWM"])
+                        else:
                             if os.path.isfile("status"):
                                 # Read VmHWM from status file. If our benchmark
                                 # didn't fork the first occurance of VmHWM is from
                                 # our benchmark
-                                with open("status", "r") as f:
-                                    for l in f.readlines():
-                                        if l.startswith("VmHWM:"):
-                                            result["VmHWM"] = l.split()[1]
-                                            break
-
+                                Benchmark.save_values_from_proc_status(result, ["VmHWM"])
                                 os.remove("status")
 
                             # parse perf output if available
                             if self.measure_cmd == Benchmark.measure_cmd or self.measure_cmd_csv:
-                                csvreader = csv.reader(res.stderr.splitlines(),
-                                                       delimiter=',')
-                                for row in csvreader:
-                                    # Split of the user/kernel space info to be better portable
-                                    try:
-                                        result[row[2].split(":")[0]] = row[0]
-                                    except Exception as e:
-                                        print_warn("Exception", e, "occured on", row, "for",
-                                                   alloc_name, "and", perm)
-                        else:
-                            result["server_status"] = []
-                            for server in self.servers:
-                                with open(f"/proc/{server['popen'].pid}/status", "r") as f:
-                                    server_status = f.read()
-                                    result["server_status"].append(server_status)
-
-                                    for l in server_status.splitlines():
-                                        if l.startswith("VmHWM:"):
-                                            result[f"{server.get('name', 'Server')}_vmhwm"] = l.split()[1]
-                                            break
+                                Benchmark.parse_and_save_perf_output(result, res.stderr, alloc_name, perm)
 
 
                         if hasattr(self, "process_output"):
@@ -560,6 +591,7 @@ class Benchmark:
                         if valid_result is None:
                             valid_result = result
 
+                    print_debug(f"Resulting in: {result}")
                     self.results[alloc_name][perm].append(result)
 
                     if os.getcwd() != cwd:
@@ -586,8 +618,8 @@ class Benchmark:
         if valid_result != {}:
             for allocator in self.allocators:
                 for perm in self.iterate_args():
-                    for i, m in enumerate(self.results[allocator][perm]):
-                        if m == {}:
+                    for i, measure in enumerate(self.results[allocator][perm]):
+                        if measure == {}:
                             self.results[allocator][perm][i] = {k: np.NaN for k in valid_result}
 
         self.calc_desc_statistics()
@@ -609,25 +641,25 @@ class Benchmark:
                                          "lower_quartile", "upper_quartile",
                                          "lower_whisker", "upper_whisker",
                                          "outliers"]}
-                for dp in self.results[alloc][perm][0]:
+                for key in self.results[alloc][perm][0]:
                     try:
-                        data = [float(m[dp]) for m in self.results[alloc][perm]]
-                    except (TypeError, ValueError) as e:
+                        data = [float(m[key]) for m in self.results[alloc][perm]]
+                    except (TypeError, ValueError):
                         continue
-                    stats["min"][dp] = np.min(data)
-                    stats["max"][dp] = np.max(data)
-                    stats["mean"][dp] = np.mean(data)
-                    stats["median"][dp] = np.median(data)
-                    stats["std"][dp] = np.std(data, ddof=1)
-                    stats["std_perc"][dp] = stats["std"][dp] / stats["mean"][dp]
-                    stats["lower_quartile"][dp], stats["upper_quartile"][dp] = np.percentile(data, [25, 75])
-                    trimmed_range = stats["upper_quartile"][dp] - stats["lower_quartile"][dp]
-                    stats["lower_whisker"][dp] = stats["lower_quartile"][dp] - trimmed_range
-                    stats["upper_whisker"][dp] = stats["upper_quartile"][dp] + trimmed_range
+                    stats["min"][key] = np.min(data)
+                    stats["max"][key] = np.max(data)
+                    stats["mean"][key] = np.mean(data)
+                    stats["median"][key] = np.median(data)
+                    stats["std"][key] = np.std(data, ddof=1)
+                    stats["std_perc"][key] = stats["std"][key] / stats["mean"][key]
+                    stats["lower_quartile"][key], stats["upper_quartile"][key] = np.percentile(data, [25, 75])
+                    trimmed_range = stats["upper_quartile"][key] - stats["lower_quartile"][key]
+                    stats["lower_whisker"][key] = stats["lower_quartile"][key] - trimmed_range
+                    stats["upper_whisker"][key] = stats["upper_quartile"][key] + trimmed_range
                     outliers = []
-                    for d in data:
-                        if d > stats["upper_whisker"][dp] or d < stats["lower_whisker"][dp]:
-                            outliers.append(d)
-                    stats["outliers"][dp] = outliers
+                    for value in data:
+                        if value > stats["upper_whisker"][key] or value < stats["lower_whisker"][key]:
+                            outliers.append(value)
+                    stats["outliers"][key] = outliers
 
                 self.results["stats"][alloc][perm] = stats
