@@ -384,7 +384,7 @@ class BenchmarkDJTrace(Benchmark):
                       file=summary_file)
 
                 for perm in self.iterate_args(args=args):
-                    cycles = abplt._get_y_data(self, "{cycles}", allocator,
+                    cycles = abplt.get_y_data(self, "{cycles}", allocator,
                                                perm)[0]
                     times = func_times_means[allocator][perm]
                     rss = rss_means[allocator][perm]

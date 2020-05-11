@@ -133,7 +133,7 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
         return nan
 
 
-def _get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
+def get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
     """Helper to get the y data of an allocator for given permutations"""
     y_data = []
     for perm in perms:
