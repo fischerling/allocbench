@@ -1,5 +1,5 @@
-- chattyparser
-  - fix passed allocations
+- summarize
+  - set summary has the problem that we don't close our figures and they will be reopened and the same allocators will be drawn multiple times.
 
 - randomization
   - env randomization *easy*
