@@ -178,7 +178,7 @@ def main():
 
         # find Benchmark class
         for member in bench_module.__dict__.values():
-            if (isinstance(member, type)
+            if (not isinstance(member, type)
                     or member is allocbench.benchmark.Benchmark
                     or not issubclass(member, allocbench.benchmark.Benchmark)):
                 continue
