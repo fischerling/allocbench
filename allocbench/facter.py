@@ -30,6 +30,7 @@ from allocbench.util import print_debug, print_info, print_warn, run_cmd
 
 FACTS = {}
 
+
 def collect_facts():
     """Collect general facts about the benchmark environment"""
     # Populate allocbench.globalvars.facts on import
@@ -93,8 +94,9 @@ def load_facts(path=None):
 
     print_info(f"Loading facts from: {filename}")
 
+
 def allocbench_version():
-    "Store and return allocbench version string."""
+    """Store and return allocbench version string."""
     if "allocbench" in FACTS:
         return FACTS["allocbench"]
 

@@ -72,7 +72,7 @@ class BenchmarkLarson(Benchmark):
         super().__init__(name)
 
     @staticmethod
-    def process_output(result, stdout, stderr, target, perm): # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, target, perm):  # pylint: disable=too-many-arguments, unused-argument
         for line in stdout.splitlines():
             res = THROUGHPUT_RE.match(line)
             if res:

@@ -98,14 +98,17 @@ class Allocator:
                     patch_content = patch_file.read()
 
                 # check if patch is already applied
-                not_patched = run_cmd(
-                    ["patch", "-R", "-p0", "-s", "-f", "--dry-run", "--verbose"],
-                    cwd=cwd,
-                    input=patch_content,
-                    check=False).returncode
+                not_patched = run_cmd([
+                    "patch", "-R", "-p0", "-s", "-f", "--dry-run", "--verbose"
+                ],
+                                      cwd=cwd,
+                                      input=patch_content,
+                                      check=False).returncode
                 if not_patched:
                     try:
-                        run_cmd(["patch", "-p0", "--verbose"], cwd=cwd, input=patch_content)
+                        run_cmd(["patch", "-p0", "--verbose"],
+                                cwd=cwd,
+                                input=patch_content)
                     except CalledProcessError as err:
                         print_debug(err.stderr, file=sys.stderr)
                         print_error(f"Patching of {self.name} failed.")
@@ -180,6 +183,7 @@ class Allocator:
         print_debug("Resulting dictionary:", res_dict)
         return res_dict
 
+
 def collect_installed_allocators():
     """Collect allocators using installed system libraries"""
 
@@ -214,6 +218,7 @@ def collect_installed_allocators():
 
     return allocators
 
+
 def collect_available_allocators():
     """Collect all allocator definitions shipped with allocbench"""
 
@@ -227,6 +232,7 @@ def collect_available_allocators():
                 available_allocators[name] = obj
 
     return available_allocators
+
 
 def read_allocators_collection_file(alloc_path):
     """Read and evaluate a python file looking for an exported dict called allocators"""
@@ -276,11 +282,16 @@ def collect_allocators(allocators):
 
         # interpret name as allocator name or wildcard
         else:
-            matched_allocators = fnmatch.filter(available_allocators.keys(), name)
+            matched_allocators = fnmatch.filter(available_allocators.keys(),
+                                                name)
             if matched_allocators:
-                ret.update({a: available_allocators[a].build() for a in matched_allocators})
+                ret.update({
+                    a: available_allocators[a].build()
+                    for a in matched_allocators
+                })
             else:
                 print_error(
                     name,
-                    "is neither a python file or a known allocator definition.")
+                    "is neither a python file or a known allocator definition."
+                )
     return ret

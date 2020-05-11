@@ -53,7 +53,8 @@ class BenchmarkKeyDB(Benchmark):
         keydb_dir = os.path.join(self.build_dir, "keydb")
 
         if not os.path.exists(os.path.join(self.build_dir, "keydb-server")):
-            keydb_artifact = GitArtifact("keydb", "https://github.com/JohnSully/KeyDB")
+            keydb_artifact = GitArtifact("keydb",
+                                         "https://github.com/JohnSully/KeyDB")
 
             os.makedirs(self.build_dir, exist_ok=True)
 
@@ -92,7 +93,7 @@ class BenchmarkKeyDB(Benchmark):
                 os.link(src, dest)
 
     @staticmethod
-    def process_output(result, stdout, stderr, allocator, perm): # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
         cmds = ["Sets", "Gets", "Waits", "Totals"]
         stats = ["ops", "hits", "misses", "latency", "throughput"]
         for line in stdout.splitlines():

@@ -185,7 +185,7 @@ class BenchmarkMYSQL(Benchmark):
             shutil.rmtree(self.build_dir, ignore_errors=True)
 
     @staticmethod
-    def process_output(result, stdout, stderr, allocator, perm): # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
         result["transactions"] = re.search("transactions:\\s*(\\d*)",
                                            stdout).group(1)
         result["queries"] = re.search("queries:\\s*(\\d*)", stdout).group(1)
@@ -294,7 +294,8 @@ class BenchmarkMYSQL(Benchmark):
         fname = ".".join([self.name, "transactions.tex"])
         headers = [perm.nthreads for perm in self.iterate_args(args=args)]
         with open(fname, "w") as table_file:
-            print("\\begin{tabular}{| l" + " l" * len(headers) + " |}", file=table_file)
+            print("\\begin{tabular}{| l" + " l" * len(headers) + " |}",
+                  file=table_file)
             print("Fäden / Allokator ", end=" ", file=table_file)
             for head in headers:
                 print("& {}".format(head), end=" ", file=table_file)
@@ -311,7 +312,9 @@ class BenchmarkMYSQL(Benchmark):
                         color = "red"
                     else:
                         color = "black"
-                    print(entry_string.format(color, mean), end=" ", file=table_file)
+                    print(entry_string.format(color, mean),
+                          end=" ",
+                          file=table_file)
                 print("\\\\", file=table_file)
 
             print("\\end{tabular}", file=table_file)

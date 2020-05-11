@@ -385,7 +385,7 @@ class BenchmarkDJTrace(Benchmark):
 
                 for perm in self.iterate_args(args=args):
                     cycles = abplt.get_y_data(self, "{cycles}", allocator,
-                                               perm)[0]
+                                              perm)[0]
                     times = func_times_means[allocator][perm]
                     rss = rss_means[allocator][perm]
                     print(fmt.format(perm.workload, cycles, times[0], times[1],

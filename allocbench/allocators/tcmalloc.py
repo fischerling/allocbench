@@ -84,8 +84,9 @@ tcmalloc_gperftools_align = TCMallocGperftools("TCMalloc-Gperftools-Aligned",
                                                version="gperftools-2.7",
                                                color="xkcd:navy blue")
 
-tcmalloc_gperftools_align.ld_preload = (f"{BUILDDIR}/align_to_cl.so "
-                                        f"{tcmalloc_gperftools_align.ld_preload}")
+tcmalloc_gperftools_align.ld_preload = (
+    f"{BUILDDIR}/align_to_cl.so "
+    f"{tcmalloc_gperftools_align.ld_preload}")
 
 tcmalloc_gperftools_cacheline_exclusive = TCMallocGperftools(
     "TCMalloc-Gperftools-Cacheline-Exclusive",

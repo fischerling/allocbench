@@ -72,12 +72,16 @@ class GitArtifact(Artifact):
         # check if we have already provided this checkout
         if os.path.exists(location):
             try:
-                run_cmd(["git", "fetch", "--force"], output_verbosity=1, cwd=location)
+                run_cmd(["git", "fetch", "--force"],
+                        output_verbosity=1,
+                        cwd=location)
             except CalledProcessError:
                 print_error(f"Failed to update {location}")
                 raise
             try:
-                run_cmd(["git", "reset", "--hard", checkout], output_verbosity=1, cwd=location)
+                run_cmd(["git", "reset", "--hard", checkout],
+                        output_verbosity=1,
+                        cwd=location)
             except CalledProcessError:
                 print_error(f"Failed to update {location}")
                 raise
@@ -90,7 +94,9 @@ class GitArtifact(Artifact):
         # update repo
         print_status(f'Updating git repository "{self.name}" ...')
         try:
-            run_cmd(["git", "fetch", "--force"], output_verbosity=1, cwd=self.repo)
+            run_cmd(["git", "fetch", "--force"],
+                    output_verbosity=1,
+                    cwd=self.repo)
         except CalledProcessError:
             print_error(f"Failed to update {self.name}")
             raise
@@ -125,7 +131,8 @@ class ArchiveArtifact(Artifact):
                 f'Archive format "{format}" not in supported list {self.supported_formats}'
             )
         self.archive_format = archive_format
-        self.archive = os.path.join(self.basedir, f"{self.name}.{self.archive_format}")
+        self.archive = os.path.join(self.basedir,
+                                    f"{self.name}.{self.archive_format}")
         self.checksum = checksum
 
     def retrieve(self):

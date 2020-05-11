@@ -47,7 +47,7 @@ class BenchmarkRdtsc(Benchmark):
         super().__init__(name)
 
     @staticmethod
-    def process_output(result, stdout, stderr, alloc, perm): # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, alloc, perm):  # pylint: disable=too-many-arguments, unused-argument
         all_cycles = []
         for line in stdout.splitlines():
             all_cycles.append(int(line.split()[1]))

@@ -16,7 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Print facts about an allocbench result directory"""
 
 import argparse
@@ -25,7 +24,8 @@ import inspect
 import os
 import sys
 
-CURRENTDIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+CURRENTDIR = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
 PARENTDIR = os.path.dirname(CURRENTDIR)
 sys.path.insert(0, PARENTDIR)
 
@@ -36,7 +36,8 @@ from allocbench.util import print_error
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Print facts about an allocbench result directory")
+    parser = argparse.ArgumentParser(
+        description="Print facts about an allocbench result directory")
     parser.add_argument("results", help="path to allocbench results", type=str)
     args = parser.parse_args()
 
@@ -49,7 +50,8 @@ def main():
     os.chdir(args.results)
 
     for benchmark in BENCHMARKS:
-        bench_module = importlib.import_module(f"allocbench.benchmarks.{benchmark}")
+        bench_module = importlib.import_module(
+            f"allocbench.benchmarks.{benchmark}")
 
         if not hasattr(bench_module, benchmark):
             print_error(f"{benchmark} has no member {benchmark}")

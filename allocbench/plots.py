@@ -32,7 +32,7 @@ from allocbench.globalvars import SUMMARY_FILE_EXT, LATEX_CUSTOM_PREAMBLE
 from allocbench.util import print_debug, print_warn
 
 # This is useful when evaluating strings in the plot functions. str(np.NaN) == "nan"
-nan = np.NaN # pylint: disable=invalid-name
+nan = np.NaN  # pylint: disable=invalid-name
 
 DEFAULT_PLOT_OPTIONS = {
     'plot': {
@@ -69,19 +69,19 @@ DEFAULT_FIG_OPTIONS = {
 
 FIGURES = {}
 
+
 def _set_all_alloc_colors(allocators):
     """Populate all not set allocator colors with matplotlib 'C' colors"""
     explicit_colors = [
         v["color"] for v in allocators.values() if v["color"] is not None
     ]
     matplotlib_c_colors = ["C" + str(i) for i in range(0, 10)]
-    avail_colors = [
-        c for c in matplotlib_c_colors if c not in explicit_colors
-    ]
+    avail_colors = [c for c in matplotlib_c_colors if c not in explicit_colors]
 
     for alloc in allocators.values():
         if alloc["color"] is None:
             alloc["color"] = avail_colors.pop()
+
 
 def get_alloc_color(bench, alloc):
     """Retrieve color of an allocator"""
@@ -96,20 +96,26 @@ def get_alloc_color(bench, alloc):
 #https://stackoverflow.com/questions/2371436/evaluating-a-mathematical-expression-in-a-string
 def _eval_with_stat(bench, evaluation, alloc, perm, stat):
     """Helper to evaluate a datapoint description string as arithmetic operation"""
-
     def _eval(node):
         """evaluate a arithmetic ast node"""
 
         # supported operators
-        operators = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul,
-                     ast.Div: operator.truediv, ast.Pow: operator.pow, ast.BitXor: operator.xor,
-                     ast.USub: operator.neg}
+        operators = {
+            ast.Add: operator.add,
+            ast.Sub: operator.sub,
+            ast.Mult: operator.mul,
+            ast.Div: operator.truediv,
+            ast.Pow: operator.pow,
+            ast.BitXor: operator.xor,
+            ast.USub: operator.neg
+        }
 
-        if isinstance(node, ast.Num): # <number>
+        if isinstance(node, ast.Num):  # <number>
             return node.n
-        if isinstance(node, ast.BinOp): # <left> <operator> <right>
-            return operators[type(node.op)](_eval(node.left), _eval(node.right))
-        if isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+        if isinstance(node, ast.BinOp):  # <left> <operator> <right>
+            return operators[type(node.op)](_eval(node.left),
+                                            _eval(node.right))
+        if isinstance(node, ast.UnaryOp):  # <operator> <operand> e.g., -1
             return operators[type(node.op)](_eval(node.operand))
 
         raise TypeError(node)
@@ -128,8 +134,7 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
         return _eval(node.body)
     except TypeError:
         print_debug(traceback.format_exc())
-        print_warn(
-            f"{expr} could not be evaluated as arithmetic operation")
+        print_warn(f"{expr} could not be evaluated as arithmetic operation")
         return nan
 
 
@@ -150,6 +155,7 @@ def get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
                 _eval_with_stat(bench, expression, allocator, perm, stat))
 
     return y_data
+
 
 def _create_plot_options(plot_type, **kwargs):
     """
@@ -176,6 +182,7 @@ def _create_plot_options(plot_type, **kwargs):
         options[key] = value
 
     return options
+
 
 def _create_figure_options(plot_type, fig_label, **kwargs):
     """
@@ -205,6 +212,7 @@ def _create_figure_options(plot_type, fig_label, **kwargs):
         options[key] = value
 
     return options
+
 
 def _plot(bench,
           allocators,
@@ -276,7 +284,8 @@ def _plot(bench,
         plt.legend(loc=fig_options['legend_pos'])
 
     if not fig_options['autoticks']:
-        plt.xticks(_x_data - (len(allocators) / 2 * plot_options['width']), x_data)
+        plt.xticks(_x_data - (len(allocators) / 2 * plot_options['width']),
+                   x_data)
 
     plt.xlabel(fig_options['xlabel'])
     plt.ylabel(fig_options['ylabel'])
@@ -290,6 +299,7 @@ def _plot(bench,
         fig.savefig(fig_path)
 
     return fig
+
 
 def plot(bench,
          y_expression,
@@ -361,14 +371,17 @@ def plot(bench,
     for loose_arg in x_args:
         x_data = args[loose_arg]
 
-        fixed_args = [[(k, v) for v in args[k]] for k in args if k != loose_arg]
+        fixed_args = [[(k, v) for v in args[k]] for k in args
+                      if k != loose_arg]
         for fixed_part_tuple in itertools.product(*fixed_args):
-            fixed_part = {k:v for k, v in fixed_part_tuple}
+            fixed_part = {k: v for k, v in fixed_part_tuple}
 
-            fixed_part_str = ".".join([f'{k}={v}' for k, v in fixed_part.items()])
+            fixed_part_str = ".".join(
+                [f'{k}={v}' for k, v in fixed_part.items()])
             fig_label = f'{bench.name}.{fixed_part_str}.{file_postfix}'
 
-            cur_plot_options = _create_plot_options(plot_type, **plot_options or {})
+            cur_plot_options = _create_plot_options(plot_type, **plot_options
+                                                    or {})
 
             cur_fig_options = {}
 
@@ -378,7 +391,8 @@ def plot(bench,
                 if isinstance(value, str):
                     cur_fig_options[option] = value.format(**substitutions)
 
-            cur_fig_options = _create_figure_options(plot_type, fig_label, **cur_fig_options)
+            cur_fig_options = _create_figure_options(plot_type, fig_label,
+                                                     **cur_fig_options)
 
             # plot specific defaults
             cur_fig_options.setdefault("ylabel", y_expression)
@@ -397,13 +411,19 @@ def plot(bench,
                   sumdir=sumdir,
                   file_ext=file_ext)
 
+
 def print_common_facts(comment_symbol="", file=None):
     print(comment_symbol, "Common facts:", file=file)
     for fact, value in facter.FACTS.items():
         print(f"{comment_symbol}  {fact}: {value}", file=file)
     print(file=file)
 
-def print_facts(bench, comment_symbol="", print_common=True, print_allocators=False, file=None):
+
+def print_facts(bench,
+                comment_symbol="",
+                print_common=True,
+                print_allocators=False,
+                file=None):
     """Write collected facts about used system and benchmark to file"""
     print(comment_symbol, bench.name, file=file)
     print(file=file)
@@ -416,7 +436,9 @@ def print_facts(bench, comment_symbol="", print_common=True, print_allocators=Fa
         print(comment_symbol, f"{fact}: {value}", file=file)
 
     if print_allocators:
-        print(comment_symbol, f'allocators: {" ".join(bench.results["allocators"])}', file=file)
+        print(comment_symbol,
+              f'allocators: {" ".join(bench.results["allocators"])}',
+              file=file)
 
     print(file=file)
 
@@ -755,7 +777,7 @@ def pgfplot(bench,
     for alloc_name, alloc_dict in allocators.items():
         if colors:
             # define color
-            rgb = matplotlib.colors.to_rgb(get_alloc_color(bench, alloc_dict)) # pylint: disable=unused-variable
+            rgb = matplotlib.colors.to_rgb(get_alloc_color(bench, alloc_dict))  # pylint: disable=unused-variable
             color_definitions += (f"\\providecolor{{{alloc_name}-color}}"
                                   "{{rgb}}{{{rgb[0]},{rgb[1]},{rgb[2]}}}\n")
             style_definitions += (f"\\pgfplotsset{{{alloc_name}/"
@@ -777,7 +799,12 @@ def pgfplot(bench,
 
         for perm in perms:
             xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
-            yval = _get_y_data(bench, yexpr, alloc_name, perm, "mean", scale=scale)
+            yval = _get_y_data(bench,
+                               yexpr,
+                               alloc_name,
+                               perm,
+                               "mean",
+                               scale=scale)
             error = ""
             if error_bars:
                 error = f" {_eval_with_stat(bench, yexpr, alloc_name, perm, 'std')}"

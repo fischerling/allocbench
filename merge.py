@@ -16,7 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Merge two compatible results of an allocbench run"""
 
 import argparse
@@ -27,6 +26,7 @@ import sys
 
 import allocbench.facter as facter
 from allocbench.util import print_license_and_exit
+
 
 def load_file(filename):
     if filename.endswith("json"):
@@ -42,13 +42,27 @@ def main():
         print_license_and_exit()
 
     parser = argparse.ArgumentParser(description="Merge to allocbench results")
-    parser.add_argument("src", help="results which should be merged into dest", type=str)
-    parser.add_argument("dest", help="results in which src should be merged", type=str)
-    parser.add_argument("--license", help="print license info and exit", action='store_true')
-    parser.add_argument("--version", help="print version info and exit", action='version',
+    parser.add_argument("src",
+                        help="results which should be merged into dest",
+                        type=str)
+    parser.add_argument("dest",
+                        help="results in which src should be merged",
+                        type=str)
+    parser.add_argument("--license",
+                        help="print license info and exit",
+                        action='store_true')
+    parser.add_argument("--version",
+                        help="print version info and exit",
+                        action='version',
                         version=f"allocbench {facter.allocbench_version()}")
-    parser.add_argument("-b", "--benchmarks", help="benchmarks to summarize", nargs='+')
-    parser.add_argument("-x", "--exclude-benchmarks", help="benchmarks to exclude", nargs='+')
+    parser.add_argument("-b",
+                        "--benchmarks",
+                        help="benchmarks to summarize",
+                        nargs='+')
+    parser.add_argument("-x",
+                        "--exclude-benchmarks",
+                        help="benchmarks to exclude",
+                        nargs='+')
 
     args = parser.parse_args()
 
@@ -66,7 +80,9 @@ def main():
         dest_save = os.path.join(args.dest, os.path.basename(src_save))
 
         if not os.path.isfile(dest_save):
-            print(f"Can't merge {src_save} because {os.path.basename(src_save)} not in {args.dest}")
+            print(
+                f"Can't merge {src_save} because {os.path.basename(src_save)} not in {args.dest}"
+            )
             continue
 
         src_results = load_file(src_save)
@@ -79,11 +95,13 @@ def main():
                 continue
 
             print("merging", alloc, "from", src_save, "into", dest_save)
-            dest_results["allocators"][alloc] = src_results["allocators"][alloc]
+            dest_results["allocators"][alloc] = src_results["allocators"][
+                alloc]
             dest_results[alloc] = src_results[alloc]
             dest_results["stats"][alloc] = src_results["stats"][alloc]
 
-        with open(os.path.splitext(dest_save)[0] + ".json", "w") as result_file:
+        with open(os.path.splitext(dest_save)[0] + ".json",
+                  "w") as result_file:
             json.dump(dest_results, result_file)
 
 

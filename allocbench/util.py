@@ -30,7 +30,7 @@ def run_cmd(cmd,
             shell=False,
             check=True,
             cwd=None,
-            input=None): # pylint: disable=redefined-builtin
+            input=None):  # pylint: disable=redefined-builtin
     """subprocess.run wrapper which cares about the set verbosity"""
     if capture:
         stdout = subprocess.PIPE

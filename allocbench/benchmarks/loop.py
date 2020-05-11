@@ -57,53 +57,49 @@ class BenchmarkLoop(Benchmark):
         super().__init__(name)
 
     @staticmethod
-    def process_output(result, stdout, stderr, alloc, perm): # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, alloc, perm):  # pylint: disable=too-many-arguments, unused-argument
         result["mops"] = perm.threads / float(result["task-clock"])
 
     def summary(self):
         # Speed
-        plt.plot(
-            self,
-            "{mops}",
-            fig_options={
-                'ylabel': 'MOPS/cpu-second',
-                'title': 'Loop: {fixed_part_str}',
-                'autoticks': False,
-            },
-            file_postfix="time")
+        plt.plot(self,
+                 "{mops}",
+                 fig_options={
+                     'ylabel': 'MOPS/cpu-second',
+                     'title': 'Loop: {fixed_part_str}',
+                     'autoticks': False,
+                 },
+                 file_postfix="time")
 
         # L1 cache misses
-        plt.plot(
-            self,
-            "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
-            fig_options={
-                'ylabel': "L1 misses in %",
-                'title': "Loop l1 cache misses: {fixed_part_str}",
-                'autoticks': False,
-            },
-            file_postfix="l1misses")
+        plt.plot(self,
+                 "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+                 fig_options={
+                     'ylabel': "L1 misses in %",
+                     'title': "Loop l1 cache misses: {fixed_part_str}",
+                     'autoticks': False,
+                 },
+                 file_postfix="l1misses")
 
         # Speed Matrix
-        plt.write_best_doublearg_tex_table(
-            self,
-            "{mops}",
-            file_postfix="time.matrix")
+        plt.write_best_doublearg_tex_table(self,
+                                           "{mops}",
+                                           file_postfix="time.matrix")
 
-        plt.write_tex_table(
-            self,
-            [{
-                "label": "MOPS/s",
-                "expression": "{mops}",
-                "sort": ">"
-            }],
-            file_postfix="mops.table")
+        plt.write_tex_table(self, [{
+            "label": "MOPS/s",
+            "expression": "{mops}",
+            "sort": ">"
+        }],
+                            file_postfix="mops.table")
 
         plt.export_stats_to_csv(self, "task-clock")
         plt.export_stats_to_dataref(self, "task-clock")
 
         # pgfplot test
         plt.pgfplot(self,
-                    self.iterate_args(fixed={"maxsize": 1024}, args=self.results["args"]),
+                    self.iterate_args(fixed={"maxsize": 1024},
+                                      args=self.results["args"]),
                     "int(perm.threads)",
                     "{mops}",
                     xlabel="Threads",

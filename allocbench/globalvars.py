@@ -14,7 +14,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Global variables for allocbench
 
 VERBOSITY: Verbosity level -1: quiet, 0: status, 1: info, 2: stdout of subcommands, 3: debug info
@@ -33,13 +32,13 @@ RESDIR: Directory were the benchmark results are stored
 import inspect
 import os
 
-
 VERBOSITY = 0
 
 ALLOCATORS = {}
 
 # /.../allocbench/allocbench
-SRCDIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+SRCDIR = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 # /.../allocbench/allocbench/benchmarks
 BENCHSRCDIR = os.path.join(SRCDIR, "benchmarks")
@@ -58,8 +57,10 @@ ALLOCBUILDDIR = os.path.join(BUILDDIR, "allocators")
 
 RESDIR = None
 
-BENCHMARKS = [e[:-3] for e in os.listdir(os.path.join(ALLOCBENCHDIR, BENCHSRCDIR))
-              if e[-3:] == ".py" and e != "__init__.py"]
+BENCHMARKS = [
+    e[:-3] for e in os.listdir(os.path.join(ALLOCBENCHDIR, BENCHSRCDIR))
+    if e[-3:] == ".py" and e != "__init__.py"
+]
 
 SUMMARY_FILE_EXT = "svg"
 

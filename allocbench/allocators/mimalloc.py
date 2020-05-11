@@ -34,5 +34,6 @@ class Mimalloc(Allocator):
 
         super().__init__(name, **kwargs)
 
+
 # pylint: disable=invalid-name
 mimalloc = Mimalloc("mimalloc", version="v1.6.0")

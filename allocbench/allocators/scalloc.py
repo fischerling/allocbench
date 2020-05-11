@@ -42,7 +42,8 @@ class Scalloc(Allocator):
         super().__init__(name, **kwargs)
 
     def build(self):
-        with open("/proc/sys/vm/overcommit_memory", "r") as overcommit_memory_file:
+        with open("/proc/sys/vm/overcommit_memory",
+                  "r") as overcommit_memory_file:
             if overcommit_memory_file.read()[0] != "1":
                 raise AssertionError("""\
 vm.overcommit_memory not set

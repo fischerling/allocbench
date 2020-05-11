@@ -76,7 +76,7 @@ class BenchmarkRaxmlng(Benchmark):
                 os.remove(direntry)
 
     @staticmethod
-    def process_output(result, stdout, stderr, allocator, perm): # pylint: disable=too-many-arguments, unused-argument, no-self-use
+    def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument, no-self-use
         result["runtime"] = RUNTIME_RE.search(stdout).group("runtime")
 
     def summary(self):

@@ -16,7 +16,6 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-
 """Plot an interactive histogram from malt or chattymalloc output file"""
 
 import argparse
@@ -28,17 +27,29 @@ import sys
 
 import matplotlib.pyplot as plt
 
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+currentdir = os.path.dirname(
+    os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Plot histograms using a malt or chattymalloc output file")
-    parser.add_argument("input_file", help="path to malt or chattymalloc output file", type=str)
-    parser.add_argument("-e", "--export", help="export to csv", action="store_true")
-    parser.add_argument("-n", "--no-ascii", help="don't output a ascii histogram", action="store_true")
-    parser.add_argument("-i", "--interactive", help="open interactive matplotlib histogram plots",
+    parser = argparse.ArgumentParser(
+        description="Plot histograms using a malt or chattymalloc output file")
+    parser.add_argument("input_file",
+                        help="path to malt or chattymalloc output file",
+                        type=str)
+    parser.add_argument("-e",
+                        "--export",
+                        help="export to csv",
+                        action="store_true")
+    parser.add_argument("-n",
+                        "--no-ascii",
+                        help="don't output a ascii histogram",
+                        action="store_true")
+    parser.add_argument("-i",
+                        "--interactive",
+                        help="open interactive matplotlib histogram plots",
                         action="store_true")
     args = parser.parse_args()
 
@@ -87,7 +98,6 @@ def main():
             else:
                 sizes_bigger_32K.append(size * amount)
 
-
         plt.figure(0)
         plt.hist(sizes_smaller_4K, 200)
         plt.title("Sizes smaller than 4K")
@@ -104,6 +114,7 @@ def main():
         plt.hist(sizes, 200)
         plt.title("All sizes")
         plt.show()
+
 
 if __name__ == "__main__":
     main()
