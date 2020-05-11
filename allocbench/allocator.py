@@ -183,8 +183,7 @@ class Allocator:
 def collect_installed_allocators():
     """Collect allocators using installed system libraries"""
 
-    # TODO: add more allocators
-    maybe_allocators = ["tcmalloc", "jemalloc", "hoard"]
+    maybe_allocators = list(collect_available_allocators().keys())
 
     allocators = {
         "libc": {
