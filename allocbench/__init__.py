@@ -17,7 +17,7 @@
 """A framework linking allocators to applications"""
 
 __author__ = "Florian Fischer"
-__copyright__ = "Copyright 2018-2019 Florian Fischer"
+__copyright__ = "Copyright 2018-2020 Florian Fischer"
 __license__ = "GPL"
 __maintainer__ = __author__
 __email__ = "florian.fl.fischer@fau.de"

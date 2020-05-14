@@ -166,7 +166,7 @@ def print_error(*objects, sep=' ', end='\n', file=sys.stderr):
 
 def print_license_and_exit():
     """Print GPL info and Copyright before exit"""
-    print("Copyright (C) 2018-2019 Florian Fischer")
+    print("Copyright (C) 2018-2020 Florian Fischer")
     print(
         "License GPLv3: GNU GPL version 3 <http://gnu.org/licenses/gpl.html>")
     sys.exit(0)
