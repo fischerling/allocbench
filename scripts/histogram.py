@@ -20,20 +20,49 @@
 
 import argparse
 import importlib
-import inspect
 import json
 import os
 import sys
 
 import matplotlib.pyplot as plt
 
-currentdir = os.path.dirname(
-    os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(currentdir)
-sys.path.insert(0, parentdir)
+
+def plot_interactive(hist):
+    """Plot 4 histograms for different sized allocations using matplotlib"""
+    sizes = []
+    sizes_smaller_4k = []
+    sizes_smaller_32k = []
+    sizes_bigger_32k = []
+    for size, amount in hist.items():
+        size = int(size)
+        sizes.append(size * amount)
+        if size < 4096:
+            sizes_smaller_4k.append(size * amount)
+        if size < 32000:
+            sizes_smaller_32k.append(size * amount)
+        else:
+            sizes_bigger_32k.append(size * amount)
+
+    plt.figure(0)
+    plt.hist(sizes_smaller_4k, 200)
+    plt.title("Sizes smaller than 4K")
+
+    plt.figure(1)
+    plt.hist(sizes_smaller_32k, 200)
+    plt.title("Sizes smaller than 32K")
+
+    plt.figure(2)
+    plt.hist(sizes_bigger_32k, 200)
+    plt.title("Sizes bigger than 32K")
+
+    plt.figure(3)
+    plt.hist(sizes, 200)
+    plt.title("All sizes")
+    plt.show()
 
 
 def main():
+    """Plot an interactive histogram from malt or chattymalloc output file"""
     parser = argparse.ArgumentParser(
         description="Plot histograms using a malt or chattymalloc output file")
     parser.add_argument("input_file",
@@ -84,36 +113,7 @@ def main():
         chattyparser.plot_hist_ascii(f"{fpath}.hist.txt", hist, calls)
 
     if args.interactive:
-        sizes = []
-        sizes_smaller_4K = []
-        sizes_smaller_32K = []
-        sizes_bigger_32K = []
-        for size, amount in hist.items():
-            size = int(size)
-            sizes.append(size * amount)
-            if size < 4096:
-                sizes_smaller_4K.append(size * amount)
-            if size < 32000:
-                sizes_smaller_32K.append(size * amount)
-            else:
-                sizes_bigger_32K.append(size * amount)
-
-        plt.figure(0)
-        plt.hist(sizes_smaller_4K, 200)
-        plt.title("Sizes smaller than 4K")
-
-        plt.figure(1)
-        plt.hist(sizes_smaller_32K, 200)
-        plt.title("Sizes smaller than 32K")
-
-        plt.figure(2)
-        plt.hist(sizes_bigger_32K, 200)
-        plt.title("Sizes bigger than 32K")
-
-        plt.figure(3)
-        plt.hist(sizes, 200)
-        plt.title("All sizes")
-        plt.show()
+        plot_interactive(hist)
 
 
 if __name__ == "__main__":
