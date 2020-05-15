@@ -82,11 +82,6 @@ def load_facts(path=None):
         filename += ".json"
         with open(filename, "r") as facts_file:
             loaded_facts = json.load(facts_file)
-    elif os.path.exists(filename + ".save"):
-        import pickle
-        filename += ".save"
-        with open(filename, "rb") as facts_file:
-            loaded_facts = pickle.load(facts_file)
     else:
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
                                 filename)

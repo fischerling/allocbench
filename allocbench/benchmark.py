@@ -258,22 +258,13 @@ class Benchmark:
     def load(self, path=None):
         """Load benchmark results from file"""
         if not path:
-            filename = self.name
-        else:
-            if os.path.isdir(path):
-                filename = os.path.join(path, self.name)
-            else:
-                filename = os.path.splitext(path)
+            filename = f"{self.name}.json"
+        elif os.path.isdir(path):
+            filename = os.path.join(path, self.name)
 
-        if os.path.exists(filename + ".json"):
-            filename += ".json"
+        if os.path.exists(filename):
             with open(filename, "r") as load_file:
                 self.results = json.load(load_file)
-        elif os.path.exists(filename + ".save"):
-            import pickle  # pylint: disable=import-outside-toplevel
-            filename += ".save"
-            with open(filename, "rb") as load_file:
-                self.results = pickle.load(load_file)
         else:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
                                     filename)

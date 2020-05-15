@@ -21,7 +21,6 @@
 import argparse
 import json
 import os
-import pickle
 import sys
 
 import allocbench.facter as facter
@@ -29,12 +28,8 @@ from allocbench.util import print_license_and_exit
 
 
 def load_file(filename):
-    if filename.endswith("json"):
-        with open(filename, "r") as json_file:
-            return json.load(json_file)
-    else:
-        with open(filename, "rb") as pickle_file:
-            return pickle.load(pickle_file)
+    with open(filename, "r") as json_file:
+        return json.load(json_file)
 
 
 def main():

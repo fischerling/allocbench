@@ -131,7 +131,7 @@ loop = BenchmarkLoop()
 
 The class Benchmark defined in the allocbench/benchmark.py implements most
 common operations for a benchmark.
-It provides load and save functions using pythons pickle module,
+It provides load and save functions using pythons json module,
 helpers generating plots using matplotlib and most importantly a run method using
 the attributes `cmd` and `args` to execute your benchmark. To not enforce some
 output format hooks are available to parse the output of your benchmark yourself.
