@@ -26,6 +26,8 @@ from allocbench.util import run_cmd
 
 RUNTIME_RE = re.compile("Elapsed time: (?P<runtime>(\\d*.\\d*)) seconds")
 
+RAXMLNG_VERSION = "0.9.0"
+
 
 class BenchmarkRaxmlng(Benchmark):
     """RAxML-ng benchmark
@@ -39,16 +41,17 @@ class BenchmarkRaxmlng(Benchmark):
             f"raxml-ng --msa {self.build_dir}/data/prim.phy --model GTR+G"
             " --redo --threads 2 --seed 2")
 
+    def prepare(self):
+        """Build raxml-ng and download test data if necessary"""
         if os.path.exists(self.build_dir):
             return
 
         raxmlng_sources = GitArtifact("raxml-ng",
                                       "https://github.com/amkozlov/raxml-ng")
-        raxmlng_version = "0.9.0"
         raxmlng_dir = os.path.join(self.build_dir, "raxml-ng-git")
         raxmlng_builddir = os.path.join(raxmlng_dir, "build")
-        self.results["facts"]["versions"]["raxml-ng"] = raxmlng_version
-        raxmlng_sources.provide(raxmlng_version, raxmlng_dir)
+        self.results["facts"]["versions"]["raxml-ng"] = RAXMLNG_VERSION
+        raxmlng_sources.provide(RAXMLNG_VERSION, raxmlng_dir)
 
         # Create builddir
         os.makedirs(raxmlng_builddir, exist_ok=True)

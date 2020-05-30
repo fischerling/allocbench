@@ -44,6 +44,9 @@ class BenchmarkHTTPD(Benchmark):
 
         super().__init__(name)
 
+    def prepare(self):
+        """Retrieve nginx and ab versions"""
+        super().prepare()
         self.results["facts"]["versions"]["nginx"] = facter.exe_version(
             "nginx", "-v")
         self.results["facts"]["versions"]["ab"] = facter.exe_version(

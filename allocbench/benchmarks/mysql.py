@@ -119,6 +119,14 @@ class BenchmarkMYSQL(Benchmark):
 
         super().__init__(name)
 
+    def reset_preparations(self):
+        """Reset self.build_dir if preparing fails"""
+        if os.path.exists(self.build_dir):
+            print_warn("Reset mysql test directory")
+            shutil.rmtree(self.build_dir, ignore_errors=True)
+
+    def prepare(self):
+        """Setup mysql database containing random test data"""
         self.results["facts"]["runtime [s]"] = RUN_TIME
 
         # save mysqld and sysbench versions
@@ -177,12 +185,6 @@ class BenchmarkMYSQL(Benchmark):
                 raise
 
             self.shutdown_servers()
-
-    def reset_preparations(self):
-        """Reset self.build_dir if preparing fails"""
-        if os.path.exists(self.build_dir):
-            print_warn("Reset mysql test directory")
-            shutil.rmtree(self.build_dir, ignore_errors=True)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument

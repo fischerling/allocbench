@@ -181,14 +181,13 @@ def main():
             print_error(f"Skipping {bench}! Loading failed.")
             continue
 
-            try:
-                print_status("Preparing", bench, "...")
-                bench = member()
-                break
-            except Exception:
-                print_error(traceback.format_exc())
-                print_error(f"Skipping {bench}! Preparing failed.")
-                continue
+        try:
+            print_status("Preparing", bench, "...")
+            bench.prepare()
+        except Exception:
+            print_error(traceback.format_exc())
+            print_error(f"Skipping {bench}! Preparing failed.")
+            continue
 
         if args.analyze:
             analyze_bench(bench)

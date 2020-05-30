@@ -31,6 +31,8 @@ from allocbench.util import run_cmd
 
 REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
 
+REDIS_VERSION = "5.0.5"
+
 
 class BenchmarkRedis(Benchmark):
     """Definition of the redis benchmark"""
@@ -47,14 +49,15 @@ class BenchmarkRedis(Benchmark):
 
         super().__init__(name)
 
-        redis_version = "5.0.5"
-        self.results["facts"]["versions"]["redis"] = redis_version
+    def prepare(self):
+        """Build redis and memtier if necessary"""
+        self.results["facts"]["versions"]["redis"] = REDIS_VERSION
         redis_artifact = ArchiveArtifact(
             "redis",
-            f"http://download.redis.io/releases/redis-{redis_version}.tar.gz",
+            f"http://download.redis.io/releases/redis-{REDIS_VERSION}.tar.gz",
             "tar", "71e38ae09ac70012b5bc326522b976bcb8e269d6")
 
-        redis_dir = os.path.join(self.build_dir, f"redis-{redis_version}")
+        redis_dir = os.path.join(self.build_dir, f"redis-{REDIS_VERSION}")
 
         redis_artifact.provide(self.build_dir)
 

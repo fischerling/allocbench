@@ -131,12 +131,16 @@ class BenchmarkDJTrace(Benchmark):
         self.requirements = ["trace_run"]
         super().__init__(name)
 
-        workloads = ArchiveArtifact(
+        self.workloads = ArchiveArtifact(
             "dj_workloads",
             "https://www4.cs.fau.de/~flow/allocbench/dj_workloads.tar.xz",
             "tar", "c9bc499eeba8023bca28a755fffbaf9200a335ad")
 
-        self.workload_dir = workloads.provide()
+        self.workload_dir = None
+
+    def prepare(self):
+        """Download and extract workload files"""
+        self.workload_dir = self.workloads.provide()
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument

@@ -210,8 +210,6 @@ class Benchmark:
 
         if not hasattr(self, "requirements"):
             self.requirements = []
-        else:
-            self.check_requirements()
 
         print_debug("Creating benchmark", self.name)
         print_debug("Cmd:", self.cmd)
@@ -220,6 +218,9 @@ class Benchmark:
         print_debug("Requirements:", self.requirements)
         print_debug("Results dictionary:", self.results)
         print_debug("Results directory:", self.result_dir)
+
+    def prepare(self):
+        self.check_requirements()
 
     def save(self, path=None):
         """Save benchmark results to a json file"""

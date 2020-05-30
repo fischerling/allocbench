@@ -27,6 +27,9 @@ from allocbench.benchmark import Benchmark
 import allocbench.plots as plt
 from allocbench.util import run_cmd
 
+KEYDB_VERSION = "v5.3.1"
+MEMTIER_VERSION = "1.2.17"
+
 
 class BenchmarkKeyDB(Benchmark):
     """Definition of the keydb benchmark"""
@@ -48,8 +51,9 @@ class BenchmarkKeyDB(Benchmark):
 
         super().__init__(name)
 
-        keydb_version = "v5.3.1"
-        self.results["facts"]["versions"]["keydb"] = keydb_version
+    def prepare(self):
+        """Build keydb and memtier if necessary"""
+        self.results["facts"]["versions"]["keydb"] = KEYDB_VERSION
         keydb_dir = os.path.join(self.build_dir, "keydb")
 
         if not os.path.exists(os.path.join(self.build_dir, "keydb-server")):
@@ -59,7 +63,7 @@ class BenchmarkKeyDB(Benchmark):
             os.makedirs(self.build_dir, exist_ok=True)
 
             # checkout sources
-            keydb_artifact.provide(keydb_version, keydb_dir)
+            keydb_artifact.provide(KEYDB_VERSION, keydb_dir)
 
             # building keyDB
             run_cmd(["make", "-C", keydb_dir, "MALLOC=libc"])
@@ -71,8 +75,7 @@ class BenchmarkKeyDB(Benchmark):
                 if not os.path.exists(dest):
                     os.link(src, dest)
 
-        memtier_version = "1.2.17"
-        self.results["facts"]["versions"]["memtier"] = memtier_version
+        self.results["facts"]["versions"]["memtier"] = MEMTIER_VERSION
         memtier_dir = os.path.join(self.build_dir, "memtier")
 
         if not os.path.exists(os.path.join(self.build_dir,
@@ -80,7 +83,7 @@ class BenchmarkKeyDB(Benchmark):
             memtier = GitArtifact(
                 "memtier", "https://github.com/RedisLabs/memtier_benchmark")
 
-            memtier.provide(memtier_version, memtier_dir)
+            memtier.provide(MEMTIER_VERSION, memtier_dir)
 
             # building memtier
             run_cmd(["autoreconf", "-ivf"], cwd=memtier_dir)

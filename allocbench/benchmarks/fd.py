@@ -22,6 +22,12 @@ from allocbench.artifact import ArchiveArtifact, GitArtifact
 from allocbench.benchmark import Benchmark
 import allocbench.plots as plt
 
+LINUX_VERSION = 'v5.3'
+FD_VERSION = 'v7.4.0'
+
+FD_URL = ("https://github.com/sharkdp/fd/releases/latest/download/"
+          f"fd-{FD_VERSION}-x86_64-unknown-linux-gnu.tar.gz")
+
 
 class BenchmarkFd(Benchmark):
     """fd benchmark
@@ -31,33 +37,30 @@ class BenchmarkFd(Benchmark):
         self.cmd = "fd -HI -e c '.*[0-9].*' {linux_files}"
         super().__init__(name)
 
-        linux = GitArtifact(
+        self.linux_artifact = GitArtifact(
             "linux",
             "git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git")
-        linux_version = "v5.3"
-        self.linux_files = linux.provide(linux_version)
+        self.linux_files = None
+
+        self.results["facts"]["versions"]["fd"] = FD_VERSION
+        self.fd_artifact = ArchiveArtifact(
+            "fd", FD_URL, "tar", "a5d8e7c8484449aa324a46abfdfaf026d7de77ee")
+
+    def prepare(self):
+        """Checkout the linux sources and download fd binary"""
+        self.linux_files = self.linux_artifact.provide(LINUX_VERSION)
 
         if os.path.exists(self.build_dir):
             return
 
-        fd_version = "v7.4.0"
-        self.results["facts"]["versions"]["fd"] = fd_version
-        fd_url = ("https://github.com/sharkdp/fd/releases/latest/download/"
-                  f"fd-{fd_version}-x86_64-unknown-linux-gnu.tar.gz")
-
-        fd_artifact = ArchiveArtifact(
-            "fd", fd_url, "tar", "a5d8e7c8484449aa324a46abfdfaf026d7de77ee")
-
         fd_dir = os.path.join(self.build_dir, "fd_sources")
-        fd_artifact.provide(fd_dir)
+        self.fd_artifact.provide(fd_dir)
 
-        # create symlinks
-        for exe in ["fd"]:
-            src = os.path.join(fd_dir,
-                               f"fd-{fd_version}-x86_64-unknown-linux-gnu",
-                               exe)
-            dest = os.path.join(self.build_dir, exe)
-            os.link(src, dest)
+        # create symlink
+        src = os.path.join(fd_dir, f"fd-{FD_VERSION}-x86_64-unknown-linux-gnu",
+                           'fd')
+        dest = os.path.join(self.build_dir, 'fd')
+        os.link(src, dest)
 
     def summary(self):
         plt.plot(self,

@@ -228,17 +228,24 @@ class BenchmarkLld(Benchmark):
         self.measure_cmd = "perf stat -x, -d time -f %M,KB,VmHWM"
         self.measure_cmd_csv = True
         self.requirements = ["ld.lld"]
+
+        self.tests_artifact = ArchiveArtifact(
+            "lld-speed-test",
+            "https://s3-us-west-2.amazonaws.com/linker-tests/lld-speed-test.tar.xz",
+            "tar", "2d449a11109c7363f67fd45513b42270f5ba2a92")
+        self.test_dir = None
+
         super().__init__(name)
+
+    def prepare(self):
+        """Download and extract lld test files"""
+        super().prepare()
 
         # save lld version
         self.results["facts"]["versions"]["lld"] = facter.exe_version(
             "ld.lld", "-v")
 
-        tests = ArchiveArtifact(
-            "lld-speed-test",
-            "https://s3-us-west-2.amazonaws.com/linker-tests/lld-speed-test.tar.xz",
-            "tar", "2d449a11109c7363f67fd45513b42270f5ba2a92")
-        self.test_dir = tests.provide()
+        self.test_dir = self.tests_artifact.provide()
 
     def cleanup(self):
         for perm in self.iterate_args():
