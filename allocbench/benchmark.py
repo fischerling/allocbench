@@ -33,7 +33,7 @@ import traceback
 import numpy as np
 
 import allocbench.facter as facter
-import allocbench.globalvars as globalvars
+import allocbench.globalvars
 from allocbench.util import print_status, print_error, print_warn
 from allocbench.util import print_info0, print_info, print_debug
 from allocbench.util import find_cmd, prefix_cmd_with_abspath, run_cmd
@@ -50,7 +50,6 @@ class Benchmark:
     measure_cmd_csv = False
     measure_cmd = "perf stat -x, -d"
     servers = []
-    allocators = copy.deepcopy(globalvars.ALLOCATORS)
 
     @staticmethod
     def terminate_subprocess(proc, timeout=5):
@@ -176,14 +175,17 @@ class Benchmark:
         """Initialize a benchmark with default members if they aren't set already"""
         self.name = name
 
+        self.allocators = copy.deepcopy(allocbench.globalvars.ALLOCATORS)
+
         # Set result_dir
         if not hasattr(self, "result_dir"):
             self.result_dir = os.path.abspath(
-                os.path.join(globalvars.RESDIR or "", self.name))
+                os.path.join(allocbench.globalvars.RESDIR or "", self.name))
         # Set build_dir
         if not hasattr(self, "build_dir"):
             self.build_dir = os.path.abspath(
-                os.path.join(globalvars.BUILDDIR, "benchmarks", self.name))
+                os.path.join(allocbench.globalvars.BUILDDIR, "benchmarks",
+                             self.name))
 
         self.Perm = namedtuple("Perm", self.args.keys())
 
@@ -293,7 +295,7 @@ class Benchmark:
     def check_requirements(self):
         """raise an error if a requirement is not found"""
         os.environ[
-            "PATH"] += f"{os.pathsep}{globalvars.BUILDDIR}/benchmarks/{self.name}"
+            "PATH"] += f"{os.pathsep}{allocbench.globalvars.BUILDDIR}/benchmarks/{self.name}"
 
         for requirement in self.requirements:
             exe = find_cmd(requirement)
@@ -367,17 +369,17 @@ class Benchmark:
                     **substitutions).split()
                 argv.extend(prefix_argv)
                 # add exec wrapper so that a possible prefixed loader can execute shell scripts
-                argv.append(f"{globalvars.BUILDDIR}/exec")
+                argv.append(f"{allocbench.globalvars.BUILDDIR}/exec")
 
             if self.measure_cmd != "":
                 measure_argv = self.measure_cmd.format(**substitutions)
                 measure_argv = prefix_cmd_with_abspath(measure_argv).split()
                 argv.extend(measure_argv)
 
-            argv.append(f"{globalvars.BUILDDIR}/exec")
+            argv.append(f"{allocbench.globalvars.BUILDDIR}/exec")
 
-            ld_preload = f"{globalvars.BUILDDIR}/print_status_on_exit.so"
-            ld_preload += f" {globalvars.BUILDDIR}/sig_handlers.so"
+            ld_preload = f"{allocbench.globalvars.BUILDDIR}/print_status_on_exit.so"
+            ld_preload += f" {allocbench.globalvars.BUILDDIR}/sig_handlers.so"
 
             if "LD_PRELOAD" in env or alloc.get("LD_PRELOAD", ""):
                 ld_preload += f" {alloc.get('LD_PRELOAD', '')}"
@@ -412,7 +414,7 @@ class Benchmark:
         substitutions = {
             "alloc": alloc_name,
             "perm": alloc_name,
-            "builddir": globalvars.BUILDDIR
+            "builddir": allocbench.globalvars.BUILDDIR
         }
 
         substitutions.update(self.__dict__)
@@ -510,7 +512,7 @@ class Benchmark:
 
         # add benchmark dir to PATH
         os.environ[
-            "PATH"] += f"{os.pathsep}{globalvars.BUILDDIR}/benchmarks/{self.name}"
+            "PATH"] += f"{os.pathsep}{allocbench.globalvars.BUILDDIR}/benchmarks/{self.name}"
 
         # save one valid result to expand invalid results
         valid_result = {}
@@ -663,7 +665,8 @@ class Benchmark:
 
         # reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(
-            f"{os.pathsep}{globalvars.BUILDDIR}/benchmarks/{self.name}", "")
+            f"{os.pathsep}{allocbench.globalvars.BUILDDIR}/benchmarks/{self.name}",
+            "")
 
         # expand invalid results
         if valid_result != {}:
