@@ -249,19 +249,19 @@ def _plot(bench,
         width = 1 / (n_allocators + 1)
         plot_options['width'] = width
     for i, allocator in enumerate(allocators):
-        y_data = _get_y_data(bench,
-                             y_expression,
-                             allocator,
-                             perms,
-                             stat='mean',
-                             scale=scale)
+        y_data = get_y_data(bench,
+                            y_expression,
+                            allocator,
+                            perms,
+                            stat='mean',
+                            scale=scale)
 
         if plot_options.get('yerr', False):
-            plot_options['yerr'] = _get_y_data(bench,
-                                               y_expression,
-                                               allocator,
-                                               perms,
-                                               stat='std')
+            plot_options['yerr'] = get_y_data(bench,
+                                              y_expression,
+                                              allocator,
+                                              perms,
+                                              stat='std')
         try:
             plot_func = getattr(plt, plot_type)
         except AttributeError:
@@ -799,12 +799,12 @@ def pgfplot(bench,
 
         for perm in perms:
             xval = _eval_with_stat(bench, xexpr, alloc_name, perm, "mean")
-            yval = _get_y_data(bench,
-                               yexpr,
-                               alloc_name,
-                               perm,
-                               "mean",
-                               scale=scale)
+            yval = get_y_data(bench,
+                              yexpr,
+                              alloc_name,
+                              perm,
+                              "mean",
+                              scale=scale)
             error = ""
             if error_bars:
                 error = f" {_eval_with_stat(bench, yexpr, alloc_name, perm, 'std')}"
