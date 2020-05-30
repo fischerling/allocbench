@@ -19,12 +19,12 @@
 """Summarize the results of an allocbench run"""
 
 import argparse
-import importlib
 import os
 import sys
 
 import allocbench.facter as facter
 import allocbench.globalvars
+import allocbench.benchmark
 from allocbench.util import print_status, print_debug, print_error
 from allocbench.util import print_license_and_exit
 
@@ -72,7 +72,7 @@ def bench_sum(bench, exclude_allocators=None, sets=False):
     new_allocs = {
         an: a
         for an, a in bench.results["allocators"].items()
-        if an not in exclude_allocators or {}
+        if an not in (exclude_allocators or {})
     }
     bench.results["allocators"] = new_allocs
 
@@ -127,14 +127,11 @@ def summarize(benchmarks=None,
         if exclude_benchmarks and benchmark in exclude_benchmarks:
             continue
 
-        bench_module = importlib.import_module(
-            f"allocbench.benchmarks.{benchmark}")
-
-        if not hasattr(bench_module, benchmark):
-            print_error(f"{benchmark} has no member {benchmark}")
-            print_error(f"Skipping {benchmark}.")
-
-        bench = getattr(bench_module, benchmark, sets=sets)
+        try:
+            bench = allocbench.benchmark.get_benchmark_object(benchmark)
+        except Exception:  #pylint: disable=broad-except
+            print_error(f"Skipping {benchmark}. Loading failed")
+            continue
 
         try:
             bench.load()
@@ -143,7 +140,7 @@ def summarize(benchmarks=None,
 
         print_status(f"Summarizing {bench.name} ...")
         try:
-            bench_sum(bench, exclude_allocators=exclude_allocators)
+            bench_sum(bench, exclude_allocators=exclude_allocators, sets=sets)
         except FileExistsError as err:
             print(err)
 

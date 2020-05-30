@@ -21,6 +21,7 @@ from collections import namedtuple
 import errno
 import copy
 import csv
+import importlib
 import itertools
 import json
 import multiprocessing
@@ -726,3 +727,16 @@ class Benchmark:
                     stats["outliers"][key] = outliers
 
                 self.results["stats"][alloc][perm] = stats
+
+
+def get_benchmark_object(benchmark_name: str) -> Benchmark:
+    """Find the first Benchmark class in allocbench.benchmarks.{benchmark_name} and return an instance"""
+    bench_module = importlib.import_module(
+        f"allocbench.benchmarks.{benchmark_name}")
+    # find Benchmark class
+    for member in bench_module.__dict__.values():
+        if (not isinstance(member, type) or member is Benchmark
+                or not issubclass(member, Benchmark)):
+            continue
+
+        return member()

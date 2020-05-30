@@ -21,13 +21,13 @@
 import argparse
 import atexit
 import datetime
-import importlib
 import os
 import sys
 import traceback
 
 from allocbench.allocator import collect_allocators
 from allocbench.analyse import analyze_bench, analyze_allocators
+from allocbench.benchmark import get_benchmark_object
 import allocbench.facter as facter
 import allocbench.globalvars
 from allocbench.util import run_cmd
@@ -173,15 +173,13 @@ def main():
         if args.exclude_benchmarks and bench in args.exclude_benchmarks:
             continue
 
-        bench_module = importlib.import_module(
-            f"allocbench.benchmarks.{bench}")
-
-        # find Benchmark class
-        for member in bench_module.__dict__.values():
-            if (not isinstance(member, type)
-                    or member is allocbench.benchmark.Benchmark
-                    or not issubclass(member, allocbench.benchmark.Benchmark)):
-                continue
+        try:
+            print_status("Loading", bench, "...")
+            bench = get_benchmark_object(bench)
+        except Exception:
+            print_error(traceback.format_exc())
+            print_error(f"Skipping {bench}! Loading failed.")
+            continue
 
             try:
                 print_status("Preparing", bench, "...")
