@@ -239,7 +239,7 @@ def read_allocators_collection_file(alloc_path):
 
     exec_globals = {"__file__": alloc_path}
     with open(alloc_path, "r") as alloc_file:
-        exec(compile(alloc_file.read(), alloc_path, 'exec'), exec_globals)
+        exec(compile(alloc_file.read(), alloc_path, 'exec'), exec_globals)  #pylint: disable=exec-used
 
     if "allocators" in exec_globals:
         return {a.name: a.build() for a in exec_globals["allocators"]}

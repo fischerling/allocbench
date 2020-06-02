@@ -534,7 +534,7 @@ class Benchmark:
                     self.start_servers(alloc_name=alloc_name,
                                        alloc=alloc,
                                        env=os.environ)
-                except Exception as err:
+                except Exception as err:  #pylint: disable=broad-except
                     print_debug(traceback.format_exc())
                     print_error(err)
                     print_error("Skipping", alloc_name)
@@ -542,9 +542,9 @@ class Benchmark:
 
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
-                    self.preallocator_hook(
+                    self.preallocator_hook(  # pylint: disable=no-member
                         (alloc_name, alloc),
-                        run,  # pylint: disable=no-member
+                        run,
                         os.environ)
 
                 # Run benchmark for alloc
@@ -633,8 +633,8 @@ class Benchmark:
                                 Benchmark.parse_and_save_perf_output(
                                     result, res.stderr, alloc_name, perm)
 
-                        if hasattr(self, "process_output"):  # pylint: disable=no-member
-                            self.process_output(result, res.stdout, res.stderr,
+                        if hasattr(self, "process_output"):
+                            self.process_output(result, res.stdout, res.stderr,  # pylint: disable=no-member
                                                 alloc_name, perm)
 
                         # save a valid result so we can expand invalid ones

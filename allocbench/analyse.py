@@ -57,8 +57,7 @@ def analyze_bench(bench):
 
     try:
         bench.run(runs=1)
-    # TODO: Introduce BenchmarkException
-    except Exception:
+    except Exception:  #pylint: disable=broad-except
         print_debug(traceback.format_exc())
         print_error("Skipping analysis of", bench, "!")
 

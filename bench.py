@@ -176,7 +176,7 @@ def main():
         try:
             print_status("Loading", bench, "...")
             bench = get_benchmark_object(bench)
-        except Exception:
+        except Exception:  #pylint: disable=broad-except
             print_error(traceback.format_exc())
             print_error(f"Skipping {bench}! Loading failed.")
             continue
@@ -184,7 +184,7 @@ def main():
         try:
             print_status("Preparing", bench, "...")
             bench.prepare()
-        except Exception:
+        except Exception:  #pylint: disable=broad-except
             print_error(traceback.format_exc())
             print_error(f"Skipping {bench}! Preparing failed.")
             continue
@@ -201,7 +201,7 @@ def main():
             bench.results['facts']['start-time'] = start_time.isoformat()
             try:
                 bench.run(runs=args.runs)
-            except Exception:
+            except Exception:  #pylint: disable=broad-except
                 # Reset cwd
                 os.chdir(cwd)
                 print_error(traceback.format_exc())
