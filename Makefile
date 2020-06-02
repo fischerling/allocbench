@@ -48,7 +48,7 @@ clean:
 	rm -rf $(OBJDIR)
 
 check-pylint:
-	pylint -j 0 $(PYTHONFILES) || ./tools/check-pylint
+	pylint --rcfile=.pylint.rc -j 0 $(PYTHONFILES) || ./tools/check-pylint
 
 format:
 	yapf -i $(PYTHONFILES)
