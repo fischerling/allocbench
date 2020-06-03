@@ -65,27 +65,27 @@ class BenchmarkHTTPD(Benchmark):
                  fig_options={
                      'xlabel': "threads",
                      'ylabel': "requests/s",
-                     'title': "{perm.site}: requests/s",
+                     'title': "{fixed_part_str}: requests/s",
                      'autoticks': False,
                  },
                  file_postfix="requests")
 
         plt.plot(self,
-                 "{nginx_vmhwm}",
+                 "{nginx_VmHWM}",
                  fig_options={
                      'xlabel': "threads",
                      'ylabel': "VmHWM in KB",
-                     'title': "{perm.site}: nginx memory usage",
+                     'title': "{fixed_part_str}: nginx memory usage",
                      'autoticks': False,
                  },
                  file_postfix="httpd_vmhwm")
 
         plt.plot(self,
-                 "{php-fpm_vmhwm}",
+                 "{php-fpm_VmHWM}",
                  fig_options={
                      'xlabel': "threads",
                      'ylabel': "VmHWM in KB",
-                     'title': "{perm.site}: php-fpm memory usage",
+                     'title': "{fixed_part_str}: php-fpm memory usage",
                      'autoticks': False,
                  },
                  file_postfix="php-fpm_vmhwm")
