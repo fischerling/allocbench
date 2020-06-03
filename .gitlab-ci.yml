@@ -1,5 +1,14 @@
 image: "debian:buster-backports"
 
+before_script:
+  - apt update -qq
+  - >
+    apt install -y --no-install-recommends
+    gcc
+    make
+    pipenv
+  - pipenv install --dev
+
 allocbench:
   script:
-    make check
+    pipenv run make check
