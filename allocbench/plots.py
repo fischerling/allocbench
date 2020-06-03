@@ -470,10 +470,14 @@ def export_stats_to_csv(bench, datapoint, path=None):
             row.append(alloc)
             row += list(perm._asdict().values())
             row += [
-                stats[alloc][perm][stat][datapoint]
+                stats[alloc][perm][stat].get(datapoint, nan)
                 for stat in stats[alloc][perm]
             ]
-            row[-1] = (",".join([str(x) for x in row[-1]]))
+            if row[-1] is not nan:
+                row[-1] = (",".join([str(x) for x in row[-1]]))
+            else:
+                row[-1] = ""
+
             rows[alloc][perm] = row
 
     # calc widths
