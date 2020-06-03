@@ -543,9 +543,7 @@ class Benchmark:
                 # Preallocator hook
                 if hasattr(self, "preallocator_hook"):
                     self.preallocator_hook(  # pylint: disable=no-member
-                        (alloc_name, alloc),
-                        run,
-                        os.environ)
+                        (alloc_name, alloc), run, os.environ)
 
                 # Run benchmark for alloc
                 for perm in self.iterate_args():
@@ -634,8 +632,9 @@ class Benchmark:
                                     result, res.stderr, alloc_name, perm)
 
                         if hasattr(self, "process_output"):
-                            self.process_output(result, res.stdout, res.stderr,  # pylint: disable=no-member
-                                                alloc_name, perm)
+                            self.process_output(  # pylint: disable=no-member
+                                result, res.stdout, res.stderr, alloc_name,
+                                perm)
 
                         # save a valid result so we can expand invalid ones
                         if valid_result is None:
