@@ -132,10 +132,10 @@ class Benchmark:
 
         for line in status_content.splitlines():
             key, value = line.split(':')
-            value = value.replace("kB", "")
-            value = value.strip()
 
             if key in keys:
+                value = value.replace("kB", "")
+                value = value.strip()
                 result[f"{key_prefix}{key}"] = value
 
     @staticmethod
@@ -151,7 +151,10 @@ class Benchmark:
             result[f"{server_name}_status"] = server_status
 
             Benchmark.save_values_from_proc_status(
-                result, keys, status_content=server_status)
+                result,
+                keys,
+                status_content=server_status,
+                key_prefix=f"{server_name}_")
 
     @staticmethod
     def parse_and_save_perf_output(result, output, alloc_name, perm):
