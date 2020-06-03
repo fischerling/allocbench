@@ -1,5 +1,5 @@
 image: "debian:buster-backports"
 
 allocbench:
-	script:
-		make check
+  script:
+    make check
