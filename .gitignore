@@ -2,6 +2,7 @@ build*
 cache*
 results/*
 *__pycache__*
+.mypy_cache
 .gdb_history
 status
 tags
