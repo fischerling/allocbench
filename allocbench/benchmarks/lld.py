@@ -14,6 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
+# pylint: disable=line-too-long
 """llvm-lld speed benchmark
 
 This benchmark runs the lld speed benchmark provided by the llvm project.
@@ -196,6 +197,7 @@ The raw speed of the allocator likewise is not a huge factor because of the smal
 small portion of the total execution time (around 1% except scylla and linux).
 So data locality and scalability should be the most important factor for those workloads.
 """
+# pylint: enable=line-too-long
 
 import os
 
@@ -248,6 +250,7 @@ class BenchmarkLld(Benchmark):
         self.test_dir = self.tests_artifact.provide()
 
     def cleanup(self):
+        """Delete linked executables"""
         for perm in self.iterate_args():
             a_out = os.path.join(self.test_dir, "lld-speed-test", perm.test,
                                  "a.out")
@@ -255,18 +258,18 @@ class BenchmarkLld(Benchmark):
                 os.remove(a_out)
 
     def summary(self):
+        """Create time and memory usage plots"""
         args = self.results["args"]
         allocators = self.results["allocators"]
-        stats = self.results["stats"]
 
         for perm in self.iterate_args(args=args):
             for i, allocator in enumerate(allocators):
 
                 plt.bar([i],
-                        allocbench.plots.get_y_data(self, "task-clock",
+                        allocbench.plots.get_y_data(self, "{task-clock}",
                                                     allocator, perm),
                         yerr=allocbench.plots.get_y_data(self,
-                                                         "task-clock",
+                                                         "{task-clock}",
                                                          allocator,
                                                          perm,
                                                          stat="std"),
@@ -279,17 +282,17 @@ class BenchmarkLld(Benchmark):
             plt.savefig(f"{self.name}.{perm.test}.runtime.{SUMMARY_FILE_EXT}")
             plt.clf()
 
-            for i, alloc in enumerate(allocators):
+            for i, allocator in enumerate(allocators):
                 plt.bar([i],
-                        allocbench.plots.get_y_data(self, "VmHWH", allocator,
+                        allocbench.plots.get_y_data(self, "{VmHWH}", allocator,
                                                     perm),
                         yerr=allocbench.plots.get_y_data(self,
-                                                         "VmHWM",
+                                                         "{VmHWM}",
                                                          allocator,
                                                          perm,
                                                          stat="std"),
-                        label=alloc,
-                        color=allocators[alloc]["color"])
+                        label=allocator,
+                        color=allocators[allocator]["color"])
 
             plt.legend(loc="best")
             plt.ylabel("Max RSS in MB")

@@ -22,6 +22,7 @@ import itertools
 import operator
 import os
 import traceback
+from typing import List
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -138,9 +139,18 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
         return nan
 
 
-def get_y_data(bench, expression, allocator, perms, stat="mean", scale=None):
+def get_y_data(bench,
+               expression,
+               allocator,
+               perms,
+               stat="mean",
+               scale=None) -> List[float]:
     """Helper to get the y data of an allocator for given permutations"""
     y_data = []
+
+    if isinstance(perms, bench.Perm):
+        perms = [perms]
+
     for perm in perms:
         if scale:
             if scale == allocator:
@@ -413,6 +423,7 @@ def plot(bench,
 
 
 def print_common_facts(comment_symbol="", file=None):
+    """Print the facts about the used system common to all benchmarks"""
     print(comment_symbol, "Common facts:", file=file)
     for fact, value in facter.FACTS.items():
         print(f"{comment_symbol}  {fact}: {value}", file=file)
@@ -537,6 +548,7 @@ def write_best_doublearg_tex_table(bench,
                                    sort=">",
                                    file_postfix="",
                                    sumdir=""):
+    """create a colored standalone tex table"""
     args = bench.results["args"]
     keys = list(args.keys())
     allocators = bench.results["allocators"]
@@ -762,6 +774,7 @@ def pgfplot(bench,
             scale=None,
             error_bars=True,
             colors=True):
+    """Create a pgf plot for a given expression"""
 
     allocators = bench.results["allocators"]
     perms = list(perms)
@@ -816,6 +829,7 @@ def pgfplot(bench,
 
         plots += "};\n"
 
+    #pylint: disable=line-too-long
     tex =\
 f"""\\documentclass{{standalone}}
 \\usepackage{{pgfplots}}
@@ -837,6 +851,7 @@ f"""\\documentclass{{standalone}}
 \\end{{axis}}
 \\end{{tikzpicture}}
 \\end{{document}}"""
+    #pylint: enable=line-too-long
 
     with open(os.path.join(sumdir, f"{bench.name}.{postfix}.tex"),
               "w") as plot_file:
