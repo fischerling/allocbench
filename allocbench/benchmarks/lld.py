@@ -263,8 +263,13 @@ class BenchmarkLld(Benchmark):
             for i, allocator in enumerate(allocators):
 
                 plt.bar([i],
-                        stats[allocator][perm]["mean"]["task-clock"],
-                        yerr=stats[allocator][perm]["std"]["task-clock"],
+                        allocbench.plots.get_y_data(self, "task-clock",
+                                                    allocator, perm),
+                        yerr=allocbench.plots.get_y_data(self,
+                                                         "task-clock",
+                                                         allocator,
+                                                         perm,
+                                                         stat="std"),
                         label=allocator,
                         color=allocators[allocator]["color"])
 
@@ -276,8 +281,13 @@ class BenchmarkLld(Benchmark):
 
             for i, alloc in enumerate(allocators):
                 plt.bar([i],
-                        stats[alloc][perm]["mean"]["VmHWM"] / 1000,
-                        yerr=stats[alloc][perm]["std"]["VmHWM"] / 1000,
+                        allocbench.plots.get_y_data(self, "VmHWH", allocator,
+                                                    perm),
+                        yerr=allocbench.plots.get_y_data(self,
+                                                         "VmHWM",
+                                                         allocator,
+                                                         perm,
+                                                         stat="std"),
                         label=alloc,
                         color=allocators[alloc]["color"])
 
