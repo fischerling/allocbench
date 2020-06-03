@@ -54,7 +54,7 @@ format:
 	yapf -i $(PYTHONFILES)
 
 check-format:
-	yapf -q -d $(PYTHONFILES)
+	yapf -d $(PYTHONFILES)
 
 tags:
 	ctags -R --exclude="build/*" --exclude="cache/*" --exclude="doc/*" --exclude="results/*"
