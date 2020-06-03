@@ -24,7 +24,7 @@ memory in speeds favor. Memory is mmapped per thread and never freed.
 from allocbench.artifact import GitArtifact
 from allocbench.allocator import Allocator
 
-VERSION = "bb3d360a36aa6798619ec8e1d5eca69d45eacb75"
+VERSION = "afeeeab47fd5f25f9f84f8e521799017d9293941"
 
 
 class Speedymalloc(Allocator):
@@ -43,7 +43,7 @@ class Speedymalloc(Allocator):
             f"meson {{srcdir}} {{dir}} {configuration}", "ninja -C {dir}"
         ]
 
-        self.ld_preload = "{dir}/libspeedymalloc.so"
+        self.ld_preload = "{dir}/src/libspeedymalloc.so"
         super().__init__(name, **kwargs)
 
 
