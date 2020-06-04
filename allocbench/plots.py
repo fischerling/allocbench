@@ -390,8 +390,9 @@ def plot(bench,
                 [f'{k}={v}' for k, v in fixed_part.items()])
             fig_label = f'{bench.name}.{fixed_part_str}.{file_postfix}'
 
-            cur_plot_options = _create_plot_options(plot_type, **plot_options
-                                                    or {})
+            karg_plot_option = plot_options or {}
+            cur_plot_options = _create_plot_options(plot_type,
+                                                    **karg_plot_option)
 
             cur_fig_options = {}
 
