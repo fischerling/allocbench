@@ -24,7 +24,7 @@ memory in speeds favor. Memory is mmapped per thread and never freed.
 from allocbench.artifact import GitArtifact
 from allocbench.allocator import Allocator
 
-VERSION = "afeeeab47fd5f25f9f84f8e521799017d9293941"
+VERSION = "dbd2610ba7b83e9dd4d05a1cb5293f749704562b"
 
 
 class Speedymalloc(Allocator):
