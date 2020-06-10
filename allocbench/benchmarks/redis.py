@@ -91,11 +91,11 @@ class BenchmarkRedis(Benchmark):
                  file_postfix="requests")
 
         plt.plot(self,
-                 "{redis_vmhwm}",
+                 "{redis_VmHWM}",
                  plot_type='bar',
                  fig_options={
-                     'ylabel': '"VmHWM in KB"',
-                     'title': '"redis memusage"',
+                     'ylabel': 'VmHWM in KB',
+                     'title': 'redis memusage',
                  },
                  file_postfix="vmhwm")
 
