@@ -89,6 +89,7 @@ class BenchmarkEspresso(Benchmark):
         # L1 cache misses
         plt.plot(self,
                  "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
+                 plot_type='bar',
                  fig_options={
                      'ylabel': "L1 misses in %",
                      'title': "Espresso l1 cache misses",
@@ -99,6 +100,7 @@ class BenchmarkEspresso(Benchmark):
         # Memusage
         plt.plot(self,
                  "{VmHWM}",
+                 plot_type='bar',
                  fig_options={
                      'ylabel': "VmHWM in KB",
                      'title': "Espresso VmHWM",
