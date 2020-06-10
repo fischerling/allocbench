@@ -271,12 +271,13 @@ class BenchmarkMYSQL(Benchmark):
         data = {allocator: {} for allocator in allocators}
         for perm in self.iterate_args(args=args):
             for allocator in allocators:
-                transactions = [
-                    float(measure["transactions"])
-                    for measure in self.results[allocator][perm]
-                ]
-                mean = np.mean(transactions)
-                std = np.std(transactions) / mean
+                mean = plt.get_y_data(self, "{transactions}", allocator,
+                                      perm)[0]
+                std = plt.get_y_data(self,
+                                     "{transactions}",
+                                     allocator,
+                                     perm,
+                                     stat="std")[0]
                 data[allocator][perm] = {"mean": mean, "std": std}
 
         mins = {}
