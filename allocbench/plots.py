@@ -378,6 +378,39 @@ def plot(bench,
 
     x_args = x_args or args
 
+    # create plots for benchmarks without arguments
+    if not x_args:
+        fig_label = f'{bench.name}.{file_postfix}'
+        karg_plot_option = plot_options or {}
+        cur_plot_options = _create_plot_options(plot_type, **karg_plot_option)
+
+        cur_fig_options = {}
+
+        substitutions = vars()
+        substitutions.update(vars(bench))
+        for option, value in (fig_options or {}).items():
+            if isinstance(value, str):
+                cur_fig_options[option] = value.format(**substitutions)
+
+        cur_fig_options = _create_figure_options(plot_type, fig_label,
+                                                 **cur_fig_options)
+
+        # plot specific defaults
+        cur_fig_options.setdefault("ylabel", y_expression)
+        cur_fig_options.setdefault("xlabel", "")
+        cur_fig_options.setdefault("titel", fig_label)
+
+        _plot(bench,
+              allocators,
+              y_expression, [""],
+              list(bench.iterate_args(args=args)),
+              plot_type,
+              cur_plot_options,
+              cur_fig_options,
+              scale=scale,
+              sumdir=sumdir,
+              file_ext=file_ext)
+
     for loose_arg in x_args:
         x_data = args[loose_arg]
 
