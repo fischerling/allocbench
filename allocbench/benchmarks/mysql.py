@@ -247,7 +247,7 @@ class BenchmarkMYSQL(Benchmark):
 
         # Memusage
         plt.plot(self,
-                 "{mysqld_vmhwm}",
+                 "{mysqld_VmHWM}",
                  plot_type='bar',
                  fig_options={
                      'xlabel': 'threads',
@@ -262,7 +262,7 @@ class BenchmarkMYSQL(Benchmark):
             "sort": ">"
         }, {
             "label": "Memusage [KB]",
-            "expression": "{mysqld_vmhwm}",
+            "expression": "{mysqld_VmHWM}",
             "sort": "<"
         }],
                             file_postfix="table")
