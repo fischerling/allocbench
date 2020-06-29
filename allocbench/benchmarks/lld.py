@@ -276,7 +276,7 @@ class BenchmarkLld(Benchmark):
                         label=allocator,
                         color=allocators[allocator]["color"])
 
-            plt.legend(loc="best")
+            plt.legend(loc="lower center")
             plt.ylabel("time in ms")
             plt.title(f"Runtime {perm.test}")
             plt.savefig(f"{self.name}.{perm.test}.runtime.{SUMMARY_FILE_EXT}")
@@ -284,7 +284,7 @@ class BenchmarkLld(Benchmark):
 
             for i, allocator in enumerate(allocators):
                 plt.bar([i],
-                        allocbench.plots.get_y_data(self, "{VmHWH}", allocator,
+                        allocbench.plots.get_y_data(self, "{VmHWM}", allocator,
                                                     perm),
                         yerr=allocbench.plots.get_y_data(self,
                                                          "{VmHWM}",
@@ -294,7 +294,7 @@ class BenchmarkLld(Benchmark):
                         label=allocator,
                         color=allocators[allocator]["color"])
 
-            plt.legend(loc="best")
+            plt.legend(loc="lower center")
             plt.ylabel("Max RSS in MB")
             plt.title(f"Max RSS {perm.test}")
             plt.savefig(f"{self.name}.{perm.test}.rss.{SUMMARY_FILE_EXT}")

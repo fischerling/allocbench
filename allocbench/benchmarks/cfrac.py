@@ -89,10 +89,10 @@ class BenchmarkCfrac(Benchmark):
         plt.plot(self,
                  "({L1-dcache-load-misses}/{L1-dcache-loads})*100",
                  plot_type='bar',
+                 plot_options={'yerr': False},
                  fig_options={
                      'ylabel': "L1 misses in %",
-                     'title': "Cfrac l1 cache misses",
-                     'yerr': False
+                     'title': "Cfrac l1 cache misses"
                  },
                  file_postfix="l1misses")
 
