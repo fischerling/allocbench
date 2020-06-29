@@ -24,7 +24,7 @@ memory in speeds favor. Memory is mmapped per thread and never freed.
 from allocbench.artifact import GitArtifact
 from allocbench.allocator import Allocator
 
-VERSION = "edb792124f15be236a3a2d774bd21461f9baaaa6"
+VERSION = "b685e17ef0181e1164b61c4a159e4ee0b45b2b1f"
 
 
 class Speedymalloc(Allocator):
@@ -50,6 +50,19 @@ class Speedymalloc(Allocator):
 # pylint: disable=invalid-name
 speedymalloc = Speedymalloc("speedymalloc", version=VERSION)
 
+speedymalloc_core_local_rseq = Speedymalloc(
+    "speedymalloc_core_local_rseq",
+    options={"lab_type": "core-local-rseq"},
+    version=VERSION)
+
+speedymalloc_core_local_treiber_stack = Speedymalloc(
+    "speedymalloc_core_local_rseq",
+    options={"lab_type": "core-local-treiber-stack"},
+    version=VERSION)
+speedymalloc_no_lab = Speedymalloc("speedymalloc_only_glab",
+                                   options={"lab_type": 'none'},
+                                   version=VERSION)
+
 speedymalloc_no_madv_free = Speedymalloc("speedymalloc_no_madv_free",
                                          options={"madvise_free": "false"},
                                          version=VERSION)
@@ -72,11 +85,6 @@ speedymalloc_4095_sc_128 = Speedymalloc("speedymalloc_4095_sc_128",
                                             "cache_bin_seperation": 128
                                         },
                                         version=VERSION)
-
-speedymalloc_only_glab = Speedymalloc(
-    "speedymalloc_only_glab",
-    options={"max_local_allocation_buffer_size": 0},
-    version=VERSION)
 
 speedymalloc_no_glab = Speedymalloc(
     "speedymalloc_no_glab",
