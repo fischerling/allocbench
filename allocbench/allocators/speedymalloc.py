@@ -75,18 +75,18 @@ speedymalloc_no_madv_willneed = Speedymalloc(
 speedymalloc_4095_sc_32 = Speedymalloc("speedymalloc_4095_sc_32",
                                        options={
                                            "cache_bins": 4095,
-                                           "cache_bin_seperation": 32
+                                           "cache_bin_separation": 32
                                        },
                                        version=VERSION)
 
 speedymalloc_4095_sc_128 = Speedymalloc("speedymalloc_4095_sc_128",
                                         options={
                                             "cache_bins": 4095,
-                                            "cache_bin_seperation": 128
+                                            "cache_bin_separation": 128
                                         },
                                         version=VERSION)
 
 speedymalloc_no_glab = Speedymalloc(
     "speedymalloc_no_glab",
-    options={"max_local_allocation_buffer_size": -1},
+    options={"max_lab_size": -1},
     version=VERSION)
