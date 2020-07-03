@@ -24,7 +24,7 @@ and saves each call and its result to a memory mapped output file.
 from allocbench.artifact import GitArtifact
 from allocbench.allocator import Allocator
 
-VERSION = "1a09b144eb18919014ecf86da3442344b0eaa5b2"
+VERSION = "e237a876227396203abae3872754ffaf8cc7e180"
 
 
 class Chattymalloc(Allocator):
