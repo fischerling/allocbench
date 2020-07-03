@@ -69,10 +69,11 @@ class BenchmarkEspresso(Benchmark):
 
         self.cmd = "espresso{binary_suffix} {file}"
         self.args = {
-            "file": [os.path.join(BENCHSRCDIR, name, "largest.espresso")]
+            "file": ["largest.espresso"]
         }
 
         self.requirements = ["espresso"]
+        self.run_dir = os.path.join(BENCHSRCDIR, name)
         super().__init__(name)
 
     def summary(self):
