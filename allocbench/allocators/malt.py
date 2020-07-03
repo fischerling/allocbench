@@ -26,4 +26,5 @@ from allocbench.allocator import Allocator
 # pylint: disable=invalid-name
 malt = Allocator(
     "malt",
-    cmd_prefix="malt -q -o output:name={{result_dir}}/malt.{{perm}}.%3")
+    cmd_prefix="malt -q -o output:name={{result_dir}}/malt.{{perm}}.%3",
+    analyze_alloc=True)

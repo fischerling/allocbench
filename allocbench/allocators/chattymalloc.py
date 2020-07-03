@@ -45,6 +45,7 @@ class Chattymalloc(Allocator):
 
         self.ld_preload = "{dir}/libchattymalloc.so"
         self.cmd_prefix = "env CHATTYMALLOC_FILE={{result_dir}}/{{perm}}.trace"
+        self.analyze_alloc = True
         super().__init__(name, **kwargs)
 
 

@@ -51,7 +51,7 @@ class Allocator:
     Allocator.build will compile the allocator and produce a for allocbench usable
     allocator dict"""
     allowed_attributes = [
-        "binary_suffix", "cmd_prefix", "ld_preload", "ld_library_path",
+        "analyze_alloc", "binary_suffix", "cmd_prefix", "ld_preload", "ld_library_path",
         "color", "sources", "version", "patches", "prepare_cmds", "build_cmds"
     ]
 
@@ -65,6 +65,7 @@ class Allocator:
     patches = []
     prepare_cmds = []
     build_cmds = []
+    analyze_alloc = False
 
     def __init__(self, name, **kwargs):
         self.class_file = Path(inspect.getfile(self.__class__))
@@ -228,7 +229,7 @@ def collect_available_allocators():
         alloc_module_name = f'allocbench.allocators.{alloc_def_path.stem}'
         module = importlib.import_module(alloc_module_name)
         for name, obj in module.__dict__.items():
-            if issubclass(obj.__class__, Allocator):
+            if issubclass(obj.__class__, Allocator) and not obj.analyze_alloc:
                 available_allocators[name] = obj
 
     return available_allocators
@@ -271,7 +272,7 @@ def collect_allocators(allocators):
     ret = {}
     for name in allocators:
         if name == "all":
-            return available_allocators
+            return {a: available_allocators[a].build() for a in available_allocators}
         if name == "installed":
             print_status("Using system-wide installed allocators ...")
             ret.update(collect_installed_allocators())
