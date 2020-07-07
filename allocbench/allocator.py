@@ -51,8 +51,9 @@ class Allocator:
     Allocator.build will compile the allocator and produce a for allocbench usable
     allocator dict"""
     allowed_attributes = [
-        "analyze_alloc", "binary_suffix", "cmd_prefix", "ld_preload", "ld_library_path",
-        "color", "sources", "version", "patches", "prepare_cmds", "build_cmds"
+        "analyze_alloc", "binary_suffix", "cmd_prefix", "ld_preload",
+        "ld_library_path", "color", "sources", "version", "patches",
+        "prepare_cmds", "build_cmds"
     ]
 
     binary_suffix = None
@@ -272,7 +273,10 @@ def collect_allocators(allocators):
     ret = {}
     for name in allocators:
         if name == "all":
-            return {a: available_allocators[a].build() for a in available_allocators}
+            return {
+                a: available_allocators[a].build()
+                for a in available_allocators
+            }
         if name == "installed":
             print_status("Using system-wide installed allocators ...")
             ret.update(collect_installed_allocators())

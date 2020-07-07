@@ -86,7 +86,6 @@ speedymalloc_4095_sc_128 = Speedymalloc("speedymalloc_4095_sc_128",
                                         },
                                         version=VERSION)
 
-speedymalloc_no_glab = Speedymalloc(
-    "speedymalloc_no_glab",
-    options={"max_lab_size": -1},
-    version=VERSION)
+speedymalloc_no_glab = Speedymalloc("speedymalloc_no_glab",
+                                    options={"max_lab_size": -1},
+                                    version=VERSION)
