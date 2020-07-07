@@ -21,6 +21,7 @@ import copy
 import itertools
 import operator
 import os
+import re
 import traceback
 from typing import List
 
@@ -547,6 +548,32 @@ def export_stats_to_csv(bench, datapoint, path=None):
                 print(line.replace("_", "-"), file=csv_file)
 
 
+# https://stackoverflow.com/questions/16259923/how-can-i-escape-latex-special-characters-inside-django-templates#25875504
+def tex_escape(text: str) -> str:
+    """
+        :param text: a plain text message
+        :return: the message escaped to appear correctly in LaTeX
+    """
+    conv = {
+        '&': r'\&',
+        '%': r'\%',
+        '$': r'\$',
+        '#': r'\#',
+        '_': r'\_',
+        '{': r'\{',
+        '}': r'\}',
+        '~': r'\textasciitilde{}',
+        '^': r'\^{}',
+        '\\': r'\textbackslash{}',
+        '<': r'\textless{}',
+        '>': r'\textgreater{}',
+    }
+    regex = re.compile('|'.join(
+        re.escape(str(key))
+        for key in sorted(conv.keys(), key=lambda item: -len(item))))
+    return regex.sub(lambda match: conv[match.group()], text)
+
+
 def export_stats_to_dataref(bench, datapoint, path=None):
     """Write descriptive statistics about datapoint to dataref file"""
     stats = bench.results["stats"]
@@ -613,12 +640,18 @@ def write_best_doublearg_tex_table(bench,
                 elif mean == best_val:
                     best.append(allocator)
 
-            row.append(f"{best[0]}: {best_val:.3f}")
+            if isinstance(best_val, float):
+                val_str = f"{best_val:.3f}"
+            else:
+                val_str = f"{best_val}"
+            val_str = tex_escape(val_str)
+
+            row.append(f"{tex_escape(best[0])}: {val_str}")
             row_str = " & ".join(row)
         cell_text.append(f"{arg_value} & {row_str}")
 
     table_layout = " l |" * (len(headers) + 1)
-    header_line = " & ".join([str(x) for x in headers])
+    header_line = " & ".join([tex_escape(str(x)) for x in headers])
     cell_text = "\\\\\n".join(cell_text)
 
     tex =\
@@ -662,12 +695,14 @@ def write_tex_table(bench, entries, file_postfix="", sumdir=""):
 
     alloc_header_line = f"\\multicolumn{{{nperm_fields}}}{{c|}}{{}} &"
     for alloc in allocators:
-        alloc_header_line += f"\\multicolumn{{{nentries}}}{{c|}}{{{alloc}}} &"
+        alloc_esc = tex_escape(alloc)
+        alloc_header_line += f"\\multicolumn{{{nentries}}}{{c|}}{{{alloc_esc}}} &"
     alloc_header_line = alloc_header_line[:-1] + "\\\\"
 
     perm_fields_header = ""
     for field in bench.Perm._fields:
-        perm_fields_header += f'{field} &'
+        field_esc = tex_escape(field)
+        perm_fields_header += f'{field_esc} &'
     entry_header_line = ""
     for entry in entries:
         entry_header_line += f'{entry["label"]} &'
@@ -726,9 +761,10 @@ def write_tex_table(bench, entries, file_postfix="", sumdir=""):
                     val = entry_vals[i]
 
                     # format
-                    val_str = str(val)
                     if isinstance(val, float):
                         val_str = f"{val:.2f}"
+                    # escape latex symbols
+                    val_str = tex_escape(val_str)
 
                     # colorize
                     if val == maxs[j]:
@@ -736,8 +772,6 @@ def write_tex_table(bench, entries, file_postfix="", sumdir=""):
                     elif val == mins[j]:
                         val_str = f"\\textcolor{{red}}{{{val_str}}}"
                     row += f"{val_str} &"
-            #escape _ for latex
-            row = row.replace("_", "\\_")
             print(row[:-1], "\\\\", file=tex_file)
 
         print("\\end{tabular}", file=tex_file)
@@ -755,6 +789,7 @@ def pgfplot_legend(bench,
     color_definitions = ""
     legend_entries = ""
     for alloc_name, alloc_dict in allocators.items():
+        alloc_name = tex_escape(alloc_name)
         if colors:
             # define color
             rgb = matplotlib.colors.to_rgb(get_alloc_color(bench, alloc_dict))
