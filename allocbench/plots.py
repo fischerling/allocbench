@@ -614,9 +614,10 @@ def write_best_doublearg_tex_table(bench,
                     best.append(allocator)
 
             row.append(f"{best[0]}: {best_val:.3f}")
-        cell_text.append(" & ".join(row))
+            row_str = " & ".join(row)
+        cell_text.append(f"{arg_value} & {row_str}")
 
-    table_layout = " l |" * len(headers)
+    table_layout = " l |" * (len(headers) + 1)
     header_line = " & ".join([str(x) for x in headers])
     cell_text = "\\\\\n".join(cell_text)
 
