@@ -52,6 +52,9 @@ class Artifact:
         run_cmd(cmd, output_verbosity=1, cwd=self.basedir)
 
 
+GIT_FETCH_CMD = ["git", "fetch", "--force", "--tags"]
+
+
 class GitArtifact(Artifact):
     """External git repository"""
     def __init__(self, name, url):
@@ -72,9 +75,7 @@ class GitArtifact(Artifact):
         # check if we have already provided this checkout
         if os.path.exists(location):
             try:
-                run_cmd(["git", "fetch", "--force"],
-                        output_verbosity=1,
-                        cwd=location)
+                run_cmd(GIT_FETCH_CMD, output_verbosity=1, cwd=location)
             except CalledProcessError:
                 print_error(f"Failed to update {location}")
                 raise
@@ -94,9 +95,7 @@ class GitArtifact(Artifact):
         # update repo
         print_status(f'Updating git repository "{self.name}" ...')
         try:
-            run_cmd(["git", "fetch", "--force"],
-                    output_verbosity=1,
-                    cwd=self.repo)
+            run_cmd(GIT_FETCH_CMD, output_verbosity=1, cwd=self.repo)
         except CalledProcessError:
             print_error(f"Failed to update {self.name}")
             raise
