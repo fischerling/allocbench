@@ -22,8 +22,9 @@ import itertools
 import operator
 import os
 import re
+import scipy.stats
 import traceback
-from typing import List
+from typing import Dict, List, Tuple, NamedTuple
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -546,6 +547,69 @@ def export_stats_to_csv(bench, datapoint, path=None):
                 for i, row in enumerate(rows[alloc][perm]):
                     line += str(row).ljust(widths[i])
                 print(line.replace("_", "-"), file=csv_file)
+
+
+def get_ordered_results_for_perm(bench,
+                                 datapoint: str,
+                                 perm: NamedTuple,
+                                 order='>') -> List[Tuple[float, List]]:
+    """Return a ordered list of the allocator and their results for a specific perm"""
+    data = {}
+    for allocator in bench.results["allocators"]:
+        value = _eval_with_stat(bench, datapoint, allocator, perm, "mean")
+        if value in data:
+            data[value].append(allocator)
+        else:
+            data[value] = [allocator]
+
+    return sorted(data.items(), reverse=order == ">")
+
+
+def get_ordered_results(bench, datapoint, order='>'):
+    """Return a ordered list of the allocator and their results"""
+    results = {}
+    for perm in bench.iterate_args(args=bench.results["args"]):
+        results[perm] = get_ordered_results_for_perm(bench,
+                                                     datapoint,
+                                                     perm,
+                                                     order=order)
+
+    return results
+
+
+def create_ascii_leaderboards(bench, datapoints: List[Tuple[str, str]]):
+    """Return a dictionary containing ordered list of allocators according to their results"""
+
+    res = ""
+    leaderboards = {
+        datapoint: get_ordered_results(bench, datapoint, order=order)
+        for datapoint, order in datapoints
+    }
+    combined = []
+
+    for datapoint, leaderboard in leaderboards.items():
+        res += f'leaderboard for "{datapoint}":\n'
+        for perm in leaderboard:
+            res += f'{perm}:\n'
+            doubles = 0
+            for i, (val, allocators) in enumerate(leaderboard[perm]):
+                doubles += len(allocators) - 1
+                allocs_str = ','.join(allocators)
+                res += f'{i + 1}. {allocs_str}: {val}\n'
+            res += '\n'
+
+    return res[:-1]
+
+
+def calc_ttests_for_alloc_pair(bench, alloc1, alloc2, datapoint: str) -> Dict:
+    ttest_results = {}
+    for perm in bench.iterate_args():
+        data1 = [float(m[datapoint]) for m in bench.results[alloc1][perm]]
+        data2 = [float(m[datapoint]) for m in bench.results[alloc2][perm]]
+
+        ttest_results[perm] = scipy.stats.ttest_ind(data1, data2)
+
+    return ttest_results
 
 
 # https://stackoverflow.com/questions/16259923/how-can-i-escape-latex-special-characters-inside-django-templates#25875504
