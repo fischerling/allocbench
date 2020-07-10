@@ -86,22 +86,25 @@ class GitArtifact(Artifact):
         if not os.path.exists(self.repo):
             self.retrieve()
 
-        # update repo
-        print_status(f'Updating git repository "{self.name}" ...')
-        try:
-            run_cmd(GIT_FETCH_CMD, output_verbosity=1, cwd=self.repo)
-        except CalledProcessError:
-            print_error(f"Failed to update {self.name}")
-            raise
-
         worktree_cmd = ["git", "worktree", "add", location, checkout]
         print_debug("create new worktree. By running: ", worktree_cmd,
                     f"in {self.repo}")
         try:
             run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
         except CalledProcessError:
-            print_error(f"Failed to provide {self.name}")
-            raise
+            # update repo
+            print_status(f'Updating git repository "{self.name}" ...')
+            try:
+                run_cmd(GIT_FETCH_CMD, output_verbosity=1, cwd=self.repo)
+            except CalledProcessError:
+                print_error(f"Failed to update {self.name}")
+                raise
+
+            try:
+                run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
+            except CalledProcessError:
+                print_error(f"Failed to provide {self.name}")
+                raise
 
         submodule_init_cmd = [
             "git", "submodule", "update", "--init", "--recursive"
