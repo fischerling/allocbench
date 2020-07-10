@@ -419,7 +419,7 @@ def plot(bench,
         fixed_args = [[(k, v) for v in args[k]] for k in args
                       if k != loose_arg]
         for fixed_part_tuple in itertools.product(*fixed_args):
-            fixed_part = {k: v for k, v in fixed_part_tuple}
+            fixed_part = dict(fixed_part_tuple)
 
             fixed_part_str = ".".join(
                 [f'{k}={v}' for k, v in fixed_part.items()])
