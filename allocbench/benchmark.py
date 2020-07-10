@@ -264,10 +264,11 @@ class Benchmark:
 
     def load(self, path=None):
         """Load benchmark results from file"""
-        if not path:
+        filename = path
+        if not filename:
             filename = f"{self.name}.json"
         elif os.path.isdir(path):
-            filename = os.path.join(path, self.name)
+            filename = os.path.join(path, f"{self.name}.json")
 
         if os.path.exists(filename):
             with open(filename, "r") as load_file:
