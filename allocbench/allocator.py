@@ -128,44 +128,45 @@ class Allocator:
 
     def build(self):
         """Build the allocator if needed and produce an allocator dict"""
-        build_needed = not self.dir.is_dir()
-        buildtimestamp_path = self.dir / ".buildtime"
+        if self.build_cmds:
+            build_needed = not self.dir.is_dir()
+            buildtimestamp_path = self.dir / ".buildtime"
 
-        if not build_needed:
-            print_info2("Old build found. Comparing build time with mtime")
+            if not build_needed:
+                print_info2("Old build found. Comparing build time with mtime")
 
-            with open(buildtimestamp_path, "r") as buildtimestamp_file:
-                timestamp = datetime.fromtimestamp(
-                    float(buildtimestamp_file.read()))
+                with open(buildtimestamp_path, "r") as buildtimestamp_file:
+                    timestamp = datetime.fromtimestamp(
+                        float(buildtimestamp_file.read()))
 
-            modtime = os.stat(self.class_file).st_mtime
-            modtime = datetime.fromtimestamp(modtime)
+                modtime = os.stat(self.class_file).st_mtime
+                modtime = datetime.fromtimestamp(modtime)
 
-            build_needed = timestamp < modtime
+                build_needed = timestamp < modtime
 
-            print_debug("Time of last build:", timestamp.isoformat())
-            print_debug("Last modification of allocators file:",
-                        modtime.isoformat())
-            print_info2("" if build_needed else "No " + "build needed")
+                print_debug("Time of last build:", timestamp.isoformat())
+                print_debug("Last modification of allocators file:",
+                            modtime.isoformat())
+                print_info2("" if build_needed else "No " + "build needed")
 
-        if build_needed:
-            self.prepare()
-            print_status("Building", self.name, "...")
+            if build_needed:
+                self.prepare()
+                print_status("Building", self.name, "...")
 
-            for cmd in self.build_cmds:
-                cmd = cmd.format(dir=self.dir, srcdir=self.srcdir)
+                for cmd in self.build_cmds:
+                    cmd = cmd.format(dir=self.dir, srcdir=self.srcdir)
 
-                try:
-                    run_cmd(cmd, cwd=BUILDDIR, shell=True)
-                except CalledProcessError as err:
-                    print_debug(err.stderr, file=sys.stderr)
-                    print_error(f"Builing {self.name} failed")
-                    shutil.rmtree(self.dir, ignore_errors=True)
-                    raise
+                    try:
+                        run_cmd(cmd, cwd=BUILDDIR, shell=True)
+                    except CalledProcessError as err:
+                        print_debug(err.stderr, file=sys.stderr)
+                        print_error(f"Builing {self.name} failed")
+                        shutil.rmtree(self.dir, ignore_errors=True)
+                        raise
 
-            with open(buildtimestamp_path, "w") as buildtimestamp_file:
-                print_info2("Save build time to:", buildtimestamp_path)
-                buildtimestamp_file.write(str(datetime.now().timestamp()))
+                with open(buildtimestamp_path, "w") as buildtimestamp_file:
+                    print_info2("Save build time to:", buildtimestamp_path)
+                    buildtimestamp_file.write(str(datetime.now().timestamp()))
 
         print_info2("Create allocator dictionary")
         res_dict = {
