@@ -33,13 +33,7 @@ ARTIFACT_STORE_DIR = os.path.join(ALLOCBENCHDIR, "cache")
 
 class Artifact:
     """Base class for external ressources"""
-    store = {}
-
     def __init__(self, name):
-        if name in Artifact.store:
-            raise Exception(f'duplicate artifact "{name}"')
-
-        Artifact.store[name] = self
         self.name = name
         self.basedir = os.path.join(ARTIFACT_STORE_DIR, name)
 
