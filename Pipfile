@@ -10,6 +10,8 @@ pylint = "*"
 [packages]
 numpy = "*"
 matplotlib = "*"
+tikzplotlib = "*"
+scipy = "*"
 
 [requires]
 python_version = "3.7"
