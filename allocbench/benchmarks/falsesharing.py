@@ -18,7 +18,6 @@
 
 import re
 
-
 from allocbench.benchmark import Benchmark
 import allocbench.plots as plt
 
