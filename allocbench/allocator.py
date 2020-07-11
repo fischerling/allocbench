@@ -28,8 +28,10 @@ import sys
 from typing import List, Optional
 
 from allocbench.artifact import Artifact, ArchiveArtifact, GitArtifact
-from allocbench.globalvars import ALLOCBUILDDIR, ALLOCSRCDIR
 from allocbench.util import print_status, print_debug, print_error, print_info2, run_cmd
+from allocbench.directories import (get_allocbench_build_dir,
+                                    get_allocbench_allocator_src_dir,
+                                    get_allocbench_allocator_build_dir)
 
 LIBRARY_PATH = ""
 for line in run_cmd(["ldconfig", "-v", "-N"],
@@ -38,8 +40,7 @@ for line in run_cmd(["ldconfig", "-v", "-N"],
     if not line.startswith('\t'):
         LIBRARY_PATH += line
 
-BUILDDIR = Path(ALLOCBUILDDIR)
-SRCDIR = BUILDDIR / "src"
+SRCDIR = Path(get_allocbench_build_dir()) / "src"
 
 SRCDIR.mkdir(parents=True, exist_ok=True)
 
@@ -73,7 +74,7 @@ class Allocator:
         self.class_file = Path(inspect.getfile(self.__class__))
         self.name = name
         self.srcdir = SRCDIR / self.name
-        self.dir = BUILDDIR / self.name
+        self.dir = get_allocbench_allocator_build_dir() / self.name
         self.patchdir = Path(self.class_file.parent, self.class_file.stem)
 
         # Update attributes
@@ -158,7 +159,9 @@ class Allocator:
                     cmd = cmd.format(dir=self.dir, srcdir=self.srcdir)
 
                     try:
-                        run_cmd(cmd, cwd=BUILDDIR, shell=True)
+                        run_cmd(cmd,
+                                cwd=get_allocbench_allocator_build_dir(),
+                                shell=True)
                     except CalledProcessError as err:
                         print_debug(err.stderr, file=sys.stderr)
                         print_error(f"Builing {self.name} failed")
@@ -228,7 +231,7 @@ def collect_available_allocators():
 
     available_allocators = {}
 
-    for alloc_def_path in Path(ALLOCSRCDIR).glob('*.py'):
+    for alloc_def_path in get_allocbench_allocator_src_dir().glob('*.py'):
         alloc_module_name = f'allocbench.allocators.{alloc_def_path.stem}'
         module = importlib.import_module(alloc_module_name)
         for name, obj in module.__dict__.items():

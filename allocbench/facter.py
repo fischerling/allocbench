@@ -25,7 +25,7 @@ import os
 import platform
 from subprocess import CalledProcessError
 
-from allocbench.globalvars import BUILDDIR
+from allocbench.directories import get_allocbench_build_dir
 from allocbench.util import print_debug, print_info, print_warn, run_cmd
 
 FACTS = {}
@@ -42,7 +42,7 @@ def collect_facts():
     FACTS["cpus"] = multiprocessing.cpu_count()
     FACTS["LD_PRELOAD"] = os.environ.get("LD_PRELOAD", None)
 
-    with open(os.path.join(BUILDDIR, "ccinfo"), "r") as ccinfo:
+    with open(get_allocbench_build_dir() / "ccinfo", "r") as ccinfo:
         FACTS["cc"] = ccinfo.readlines()[-1][:-1]
 
     # get commit info from git

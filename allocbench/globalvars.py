@@ -19,46 +19,13 @@
 VERBOSITY: Verbosity level -1: quiet, 0: status, 1: info, 2: stdout of subcommands, 3: debug info
 ALLOCATORS: Dict holding the allocators to compare
 BENCHMARKS: List of available benchmarks
-
-ALLOCBENCHDIR: Root directory of allocbench
-SRCDIR: Directory of allocbench sources
-BENCHSRCDIR: Source directory for all benchmarks
-ALLOCSRCDIR: Source directory for all benchmarks
-BUILDDIR: Path of the build directory
-ALLOCBUILDDIR: Path of the allocators build directory
-RESDIR: Directory were the benchmark results are stored
 """
 
-import inspect
-import os
 from typing import Dict
-
-import allocbench.allocator
 
 VERBOSITY = 0
 
-ALLOCATORS: Dict[str, allocbench.allocator.Allocator] = {}
-
-# /.../allocbench/allocbench
-SRCDIR = os.path.dirname(
-    os.path.abspath(inspect.getfile(inspect.currentframe())))
-
-# /.../allocbench/allocbench/benchmarks
-BENCHSRCDIR = os.path.join(SRCDIR, "benchmarks")
-
-# /.../allocbench/allocbench/allocators
-ALLOCSRCDIR = os.path.join(SRCDIR, "allocators")
-
-# /.../allocbench
-ALLOCBENCHDIR = os.path.dirname(SRCDIR)
-
-# /.../allocbench/build
-BUILDDIR = os.path.join(ALLOCBENCHDIR, "build")
-
-# /.../allocbench/build/allocators
-ALLOCBUILDDIR = os.path.join(BUILDDIR, "allocators")
-
-RESDIR = None
+ALLOCATORS = {}
 
 BENCHMARKS = [
     e[:-3] for e in os.listdir(os.path.join(ALLOCBENCHDIR, BENCHSRCDIR))

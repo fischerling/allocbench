@@ -22,24 +22,23 @@ Both flavours are version controlled archive with a checksum and git repositorie
 with a specific checkout.
 """
 
-import os
 from subprocess import CalledProcessError
 
-from allocbench.globalvars import ALLOCBENCHDIR
+from allocbench.directories import get_allocbench_base_dir
 from allocbench.util import print_status, print_info, print_debug, print_error, run_cmd, sha1sum
 
-ARTIFACT_STORE_DIR = os.path.join(ALLOCBENCHDIR, "cache")
+ARTIFACT_STORE_DIR = get_allocbench_base_dir() / "cache"
 
 
 class Artifact:
     """Base class for external ressources"""
     def __init__(self, name):
         self.name = name
-        self.basedir = os.path.join(ARTIFACT_STORE_DIR, name)
+        self.basedir = ARTIFACT_STORE_DIR / name
 
     def _retrieve(self, cmd):
         """Run cmd to retrieve the artifact"""
-        os.makedirs(self.basedir, exist_ok=True)
+        self.basedir.mkdir(exist_ok=True)
 
         print_status(f'Retrieving artifact "{self.name}" ...')
         print_debug(f"By running: {cmd} in {self.basedir}")
@@ -54,7 +53,7 @@ class GitArtifact(Artifact):
     def __init__(self, name, url):
         super().__init__(name)
         self.url = url
-        self.repo = os.path.join(self.basedir, "repo")
+        self.repo = self.basedir / "repo"
 
     def retrieve(self):
         """clone the git repo"""
@@ -64,10 +63,10 @@ class GitArtifact(Artifact):
     def provide(self, checkout, location=None):
         """checkout new worktree at location"""
         if not location:
-            location = os.path.join(self.basedir, checkout)
+            location = self.basedir / checkout
 
         # check if we have already provided this checkout
-        if os.path.exists(location):
+        if location.exists():
             try:
                 run_cmd(GIT_FETCH_CMD, output_verbosity=1, cwd=location)
             except CalledProcessError:
@@ -83,7 +82,7 @@ class GitArtifact(Artifact):
             return location
 
         # check if we have already retrieved the repo
-        if not os.path.exists(self.repo):
+        if not self.repo.exists():
             self.retrieve()
 
         worktree_cmd = ["git", "worktree", "add", location, checkout]
@@ -127,8 +126,7 @@ class ArchiveArtifact(Artifact):
                 f'Archive format "{format}" not in supported list {self.supported_formats}'
             )
         self.archive_format = archive_format
-        self.archive = os.path.join(self.basedir,
-                                    f"{self.name}.{self.archive_format}")
+        self.archive = self.basedir / f"{self.name}.{self.archive_format}"
         self.checksum = checksum
 
     def retrieve(self):
@@ -139,7 +137,7 @@ class ArchiveArtifact(Artifact):
         """extract the archive"""
 
         # Download archive
-        if not os.path.exists(self.archive):
+        if not self.archive.exists():
             self.retrieve()
 
         # compare checksums
@@ -149,13 +147,13 @@ class ArchiveArtifact(Artifact):
                 f"Archive {self.archive} does not match provided checksum")
 
         if not location:
-            location = os.path.join(self.basedir, "content")
+            location = self.basedir / "content"
 
         # Check if we already provided the archive at location
-        if os.path.exists(location):
+        if location.exists():
             return location
 
-        os.makedirs(location, exist_ok=True)
+        location.mkdir(exist_ok=True)
 
         # Extract archive
         if self.archive_format == "tar":

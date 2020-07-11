@@ -28,6 +28,7 @@ import traceback
 from allocbench.allocator import collect_allocators
 from allocbench.analyse import analyze_bench, analyze_allocators
 from allocbench.benchmark import get_benchmark_object
+from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
 import allocbench.globalvars
 from allocbench.util import run_cmd
@@ -40,20 +41,23 @@ from summarize import summarize
 
 def epilog():
     """Run tasks on exit"""
-    # After early errors resdir may not be set
-    if allocbench.globalvars.RESDIR is not None:
-        if os.listdir(allocbench.globalvars.RESDIR) == []:
-            print_warn("Remove empty resultdir")
-            os.removedirs(allocbench.globalvars.RESDIR)
-        else:
-            endtime = datetime.datetime.now().isoformat()
-            endtime = endtime[:endtime.rfind(':')]
-            facter.FACTS["endtime"] = endtime
-            facter.store_facts(allocbench.globalvars.RESDIR)
-
     # remove a left over status file if some is present
     if os.path.exists("status"):
         os.remove("status")
+
+    res_dir = get_current_result_dir()
+    # After early errors resdir may not be set
+    if not res_dir:
+        return
+
+    if not res_dir.iterdir():
+        print_warn("Remove empty resultdir")
+        res_dir.rmdir()
+    else:
+        endtime = datetime.datetime.now().isoformat()
+        endtime = endtime[:endtime.rfind(':')]
+        facter.FACTS["endtime"] = endtime
+        facter.store_facts(res_dir)
 
 
 def check_dependencies():
@@ -149,14 +153,13 @@ def main():
 
     # Create result directory
     if args.resultdir:
-        allocbench.globalvars.RESDIR = os.path.join(args.resultdir)
+        set_current_result_dir(args.resultdir)
     else:
-        allocbench.globalvars.RESDIR = os.path.join("results",
-                                                    facter.FACTS["hostname"],
-                                                    facter.FACTS["starttime"])
+        set_current_result_dir(
+            os.path.join("results", facter.FACTS["hostname"],
+                         facter.FACTS["starttime"]))
 
-    print_status("Writing results to:", allocbench.globalvars.RESDIR)
-    os.makedirs(allocbench.globalvars.RESDIR, exist_ok=True)
+    print_status("Writing results to:", get_current_result_dir())
 
     cwd = os.getcwd()
 
@@ -214,7 +217,7 @@ def main():
                                                   start_time).total_seconds()
 
         # Save results in resultdir
-        bench.save(allocbench.globalvars.RESDIR)
+        bench.save(get_current_result_dir())
 
         if hasattr(bench, "cleanup"):
             print_status("Cleaning up", bench.name, "...")

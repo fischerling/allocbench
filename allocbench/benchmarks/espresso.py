@@ -58,7 +58,7 @@ API function as well as memory placement strategies with good data locality.
 import os
 
 from allocbench.benchmark import Benchmark
-from allocbench.globalvars import BENCHSRCDIR
+from allocbench.directories import get_allocbench_benchmark_src_dir
 import allocbench.plots as plt
 
 
@@ -71,7 +71,7 @@ class BenchmarkEspresso(Benchmark):
         self.args = {"file": ["largest.espresso"]}
 
         self.requirements = ["espresso"]
-        self.run_dir = os.path.join(BENCHSRCDIR, name)
+        self.run_dir = get_allocbench_benchmark_src_dir() / name
         super().__init__(name)
 
     def summary(self):

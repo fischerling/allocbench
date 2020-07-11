@@ -33,6 +33,10 @@ from typing import Dict, Iterable, List, Optional
 
 import numpy as np
 
+from allocbench.directories import (get_allocbench_benchmark_src_dir,
+                                    get_current_result_dir,
+                                    get_allocbench_benchmark_build_dir,
+                                    get_allocbench_build_dir)
 import allocbench.facter as facter
 import allocbench.globalvars
 from allocbench.util import print_status, print_error, print_warn
@@ -183,13 +187,16 @@ class Benchmark:
 
         # Set result_dir
         if not hasattr(self, "result_dir"):
-            self.result_dir = os.path.abspath(
-                os.path.join(allocbench.globalvars.RESDIR or "", self.name))
+            res_dir = get_current_result_dir()
+            if res_dir:
+                self.result_dir = (res_dir / self.name).absolute()
+            else:
+                self.result_dir = self.name
+
         # Set build_dir
         if not hasattr(self, "build_dir"):
-            self.build_dir = os.path.abspath(
-                os.path.join(allocbench.globalvars.BUILDDIR, "benchmarks",
-                             self.name))
+            self.build_dir = (get_allocbench_benchmark_build_dir() /
+                              self.name).absolute()
 
         self.Perm = namedtuple("Perm", self.args.keys())
 
@@ -299,8 +306,7 @@ class Benchmark:
 
     def check_requirements(self):
         """raise an error if a requirement is not found"""
-        os.environ[
-            "PATH"] += f"{os.pathsep}{allocbench.globalvars.BUILDDIR}/benchmarks/{self.name}"
+        os.environ["PATH"] += f"{os.pathsep}{self.build_dir}"
 
         for requirement in self.requirements:
             exe = find_cmd(requirement)
@@ -369,22 +375,23 @@ class Benchmark:
 
         argv = []
         if prepend:
+            build_dir = get_allocbench_build_dir()
             if "cmd_prefix" in alloc:
                 prefix_argv = alloc["cmd_prefix"].format(
                     **substitutions).split()
                 argv.extend(prefix_argv)
                 # add exec wrapper so that a possible prefixed loader can execute shell scripts
-                argv.append(f"{allocbench.globalvars.BUILDDIR}/exec")
+                argv.append(f"{build_dir / 'exec'}")
 
             if self.measure_cmd != "":
                 measure_argv = self.measure_cmd.format(**substitutions)
                 measure_argv = prefix_cmd_with_abspath(measure_argv).split()
                 argv.extend(measure_argv)
 
-            argv.append(f"{allocbench.globalvars.BUILDDIR}/exec")
+            argv.append(f"{build_dir / 'exec'}")
 
-            ld_preload = f"{allocbench.globalvars.BUILDDIR}/print_status_on_exit.so"
-            ld_preload += f" {allocbench.globalvars.BUILDDIR}/sig_handlers.so"
+            ld_preload = f"{build_dir / 'print_status_on_exit.so'}"
+            ld_preload += f" {build_dir / 'sig_handlers.so'}"
 
             if "LD_PRELOAD" in env or alloc.get("LD_PRELOAD", ""):
                 ld_preload += f" {alloc.get('LD_PRELOAD', '')}"
@@ -419,7 +426,7 @@ class Benchmark:
         substitutions = {
             "alloc": alloc_name,
             "perm": alloc_name,
-            "builddir": allocbench.globalvars.BUILDDIR
+            "builddir": get_allocbench_build_dir()
         }
 
         substitutions.update(self.__dict__)
@@ -516,8 +523,7 @@ class Benchmark:
             Benchmark.is_perf_allowed()
 
         # add benchmark dir to PATH
-        os.environ[
-            "PATH"] += f"{os.pathsep}{allocbench.globalvars.BUILDDIR}/benchmarks/{self.name}"
+        os.environ["PATH"] += f"{os.pathsep}{self.build_dir}"
 
         # save one valid result to expand invalid results
         valid_result = {}
@@ -669,8 +675,7 @@ class Benchmark:
 
         # reset PATH
         os.environ["PATH"] = os.environ["PATH"].replace(
-            f"{os.pathsep}{allocbench.globalvars.BUILDDIR}/benchmarks/{self.name}",
-            "")
+            f"{os.pathsep}{self.build_dir}", "")
 
         # expand invalid results
         if valid_result != {}:

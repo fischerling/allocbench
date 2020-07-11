@@ -22,9 +22,11 @@ See allocbench/bumpptr.c for the actual implementation.
 """
 
 import os
-from allocbench.allocator import Allocator, BUILDDIR
+from allocbench.allocator import Allocator
+from allocbench.directories import get_allocbench_allocator_build_dir
 
 # pylint: disable=invalid-name
 bumpptr = Allocator("bumpptr",
-                    ld_preload=os.path.join(BUILDDIR, "bumpptr_alloc.so"),
+                    ld_preload=str(get_allocbench_allocator_build_dir() /
+                                   "bumpptr_alloc.so"),
                     color="xkcd:black")
