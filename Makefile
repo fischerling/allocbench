@@ -56,6 +56,9 @@ format:
 check-format:
 	yapf -d $(PYTHONFILES)
 
+check-mypy:
+	mypy $(PYTHONFILES)
+
 tags:
 	ctags -R --exclude="build/*" --exclude="cache/*" --exclude="doc/*" --exclude="results/*"
 
