@@ -31,10 +31,13 @@ RESDIR: Directory were the benchmark results are stored
 
 import inspect
 import os
+from typing import Dict
+
+import allocbench.allocator
 
 VERBOSITY = 0
 
-ALLOCATORS = {}
+ALLOCATORS: Dict[str, allocbench.allocator.Allocator] = {}
 
 # /.../allocbench/allocbench
 SRCDIR = os.path.dirname(

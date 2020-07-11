@@ -29,6 +29,7 @@ import os
 import subprocess
 from time import sleep
 import traceback
+from typing import Dict, Iterable, List, Optional
 
 import numpy as np
 
@@ -46,10 +47,10 @@ class Benchmark:
     perf_allowed = None
 
     cmd = "false"
-    args = {}
+    args: Dict[str, Iterable] = {}
     measure_cmd_csv = False
     measure_cmd = "perf stat -x, -d"
-    servers = []
+    servers: List[Dict[str, str]] = []
 
     @staticmethod
     def terminate_subprocess(proc, timeout=5):
@@ -736,7 +737,7 @@ class Benchmark:
                 self.results["stats"][alloc][perm] = stats
 
 
-def get_benchmark_object(benchmark_name: str) -> Benchmark:
+def get_benchmark_object(benchmark_name: str) -> Optional[Benchmark]:
     """Find the first Benchmark class in allocbench.benchmarks.{benchmark_name} and return an instance"""
     bench_module = importlib.import_module(
         f"allocbench.benchmarks.{benchmark_name}")
@@ -747,3 +748,5 @@ def get_benchmark_object(benchmark_name: str) -> Benchmark:
             continue
 
         return member()
+
+    return None

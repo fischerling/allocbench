@@ -22,13 +22,13 @@ import itertools
 import operator
 import os
 import re
-import scipy.stats
 import traceback
 from typing import Dict, List, Tuple, NamedTuple
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats
 
 import allocbench.facter as facter
 from allocbench.globalvars import SUMMARY_FILE_EXT, LATEX_CUSTOM_PREAMBLE
@@ -148,7 +148,8 @@ def get_y_data(bench,
                stat="mean",
                scale=None) -> List[float]:
     """Helper to get the y data of an allocator for given permutations"""
-    y_data = []
+
+    y_data: List[float] = []
 
     if isinstance(perms, bench.Perm):
         perms = [perms]
@@ -552,9 +553,9 @@ def export_stats_to_csv(bench, datapoint, path=None):
 def get_ordered_results_for_perm(bench,
                                  datapoint: str,
                                  perm: NamedTuple,
-                                 order='>') -> List[Tuple[float, List]]:
+                                 order='>') -> List[Tuple[float, List[str]]]:
     """Return a ordered list of the allocator and their results for a specific perm"""
-    data = {}
+    data: Dict[float, List[str]] = {}
     for allocator in bench.results["allocators"]:
         value = _eval_with_stat(bench, datapoint, allocator, perm, "mean")
         if value in data:

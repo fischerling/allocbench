@@ -25,8 +25,9 @@ from pathlib import Path
 import shutil
 from subprocess import CalledProcessError
 import sys
+from typing import List, Optional
 
-from allocbench.artifact import ArchiveArtifact, GitArtifact
+from allocbench.artifact import Artifact, ArchiveArtifact, GitArtifact
 from allocbench.globalvars import ALLOCBUILDDIR, ALLOCSRCDIR
 from allocbench.util import print_status, print_debug, print_error, print_info2, run_cmd
 
@@ -56,16 +57,16 @@ class Allocator:
         "prepare_cmds", "build_cmds"
     ]
 
-    binary_suffix = None
-    cmd_prefix = None
-    ld_preload = None
-    ld_library_path = None
+    binary_suffix: Optional[str] = None
+    cmd_prefix: Optional[str] = None
+    ld_preload: Optional[str] = None
+    ld_library_path: Optional[str] = None
     color = None
-    sources = None
-    version = None
-    patches = []
-    prepare_cmds = []
-    build_cmds = []
+    sources: Optional[Artifact] = None
+    version: Optional[str] = None
+    patches: List[str] = []
+    prepare_cmds: List[str] = []
+    build_cmds: List[str] = []
     analyze_alloc = False
 
     def __init__(self, name, **kwargs):
