@@ -18,7 +18,6 @@
 
 import re
 
-import matplotlib.pyplot as plt
 
 from allocbench.benchmark import Benchmark
 import allocbench.plots as plt
