@@ -238,6 +238,7 @@ class Benchmark:
         print_debug("Results directory:", self.result_dir)
 
     def prepare(self):
+        """Default prepare function which only checks dependencies"""
         self.check_requirements()
 
     def save(self, path=None):
@@ -748,7 +749,7 @@ class Benchmark:
 
 
 def get_benchmark_object(benchmark_name: str) -> Optional[Benchmark]:
-    """Find the first Benchmark class in allocbench.benchmarks.{benchmark_name} and return an instance"""
+    """Return an object of first Benchmark subclass in allocbench.benchmarks.{benchmark_name}"""
     bench_module = importlib.import_module(
         f"allocbench.benchmarks.{benchmark_name}")
     # find Benchmark class
@@ -757,6 +758,6 @@ def get_benchmark_object(benchmark_name: str) -> Optional[Benchmark]:
                 or not issubclass(member, Benchmark)):
             continue
 
-        return member()
+        return member()  # type: ignore
 
     return None

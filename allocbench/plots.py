@@ -589,7 +589,7 @@ def create_ascii_leaderboards(bench, datapoints: List[Tuple[str, str]]):
         datapoint: get_ordered_results(bench, datapoint, order=order)
         for datapoint, order in datapoints
     }
-    combined = []
+    # combined = []
 
     for datapoint, leaderboard in leaderboards.items():
         res += f'leaderboard for "{datapoint}":\n'

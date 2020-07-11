@@ -57,9 +57,9 @@ check-format:
 	yapf -d $(PYTHONFILES)
 
 check-mypy:
-	mypy $(PYTHONFILES)
+	mypy --ignore-missing-imports $(PYTHONFILES)
 
 tags:
 	ctags -R --exclude="build/*" --exclude="cache/*" --exclude="doc/*" --exclude="results/*"
 
-check: check-pylint check-format
+check: check-pylint check-format check-mypy
