@@ -23,10 +23,8 @@ BENCHMARKS: List of available benchmarks
 
 from typing import Dict
 
+from allocbench.allocator import Allocator
+
 VERBOSITY = 0
 
-ALLOCATORS = {}
-
-SUMMARY_FILE_EXT = "svg"
-
-LATEX_CUSTOM_PREAMBLE = ""
+ALLOCATORS: Dict[str, Allocator] = {}

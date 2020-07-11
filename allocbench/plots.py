@@ -31,11 +31,14 @@ import numpy as np
 import scipy.stats
 
 import allocbench.facter as facter
-from allocbench.globalvars import SUMMARY_FILE_EXT, LATEX_CUSTOM_PREAMBLE
 from allocbench.util import print_debug, print_warn
 
 # This is useful when evaluating strings in the plot functions. str(np.NaN) == "nan"
 nan = np.NaN  # pylint: disable=invalid-name
+
+SUMMARY_FILE_EXT = "svg"
+
+LATEX_CUSTOM_PREAMBLE = ""
 
 DEFAULT_PLOT_OPTIONS = {
     'plot': {

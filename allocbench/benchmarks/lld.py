@@ -207,7 +207,7 @@ from allocbench.artifact import ArchiveArtifact
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
 import allocbench.plots
-from allocbench.globalvars import SUMMARY_FILE_EXT
+from allocbench.plots import SUMMARY_FILE_EXT
 
 
 class BenchmarkLld(Benchmark):

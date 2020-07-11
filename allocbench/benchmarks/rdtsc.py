@@ -26,8 +26,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from allocbench.benchmark import Benchmark
-from allocbench.globalvars import SUMMARY_FILE_EXT
 import allocbench.plots
+from allocbench.plots import SUMMARY_FILE_EXT
 
 
 class BenchmarkRdtsc(Benchmark):

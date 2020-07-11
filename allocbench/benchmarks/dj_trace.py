@@ -22,8 +22,8 @@ import numpy as np
 
 from allocbench.artifact import ArchiveArtifact
 from allocbench.benchmark import Benchmark
-from allocbench.globalvars import SUMMARY_FILE_EXT
 import allocbench.plots as abplt
+from allocbench.plots import SUMMARY_FILE_EXT
 
 COMMA_SEP_NUMBER_RE = "(?:\\d*(?:,\\d*)?)*"
 RSS_RE = f"(?P<rss>{COMMA_SEP_NUMBER_RE})"
