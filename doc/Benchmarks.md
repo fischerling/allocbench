@@ -167,5 +167,3 @@ for number_of_runs
 	is called after all permutations are done for the current allocator.
 	The mysql benchmark uses this hook to terminate the in preallocator_hook started
 	mysql server.
-
-### plot helpers

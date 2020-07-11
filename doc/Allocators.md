@@ -37,7 +37,7 @@ and a python script exporting a global dictionary with the name `allocators`.
 ## Building Allocators
 
 To reproducible build allocators and patched version you can use the
-classes `Allocator` and `Allocator_Sources` provided in `src/allocator.py`.
-
+classes `Allocator` and any `Artifact` subclass provided in `allocbench/allocator.py`
+and `allocbench/artifact.py`.
 See [allocators/no_falsesharing.py](allocators/no_falsesharing.py) or
 [allocators/ba_allocators.py](allocators/ba_allocators.py) for examples.
