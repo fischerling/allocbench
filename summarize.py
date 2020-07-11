@@ -121,7 +121,7 @@ def summarize(benchmarks=None,
     cwd = os.getcwd()
     os.chdir(allocbench.globalvars.resdir)
 
-    for benchmark in allocbench.globalvars.BENCHMARKS:
+    for benchmark in allocbench.benchmark.AVAIL_BENCHMARKS:
         if benchmarks and not benchmark in benchmarks:
             continue
         if exclude_benchmarks and benchmark in exclude_benchmarks:

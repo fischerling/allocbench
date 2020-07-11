@@ -27,11 +27,6 @@ VERBOSITY = 0
 
 ALLOCATORS = {}
 
-BENCHMARKS = [
-    e[:-3] for e in os.listdir(os.path.join(ALLOCBENCHDIR, BENCHSRCDIR))
-    if e[-3:] == ".py" and e != "__init__.py"
-]
-
 SUMMARY_FILE_EXT = "svg"
 
 LATEX_CUSTOM_PREAMBLE = ""

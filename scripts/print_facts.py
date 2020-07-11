@@ -20,17 +20,15 @@
 
 import argparse
 import importlib
-import inspect
 import os
 import sys
 
-CURRENTDIR = os.path.dirname(
-    os.path.abspath(inspect.getfile(inspect.currentframe())))
+CURRENTDIR = os.path.dirname(os.path.abspath(__file__))
 PARENTDIR = os.path.dirname(CURRENTDIR)
 sys.path.insert(0, PARENTDIR)
 
+from allocbench.benchmark import AVAIL_BENCHMARKS
 import allocbench.facter as facter
-from allocbench.globalvars import BENCHMARKS
 from allocbench.plots import print_facts, print_common_facts
 from allocbench.util import print_error
 
@@ -49,7 +47,7 @@ def main():
     cwd = os.getcwd()
     os.chdir(args.results)
 
-    for benchmark in BENCHMARKS:
+    for benchmark in AVAIL_BENCHMARKS:
         bench_module = importlib.import_module(
             f"allocbench.benchmarks.{benchmark}")
 

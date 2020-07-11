@@ -165,11 +165,11 @@ def main():
 
     # warn about unknown benchmarks
     for bench in (args.benchmarks or []) + (args.exclude_benchmarks or []):
-        if bench not in allocbench.globalvars.BENCHMARKS:
+        if bench not in allocbench.benchmark.AVAIL_BENCHMARKS:
             print_error(f'Benchmark "{bench}" unknown!')
 
     # Run actual benchmarks
-    for bench in allocbench.globalvars.BENCHMARKS:
+    for bench in allocbench.benchmark.AVAIL_BENCHMARKS:
         if args.benchmarks and bench not in args.benchmarks:
             continue
 

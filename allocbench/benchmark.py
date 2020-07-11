@@ -43,6 +43,11 @@ from allocbench.util import print_status, print_error, print_warn
 from allocbench.util import print_info0, print_info, print_debug
 from allocbench.util import find_cmd, prefix_cmd_with_abspath, run_cmd
 
+AVAIL_BENCHMARKS = [
+    p.stem for p in get_allocbench_benchmark_src_dir().glob('*.py')
+    if p.name != "__init__.py"
+]
+
 
 class Benchmark:
     """Default implementation of most methods allocbench expects from a benchmark"""
