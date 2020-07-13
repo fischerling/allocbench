@@ -22,9 +22,11 @@ import argparse
 import os
 import sys
 
+from allocbench.directories import set_current_result_dir, get_current_result_dir
 import allocbench.facter as facter
 import allocbench.globalvars
 import allocbench.benchmark
+import allocbench.util
 from allocbench.util import print_status, print_debug, print_error
 from allocbench.util import print_license_and_exit
 
@@ -59,7 +61,7 @@ def specific_summary(bench, sum_dir, allocators):
         if value["color"] is None:
             value["color"] = avail_colors.pop()
 
-    allocbench.globalvars.allocators = allocators
+    allocbench.globalvars.ALLOCATORS = allocators
 
     bench.summary()
     bench.results["allocators"] = old_allocs
@@ -119,7 +121,7 @@ def summarize(benchmarks=None,
     """summarize the benchmarks in the resdir"""
 
     cwd = os.getcwd()
-    os.chdir(allocbench.globalvars.resdir)
+    os.chdir(get_current_result_dir())
 
     for benchmark in allocbench.benchmark.AVAIL_BENCHMARKS:
         if benchmarks and not benchmark in benchmarks:
@@ -192,22 +194,22 @@ def main():
     args = parser.parse_args()
 
     if args.verbose:
-        allocbench.globalvars.verbosity = args.verbose
+        allocbench.util.VERBOSITY = args.verbose
 
     if args.file_ext:
-        allocbench.globalvars.summary_file_ext = args.file_ext
+        allocbench.plots.summary_file_ext = args.file_ext
 
     if args.latex_preamble:
-        allocbench.globalvars.latex_custom_preamble = args.latex_preamble
+        allocbench.plots.latex_custom_preamble = args.latex_preamble
 
     if not os.path.isdir(args.results):
         print_error(f"{args.results} is no directory")
         sys.exit(1)
 
-    allocbench.globalvars.resdir = args.results
+    set_current_result_dir(args.results)
 
     # Load facts
-    facter.load_facts(allocbench.globalvars.resdir)
+    facter.load_facts(get_current_result_dir())
 
     summarize(benchmarks=args.benchmarks,
               exclude_benchmarks=args.exclude_benchmarks,
