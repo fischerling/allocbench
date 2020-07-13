@@ -20,13 +20,16 @@ import ctypes
 import datetime
 import errno
 import json
+import logging
 import multiprocessing
 import os
 import platform
 from subprocess import CalledProcessError
 
 from allocbench.directories import get_allocbench_build_dir
-from allocbench.util import print_debug, print_info, print_warn, run_cmd
+from allocbench.util import run_cmd
+
+logger = logging.getLogger(__file__)
 
 FACTS = {}
 
@@ -63,7 +66,7 @@ def store_facts(path=None):
     else:
         filename = path
 
-    print_info(f"Saving facts to: {filename}")
+    logger.info("Saving facts to: %s", filename)
     with open(filename, "w") as facts_file:
         json.dump(FACTS, facts_file)
 
@@ -87,7 +90,7 @@ def load_facts(path=None):
                                 filename)
     FACTS.update(loaded_facts)
 
-    print_info(f"Loading facts from: {filename}")
+    logger.info("Loading facts from: %s", filename)
 
 
 def allocbench_version():
@@ -168,8 +171,8 @@ def exe_version(executable, version_flag="--version"):
     try:
         proc = run_cmd([executable, version_flag], capture=True)
     except CalledProcessError as err:
-        print_warn(f"failed to get version of {executable}")
-        print_debug(err.stderr)
+        logger.warning("failed to get version of %s", executable)
+        logger.debug("%s", err.stderr)
         return ""
 
     return proc.stdout[:-1]

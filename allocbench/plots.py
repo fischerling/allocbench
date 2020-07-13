@@ -19,6 +19,7 @@
 import ast
 import copy
 import itertools
+import logging
 import operator
 import os
 import re
@@ -31,7 +32,8 @@ import numpy as np
 import scipy.stats
 
 import allocbench.facter as facter
-from allocbench.util import print_debug, print_warn
+
+logger = logging.getLogger(__file__)
 
 # This is useful when evaluating strings in the plot functions. str(np.NaN) == "nan"
 nan = np.NaN  # pylint: disable=invalid-name
@@ -129,9 +131,9 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
     try:
         expr = evaluation.format(**bench.results["stats"][alloc][perm][stat])
     except KeyError:
-        print_debug(traceback.format_exc())
-        print_warn(
-            f"KeyError while expanding {evaluation} for {alloc} and {perm}")
+        logger.debug("%s", traceback.format_exc())
+        logger.warning("KeyError while expanding %s for %s and %s", evaluation,
+                       alloc, perm)
         return nan
 
     node = ast.parse(expr, mode='eval')
@@ -139,8 +141,9 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
     try:
         return _eval(node.body)
     except TypeError:
-        print_debug(traceback.format_exc())
-        print_warn(f"{expr} could not be evaluated as arithmetic operation")
+        logger.debug("%s", traceback.format_exc())
+        logger.warning("%s could not be evaluated as arithmetic operation",
+                       expr)
         return nan
 
 
@@ -281,7 +284,7 @@ def _plot(bench,
         try:
             plot_func = getattr(plt, plot_type)
         except AttributeError:
-            print_debug(f'Unknown plot type: {plot_type}')
+            logger.debug('Unknown plot type: %s', plot_type)
             raise
 
         _x_data = x_data
@@ -309,7 +312,7 @@ def _plot(bench,
 
     fig_path = os.path.join(sumdir, f'{fig_options["fig_label"]}.{file_ext}')
     if file_ext == 'tex':
-        import tikzplotlib
+        import tikzplotlib  # pylint: disable=import-outside-toplevel
         tikzplotlib.save(fig_path)
     else:
         fig.savefig(fig_path)

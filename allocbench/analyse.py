@@ -17,12 +17,13 @@
 """Analyze benchmarks and allocators"""
 
 import importlib
+import logging
 import os
 import traceback
 
-from allocbench.util import find_cmd
-from allocbench.util import print_status, print_warn, print_error
-from allocbench.util import print_info2, print_debug
+from allocbench.util import find_cmd, print_status
+
+logger = logging.getLogger(__file__)
 
 
 def build_analyze_alloc():
@@ -30,7 +31,7 @@ def build_analyze_alloc():
     if find_cmd("malt") is not None:
         alloc_name = "malt"
     else:
-        print_warn("malt not found. Using chattymalloc.")
+        logger.warning("malt not found. Using chattymalloc.")
         alloc_name = "chattymalloc"
 
     analyze_alloc_module = importlib.import_module(
@@ -45,7 +46,7 @@ def analyze_bench(bench):
 
     # Create benchmark result directory
     if not os.path.isdir(bench.result_dir):
-        print_info2("Creating benchmark result dir:", bench.result_dir)
+        logger.info("Creating benchmark result dir: %s", bench.result_dir)
         os.makedirs(bench.result_dir, exist_ok=True)
 
     alloc_name, alloc_dict = build_analyze_alloc()
@@ -58,8 +59,8 @@ def analyze_bench(bench):
     try:
         bench.run(runs=1)
     except Exception:  #pylint: disable=broad-except
-        print_debug(traceback.format_exc())
-        print_error("Skipping analysis of", bench, "!")
+        logger.debug("%s", traceback.format_exc())
+        logger.error("Skipping analysis of %s!", bench)
 
     bench.measure_cmd = old_measure_cmd
 

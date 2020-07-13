@@ -20,18 +20,20 @@ from datetime import datetime
 import fnmatch
 import inspect
 import importlib
+import logging
 import os
 from pathlib import Path
 import shutil
 from subprocess import CalledProcessError
-import sys
 from typing import List, Optional
 
 from allocbench.artifact import Artifact, ArchiveArtifact, GitArtifact
-from allocbench.util import print_status, print_debug, print_error, print_info2, run_cmd
+from allocbench.util import print_status, run_cmd
 from allocbench.directories import (get_allocbench_build_dir,
                                     get_allocbench_allocator_src_dir,
                                     get_allocbench_allocator_build_dir)
+
+logger = logging.getLogger(__file__)
 
 LIBRARY_PATH = ""
 for line in run_cmd(["ldconfig", "-v", "-N"],
@@ -114,8 +116,8 @@ class Allocator:
                                 cwd=cwd,
                                 input=patch_content)
                     except CalledProcessError as err:
-                        print_debug(err.stderr, file=sys.stderr)
-                        print_error(f"Patching of {self.name} failed.")
+                        logger.debug("%s", err.stderr)
+                        logger.error("Patching of %s failed.", self.name)
                         raise
 
         if self.prepare_cmds:
@@ -124,8 +126,8 @@ class Allocator:
                 try:
                     run_cmd(cmd, shell=True, cwd=self.srcdir)
                 except CalledProcessError as err:
-                    print_debug(err.stderr, file=sys.stderr)
-                    print_error(f"Prepare {self.name} failed")
+                    logger.debug("%s", err.stderr)
+                    logger.error("Prepare %s failed", self.name)
                     raise
 
     def build(self):
@@ -135,7 +137,7 @@ class Allocator:
             buildtimestamp_path = self.dir / ".buildtime"
 
             if not build_needed:
-                print_info2("Old build found. Comparing build time with mtime")
+                logger.info("Old build found. Comparing build time with mtime")
 
                 with open(buildtimestamp_path, "r") as buildtimestamp_file:
                     timestamp = datetime.fromtimestamp(
@@ -146,10 +148,10 @@ class Allocator:
 
                 build_needed = timestamp < modtime
 
-                print_debug("Time of last build:", timestamp.isoformat())
-                print_debug("Last modification of allocators file:",
-                            modtime.isoformat())
-                print_info2("" if build_needed else "No " + "build needed")
+                logger.debug("Time of last build: %s", timestamp.isoformat())
+                logger.debug("Last modification of allocators file: %s",
+                             modtime.isoformat())
+                logger.info("%sbuild needed", "" if build_needed else "No ")
 
             if build_needed:
                 self.prepare()
@@ -163,16 +165,16 @@ class Allocator:
                                 cwd=get_allocbench_allocator_build_dir(),
                                 shell=True)
                     except CalledProcessError as err:
-                        print_debug(err.stderr, file=sys.stderr)
-                        print_error(f"Builing {self.name} failed")
+                        logger.debug("%s", err.stderr)
+                        logger.error("Builing %s failed", self.name)
                         shutil.rmtree(self.dir, ignore_errors=True)
                         raise
 
                 with open(buildtimestamp_path, "w") as buildtimestamp_file:
-                    print_info2("Save build time to:", buildtimestamp_path)
+                    logger.info("Save build time to: %s", buildtimestamp_path)
                     buildtimestamp_file.write(str(datetime.now().timestamp()))
 
-        print_info2("Create allocator dictionary")
+        logger.info("Create allocator dictionary")
         res_dict = {
             "cmd_prefix": self.cmd_prefix or "",
             "binary_suffix": self.binary_suffix or "",
@@ -187,7 +189,7 @@ class Allocator:
                 value = value.format(dir=self.dir, srcdir=self.srcdir)
                 res_dict[attr] = value
 
-        print_debug("Resulting dictionary:", res_dict)
+        logger.debug("Resulting dictionary: %s", res_dict)
         return res_dict
 
 
@@ -251,7 +253,7 @@ def read_allocators_collection_file(alloc_path):
     if "allocators" in exec_globals:
         return {a.name: a.build() for a in exec_globals["allocators"]}
 
-    print_error("No global dictionary 'allocators' in", alloc_path)
+    logger.error("No global dictionary 'allocators' in %s", alloc_path)
     return {}
 
 
@@ -300,8 +302,7 @@ def collect_allocators(allocators):
                     for a in matched_allocators
                 })
             else:
-                print_error(
-                    name,
-                    "is neither a python file or a known allocator definition."
-                )
+                logger.error(
+                    '"%s" is neither a python file or a known allocator definition.',
+                    name)
     return ret

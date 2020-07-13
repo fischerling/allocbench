@@ -24,6 +24,7 @@ import csv
 import importlib
 import itertools
 import json
+import logging
 import multiprocessing
 import os
 import subprocess
@@ -39,9 +40,10 @@ from allocbench.directories import (get_allocbench_benchmark_src_dir,
                                     get_allocbench_build_dir)
 import allocbench.facter as facter
 import allocbench.globalvars
-from allocbench.util import print_status, print_error, print_warn
-from allocbench.util import print_info0, print_info, print_debug
+from allocbench.util import print_status
 from allocbench.util import find_cmd, prefix_cmd_with_abspath, run_cmd
+
+logger = logging.getLogger(__file__)
 
 AVAIL_BENCHMARKS = [
     p.stem for p in get_allocbench_benchmark_src_dir().glob('*.py')
@@ -69,18 +71,18 @@ class Benchmark:
         if proc.poll() is not None:
             return proc.communicate()
 
-        print_info("Terminating subprocess", proc.args)
+        logger.info("Terminating subprocess %s", proc.args)
         proc.terminate()
         try:
             outs, errs = proc.communicate(timeout=timeout)
-            print_info("Subprocess exited with ", proc.returncode)
+            logger.info("Subprocess exited with %s", proc.returncode)
         except subprocess.TimeoutExpired:
-            print_error("Killing subprocess ", proc.args)
+            logger.error("Killing subprocess %s", proc.args)
             proc.kill()
             outs, errs = proc.communicate()
 
-        print_debug("Server Out:", outs)
-        print_debug("Server Err:", errs)
+        logger.debug("Server Out: %s", outs)
+        logger.debug("Server Err: %s", errs)
         return outs, errs
 
     @staticmethod
@@ -110,14 +112,14 @@ class Benchmark:
     def is_perf_allowed():
         """raise an exception if perf is not allowed on this system"""
         if Benchmark.perf_allowed is None:
-            print_info("Check if you are allowed to use perf ...")
+            logger.info("Check if you are allowed to use perf ...")
             try:
                 run_cmd(["perf", "stat", "ls"], capture=True)
                 Benchmark.perf_allowed = True
             except subprocess.CalledProcessError as err:
-                print_error(
-                    f"Test perf run failed with exit status: {err.returncode}")
-                print_debug(err.stderr)
+                logger.error("Test perf run failed with exit status: %s",
+                             err.returncode)
+                logger.debug("%s", err.stderr)
                 Benchmark.perf_allowed = False
 
         if not Benchmark.perf_allowed:
@@ -177,9 +179,8 @@ class Benchmark:
                 value = row[0]
                 result[datapoint] = value
             except IndexError as err:
-                print_warn(
-                    f"Exception {err} occured on {row} for {alloc_name} and {perm}"
-                )
+                logger.warning("Exception %s occured on %s for %s and %s", err,
+                               row, alloc_name, perm)
 
     def __str__(self):
         return self.name
@@ -229,13 +230,13 @@ class Benchmark:
         if not hasattr(self, "requirements"):
             self.requirements = []
 
-        print_debug("Creating benchmark", self.name)
-        print_debug("Cmd:", self.cmd)
-        print_debug("Args:", self.args)
-        print_debug("Servers:", self.servers)
-        print_debug("Requirements:", self.requirements)
-        print_debug("Results dictionary:", self.results)
-        print_debug("Results directory:", self.result_dir)
+        logger.debug("Creating benchmark %s", self.name)
+        logger.debug("Cmd: %s", self.cmd)
+        logger.debug("Args: %s", self.args)
+        logger.debug("Servers: %s", self.servers)
+        logger.debug("Requirements: %s", self.requirements)
+        logger.debug("Results dictionary: %s", self.results)
+        logger.debug("Results directory: %s", self.result_dir)
 
     def prepare(self):
         """Default prepare function which only checks dependencies"""
@@ -248,7 +249,7 @@ class Benchmark:
         elif os.path.isdir(path):
             path = os.path.join(path, self.name + ".json")
 
-        print_info(f"Saving results to: {path}")
+        logger.info("Saving results to: %s", path)
         # JSON can't handle namedtuples so convert the dicts of namedtuples
         # into lists of dicts.
         save_data = {}
@@ -291,7 +292,7 @@ class Benchmark:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
                                     filename)
 
-        print_info(f"Loading results from: {filename}")
+        logger.info("Loading results from: %s", filename)
 
         # Build new named tuples
         for allocator in self.results["allocators"]:
@@ -440,10 +441,10 @@ class Benchmark:
 
         for server in self.servers:
             server_name = server.get("name", "Server")
-            print_info(f"Starting {server_name} for {alloc_name}")
+            logger.info("Starting %s for %s", server_name, alloc_name)
 
             argv = self.prepare_argv(server["cmd"], env, alloc, substitutions)
-            print_debug(argv)
+            logger.debug("%s", argv)
 
             proc = subprocess.Popen(argv,
                                     env=env,
@@ -456,8 +457,8 @@ class Benchmark:
 
             ret = proc.poll()
             if ret is not None:
-                print_debug("Stdout:", proc.stdout.read())
-                print_debug("Stderr:", proc.stderr.read())
+                logger.debug("Stdout: %s", proc.stdout.read())
+                logger.debug("Stderr: %s", proc.stderr.read())
                 raise Exception(
                     f"Starting {server_name} failed with exit code: {ret}")
             server["popen"] = proc
@@ -479,7 +480,7 @@ class Benchmark:
             if not "prepare_cmds" in server:
                 continue
 
-            print_info(f"Preparing {server_name}")
+            logger.info("Preparing %s", server_name)
             for prep_cmd in server["prepare_cmds"]:
                 prep_cmd = prep_cmd.format(**substitutions)
 
@@ -489,7 +490,7 @@ class Benchmark:
         """Terminate a started server running its shutdown_cmds in advance"""
         if server["popen"].poll() is None:
             server_name = server.get("name", "Server")
-            print_info(f"Shutting down {server_name}")
+            logger.info("Shutting down %s", server_name)
 
             substitutions = {}
             substitutions.update(self.__dict__)
@@ -517,7 +518,7 @@ class Benchmark:
 
     def shutdown_servers(self):
         """Terminate all started servers"""
-        print_info("Shutting down servers")
+        logger.info("Shutting down servers")
         for server in self.servers:
             self.shutdown_server(server)
 
@@ -552,9 +553,9 @@ class Benchmark:
                                        alloc=alloc,
                                        env=os.environ)
                 except Exception as err:  #pylint: disable=broad-except
-                    print_debug(traceback.format_exc())
-                    print_error(err)
-                    print_error("Skipping", alloc_name)
+                    logger.debug("%s", traceback.format_exc())
+                    logger.error("%s", err)
+                    logger.error("Skipping %s", alloc_name)
                     skip = True
 
                 # Preallocator hook
@@ -575,7 +576,8 @@ class Benchmark:
                         self.results[alloc_name][perm].append({})
                         continue
 
-                    print_info0(i, "of", total_executions, "\r", end='')
+                    # TODO: make this silencable
+                    print(i, "of", total_executions, "\r", end='')
 
                     # Available substitutions in cmd
                     substitutions = {"run": run, "alloc": alloc_name}
@@ -602,7 +604,7 @@ class Benchmark:
                     if hasattr(self, "run_dir"):
                         run_dir = self.run_dir.format(**substitutions)  # pylint: disable=no-member
                         os.chdir(run_dir)
-                        print_debug("\nChange cwd to:", run_dir)
+                        logger.debug("\nChange cwd to: %s", run_dir)
 
                     try:
                         res = run_cmd(argv, capture=True)
@@ -615,18 +617,16 @@ class Benchmark:
                             or "Segmentation fault" in res.stderr
                             or "Aborted" in res.stderr):
                         print()
-                        print_debug("Stdout:\n" + res.stdout)
-                        print_debug("Stderr:\n" + res.stderr)
+                        logger.debug("Stdout:\n %s", res.stdout)
+                        logger.debug("Stderr:\n %s", res.stderr)
                         if res.returncode != 0:
-                            print_error(
-                                f"{argv} failed with exit code {res.returncode} for {alloc_name}"
-                            )
+                            logger.error("%s failed with exit code %s for %s",
+                                         argv, res.returncode, alloc_name)
                         elif "ERROR: ld.so" in res.stderr:
-                            print_error(
-                                f"Preloading of {alloc['LD_PRELOAD']} failed for {alloc_name}"
-                            )
+                            logger.error("Preloading of %s failed for %s",
+                                         alloc['LD_PRELOAD'], alloc_name)
                         else:
-                            print_error(f"{argv} terminated abnormally")
+                            logger.error("%s terminated abnormally", argv)
 
                     # parse and store results
                     else:
@@ -657,7 +657,7 @@ class Benchmark:
                         if valid_result is None:
                             valid_result = result
 
-                    print_debug(f"Resulting in: {result}")
+                    logger.debug("Resulting in: %s", result)
                     self.results[alloc_name][perm].append(result)
 
                     if os.getcwd() != cwd:

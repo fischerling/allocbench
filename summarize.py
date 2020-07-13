@@ -19,6 +19,7 @@
 """Summarize the results of an allocbench run"""
 
 import argparse
+import logging
 import os
 import sys
 
@@ -27,8 +28,9 @@ import allocbench.facter as facter
 import allocbench.globalvars
 import allocbench.benchmark
 import allocbench.util
-from allocbench.util import print_status, print_debug, print_error
-from allocbench.util import print_license_and_exit
+from allocbench.util import print_status, set_verbosity, print_license_and_exit
+
+logger = logging.getLogger(__file__)
 
 
 def specific_summary(bench, sum_dir, allocators):
@@ -49,13 +51,13 @@ def specific_summary(bench, sum_dir, allocators):
     explicit_colors = [
         v["color"] for k, v in allocs_in_set.items() if v["color"] is not None
     ]
-    print_debug("Explicit colors:", explicit_colors)
+    logger.debug("Explicit colors: %s", explicit_colors)
 
     cycle_list = ["C" + str(i) for i in range(0, 10)]
     avail_colors = [
         color for color in cycle_list if color not in explicit_colors
     ]
-    print_debug("available colors:", avail_colors)
+    logger.debug("available colors: %s", avail_colors)
 
     for _, value in allocs_in_set.items():
         if value["color"] is None:
@@ -132,7 +134,7 @@ def summarize(benchmarks=None,
         try:
             bench = allocbench.benchmark.get_benchmark_object(benchmark)
         except Exception:  #pylint: disable=broad-except
-            print_error(f"Skipping {benchmark}. Loading failed")
+            logger.error("Skipping %s. Loading failed", benchmark)
             continue
 
         try:
@@ -144,7 +146,7 @@ def summarize(benchmarks=None,
         try:
             bench_sum(bench, exclude_allocators=exclude_allocators, sets=sets)
         except FileExistsError as err:
-            print(err)
+            logger.error("%s", err)
 
     os.chdir(cwd)
 
@@ -165,7 +167,11 @@ def main():
                         help="print version info and exit",
                         action='version',
                         version=f"allocbench {facter.allocbench_version()}")
-    parser.add_argument("-v", "--verbose", help="more output", action='count')
+    parser.add_argument("-v",
+                        "--verbose",
+                        help="more output",
+                        action='count',
+                        default=0)
     parser.add_argument("-b",
                         "--benchmarks",
                         help="benchmarks to summarize",
@@ -193,8 +199,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.verbose:
-        allocbench.util.VERBOSITY = args.verbose
+    set_verbosity(args.verbose)
 
     if args.file_ext:
         allocbench.plots.summary_file_ext = args.file_ext
@@ -203,7 +208,7 @@ def main():
         allocbench.plots.latex_custom_preamble = args.latex_preamble
 
     if not os.path.isdir(args.results):
-        print_error(f"{args.results} is no directory")
+        logger.critical(f"%s is no directory", args.results)
         sys.exit(1)
 
     set_current_result_dir(args.results)

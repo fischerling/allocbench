@@ -17,12 +17,29 @@
 """Helper functions for allocbench"""
 
 import hashlib
+import logging
 import os
 import subprocess
 import sys
 
-# Verbosity level -1: quiet, 0: status, 1: info, 2: stdout of subcommands, 3: debug info
+# Verbosity level -1: quiet, 0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG
 VERBOSITY = 0
+
+
+def set_verbosity(verbosity: int):
+    """Set global logging level
+
+    0 (default): logging.WARNING
+    1: logging.INFO
+    2: logging.DEBUG
+    """
+    loglevels = [logging.ERROR, logging.INFO, logging.DEBUG]
+    logging.basicConfig(level=loglevels[verbosity])
+    global VERBOSITY
+    VERBOSITY = verbosity
+
+
+logger = logging.getLogger(__file__)
 
 
 def run_cmd(cmd,
@@ -43,7 +60,7 @@ def run_cmd(cmd,
         stdout = None
         stderr = stdout
 
-    print_debug(f"Running command {cmd}")
+    logger.debug("Running command %s", cmd)
 
     return subprocess.run(cmd,
                           stdout=stdout,
@@ -118,49 +135,9 @@ def allocbench_msg(color, *objects, sep=' ', end='\n', file=None):
         print("\x1b[0m", end="", file=file, flush=True)
 
 
-def print_debug(*objects, sep=' ', end='\n', file=None):
-    """Print colorless debug message"""
-    if VERBOSITY < 3:
-        return
-    print(*objects, sep=sep, end=end, file=file)
-
-
-def print_info(*objects, sep=' ', end='\n', file=None):
-    """Print colorless info message"""
-    if VERBOSITY < 1:
-        return
-    print(*objects, sep=sep, end=end, file=file)
-
-
-def print_info0(*objects, sep=' ', end='\n', file=None):
-    """Print colorless info message at every verbosity level message"""
-    if VERBOSITY < 0:
-        return
-    print(*objects, sep=sep, end=end, file=file)
-
-
-def print_info2(*objects, sep=' ', end='\n', file=None):
-    """Print colorless info message at the second verbosity level message"""
-    if VERBOSITY < 2:
-        return
-    print(*objects, sep=sep, end=end, file=file)
-
-
 def print_status(*objects, sep=' ', end='\n', file=None):
     """Print green status message"""
     allocbench_msg("GREEN", *objects, sep=sep, end=end, file=file)
-
-
-def print_warn(*objects, sep=' ', end='\n', file=None):
-    """Print yellow warning"""
-    if VERBOSITY < 1:
-        return
-    allocbench_msg("YELLOW", *objects, sep=sep, end=end, file=file)
-
-
-def print_error(*objects, sep=' ', end='\n', file=sys.stderr):
-    """Print red error message"""
-    allocbench_msg("RED", *objects, sep=sep, end=end, file=file)
 
 
 def print_license_and_exit():
@@ -177,6 +154,6 @@ def sha1sum(filename):
     barray = bytearray(64 * 1024)
     view = memoryview(barray)
     with open(filename, 'rb', buffering=0) as input_file:
-        for n in iter(lambda: input_file.readinto(view), 0):
-            sha1.update(view[:n])
+        for bytes_read in iter(lambda: input_file.readinto(view), 0):
+            sha1.update(view[:bytes_read])
     return sha1.hexdigest()

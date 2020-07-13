@@ -21,6 +21,7 @@
 import argparse
 import atexit
 import datetime
+import logging
 import os
 import sys
 import traceback
@@ -31,13 +32,11 @@ from allocbench.benchmark import get_benchmark_object
 from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
 import allocbench.globalvars
-import allocbench.util
-from allocbench.util import run_cmd
-from allocbench.util import print_status, print_warn, print_error
-from allocbench.util import print_info, print_info2, print_debug
-from allocbench.util import print_license_and_exit
+from allocbench.util import run_cmd, print_status, print_license_and_exit
 
 from summarize import summarize
+
+logger = logging.getLogger(__file__)
 
 
 def epilog():
@@ -52,7 +51,7 @@ def epilog():
         return
 
     if not res_dir.iterdir():
-        print_warn("Remove empty resultdir")
+        logger.warning("Remove empty resultdir")
         res_dir.rmdir()
     else:
         endtime = datetime.datetime.now().isoformat()
@@ -65,7 +64,7 @@ def check_dependencies():
     """Check if known requirements of allocbench are met"""
     # used python 3.6 features: f-strings
     if sys.version_info[0] < 3 or sys.version_info[1] < 6:
-        print_error("At least python version 3.6 is required.")
+        logger.critical("At least python version 3.6 is required.")
         sys.exit(1)
 
 
@@ -84,7 +83,11 @@ def main():
                         help="how often the benchmarks run",
                         default=3,
                         type=int)
-    parser.add_argument("-v", "--verbose", help="more output", action='count')
+    parser.add_argument("-v",
+                        "--verbose",
+                        help="more output",
+                        action='count',
+                        default=0)
     parser.add_argument("-b",
                         "--benchmarks",
                         help="benchmarks to run",
@@ -122,31 +125,33 @@ def main():
     atexit.register(epilog)
 
     # Set global verbosity
-    # quiet | -1: Don't output to stdout
-    # default | 0: Only print status and errors
-    # 1: Print warnings and some infos
-    # 2: Print all infos
-    # 3: Print everything
-    if args.verbose:
-        allocbench.util.VERBOSITY = args.verbose
+    # default | 0: Only print status, errors and warnings
+    # 1: Print above plus infos
+    # 2: Print above plus debug information
+    loglevels = [logging.ERROR, logging.INFO, logging.DEBUG]
+    logging.basicConfig(level=loglevels[args.verbose])
+    allocbench.util.VERBOSITY = args.verbose
 
-    print_info2("Arguments:", args)
+    logger.debug("Arguments: %s", args)
 
     # Prepare allocbench
     print_status("Building allocbench ...")
     make_cmd = ["make"]
-    if allocbench.util.VERBOSITY < 2:
+    if args.verbose < 2:
         make_cmd.append("-s")
     run_cmd(make_cmd, output_verbosity=1)
 
     # allocators to benchmark
-    allocbench.globalvars.ALLOCATORS = collect_allocators(args.allocators)
+    allocators = collect_allocators(args.allocators)
+    allocbench.globalvars.ALLOCATORS = allocators
 
-    print_info("Allocators:", *allocbench.globalvars.ALLOCATORS.keys())
-    print_debug("Allocators:", *allocbench.globalvars.ALLOCATORS.items())
+    logger.info(f"Allocators: {'%s, ' * (len(allocators) - 1)}%s",
+                *allocators.keys())
+    logger.debug(f"Allocators: {'%s, ' * (len(allocators) - 1)}%s",
+                 *allocators.items())
 
-    if allocbench.globalvars.ALLOCATORS == {}:
-        print_error("Abort because there are no allocators to benchmark")
+    if not allocators:
+        logger.critical("Abort because there are no allocators to benchmark")
         sys.exit(1)
 
     # collect facts about benchmark environment
@@ -167,7 +172,7 @@ def main():
     # warn about unknown benchmarks
     for bench in (args.benchmarks or []) + (args.exclude_benchmarks or []):
         if bench not in allocbench.benchmark.AVAIL_BENCHMARKS:
-            print_error(f'Benchmark "{bench}" unknown!')
+            logger.error('Benchmark "%s" unknown!', bench)
 
     # Run actual benchmarks
     for bench in allocbench.benchmark.AVAIL_BENCHMARKS:
@@ -181,16 +186,16 @@ def main():
             print_status("Loading", bench, "...")
             bench = get_benchmark_object(bench)
         except Exception:  #pylint: disable=broad-except
-            print_error(traceback.format_exc())
-            print_error(f"Skipping {bench}! Loading failed.")
+            logger.error(traceback.format_exc())
+            logger.error("Skipping %s! Loading failed.", bench)
             continue
 
         try:
             print_status("Preparing", bench, "...")
             bench.prepare()
         except Exception:  #pylint: disable=broad-except
-            print_error(traceback.format_exc())
-            print_error(f"Skipping {bench}! Preparing failed.")
+            logger.error(traceback.format_exc())
+            logger.error("Skipping %s! Preparing failed.", bench)
             continue
 
         if args.analyze:
@@ -208,8 +213,8 @@ def main():
             except Exception:  #pylint: disable=broad-except
                 # Reset cwd
                 os.chdir(cwd)
-                print_error(traceback.format_exc())
-                print_error("Skipping", bench, "!")
+                logger.error(traceback.format_exc())
+                logger.error("Skipping %s!", bench)
                 continue
 
             end_time = datetime.datetime.now()

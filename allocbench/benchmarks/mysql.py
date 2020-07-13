@@ -72,6 +72,7 @@ allocators algorithm, host system and workload is needed.
 """
 
 import multiprocessing
+import logging
 import os
 import re
 import shutil
@@ -80,7 +81,9 @@ import sys
 
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
-from allocbench.util import print_status, print_debug, print_info2, print_warn, run_cmd
+from allocbench.util import print_status, run_cmd
+
+logger = logging.getLogger(__file__)
 
 MYSQL_USER = "root"
 RUN_TIME = 300
@@ -119,7 +122,7 @@ class BenchmarkMYSQL(Benchmark):
     def reset_preparations(self):
         """Reset self.build_dir if preparing fails"""
         if os.path.exists(self.build_dir):
-            print_warn("Reset mysql test directory")
+            logger.warning("Reset mysql test directory")
             shutil.rmtree(self.build_dir, ignore_errors=True)
 
     def prepare(self):
@@ -142,18 +145,18 @@ class BenchmarkMYSQL(Benchmark):
                     "mysql_install_db", "--basedir=/usr",
                     f"--datadir={self.build_dir}"
                 ]
-                print_info2("MariaDB detected")
+                logger.info("MariaDB detected")
             else:
                 init_db_cmd = [
                     "mysqld", "-h", self.build_dir, "--initialize-insecure"
                 ]
-                print_info2("Oracle MySQL detected")
+                logger.info("Oracle MySQL detected")
 
             try:
                 run_cmd(init_db_cmd, capture=True)
             except CalledProcessError as err:
-                print_debug("Stdout:", err.stdout, file=sys.stderr)
-                print_debug("Stderr:", err.stderr, file=sys.stderr)
+                logger.debug("Stdout: %s", err.stdout)
+                logger.debug("Stderr: %s", err.stderr)
                 self.reset_preparations()
                 raise
 
@@ -167,7 +170,7 @@ class BenchmarkMYSQL(Benchmark):
                         capture=True,
                         cwd=self.build_dir)
             except CalledProcessError as err:
-                print_debug("Stderr:", err.stderr, file=sys.stderr)
+                logger.debug("Stderr: %s", err.stderr)
                 self.reset_preparations()
                 raise
 
@@ -176,8 +179,8 @@ class BenchmarkMYSQL(Benchmark):
             try:
                 run_cmd(prepare_cmd, capture=True)
             except CalledProcessError as err:
-                print_debug("Stdout:", err.stdout, file=sys.stderr)
-                print_debug("Stderr:", err.stderr, file=sys.stderr)
+                logger.debug("Stdout: %s", err.stdout)
+                logger.debug("Stderr: %s", err.stderr)
                 self.reset_preparations()
                 raise
 

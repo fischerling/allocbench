@@ -22,12 +22,15 @@ Both flavours are version controlled archive with a checksum and git repositorie
 with a specific checkout.
 """
 
+import logging
 from subprocess import CalledProcessError
 
 from allocbench.directories import get_allocbench_base_dir
-from allocbench.util import print_status, print_info, print_debug, print_error, run_cmd, sha1sum
+from allocbench.util import print_status, run_cmd, sha1sum
 
 ARTIFACT_STORE_DIR = get_allocbench_base_dir() / "cache"
+
+logger = logging.getLogger(__file__)
 
 
 class Artifact:
@@ -41,7 +44,7 @@ class Artifact:
         self.basedir.mkdir(exist_ok=True)
 
         print_status(f'Retrieving artifact "{self.name}" ...')
-        print_debug(f"By running: {cmd} in {self.basedir}")
+        logger.debug("By running: %s in %s", cmd, self.basedir)
         run_cmd(cmd, output_verbosity=1, cwd=self.basedir)
 
 
@@ -70,14 +73,14 @@ class GitArtifact(Artifact):
             try:
                 run_cmd(GIT_FETCH_CMD, output_verbosity=1, cwd=location)
             except CalledProcessError:
-                print_error(f"Failed to update {location}")
+                logger.error("Failed to update %s", location)
                 raise
             try:
                 run_cmd(["git", "reset", "--hard", checkout],
                         output_verbosity=1,
                         cwd=location)
             except CalledProcessError:
-                print_error(f"Failed to update {location}")
+                logger.error("Failed to update %s", location)
                 raise
             return location
 
@@ -86,8 +89,8 @@ class GitArtifact(Artifact):
             self.retrieve()
 
         worktree_cmd = ["git", "worktree", "add", location, checkout]
-        print_debug("create new worktree. By running: ", worktree_cmd,
-                    f"in {self.repo}")
+        logger.debug("create new worktree. By running: %s in %s", worktree_cmd,
+                     self.repo)
         try:
             run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
         except CalledProcessError:
@@ -96,20 +99,20 @@ class GitArtifact(Artifact):
             try:
                 run_cmd(GIT_FETCH_CMD, output_verbosity=1, cwd=self.repo)
             except CalledProcessError:
-                print_error(f"Failed to update {self.name}")
+                logger.error("Failed to update %s", self.name)
                 raise
 
             try:
                 run_cmd(worktree_cmd, output_verbosity=1, cwd=self.repo)
             except CalledProcessError:
-                print_error(f"Failed to provide {self.name}")
+                logger.error("Failed to provide %s", self.name)
                 raise
 
         submodule_init_cmd = [
             "git", "submodule", "update", "--init", "--recursive"
         ]
-        print_debug("update submodules in worktree. By running: ",
-                    f"{submodule_init_cmd} in {self.repo}")
+        logger.debug("update submodules in worktree. By running: %s in %s",
+                     submodule_init_cmd, self.repo)
         run_cmd(submodule_init_cmd, output_verbosity=1, cwd=location)
         return location
 
@@ -141,7 +144,7 @@ class ArchiveArtifact(Artifact):
             self.retrieve()
 
         # compare checksums
-        print_info("Verify checksum ...")
+        logger.info("Verify checksum ...")
         if sha1sum(self.archive) != self.checksum:
             raise Exception(
                 f"Archive {self.archive} does not match provided checksum")
@@ -159,6 +162,6 @@ class ArchiveArtifact(Artifact):
         if self.archive_format == "tar":
             cmd = ["tar", "Cxf", location, self.archive]
 
-        print_debug(f"extract archive by running: {cmd} in {self.basedir}")
+        logger.debug("extract archive by running: %s in %s", cmd, self.basedir)
         run_cmd(cmd, output_verbosity=1, cwd=self.basedir)
         return location
