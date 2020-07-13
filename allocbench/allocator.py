@@ -166,7 +166,7 @@ class Allocator:
                                 shell=True)
                     except CalledProcessError as err:
                         logger.debug("%s", err.stderr)
-                        logger.error("Builing %s failed", self.name)
+                        logger.error("Building %s failed", self.name)
                         shutil.rmtree(self.dir, ignore_errors=True)
                         raise
 

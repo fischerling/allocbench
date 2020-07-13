@@ -48,7 +48,9 @@ tcmalloc_align = TCMalloc("TCMalloc-Aligned",
                           version="1676100265bd189df6b5513feac15f102542367e",
                           color="xkcd:light blue")
 
-tcmalloc_align.ld_preload = f"{get_allocbench_allocator_build_dir()}/align_to_cl.so {tcmalloc_align.ld_preload}"
+align_to_cl_location = f"{get_allocbench_allocator_build_dir()}/align_to_cl.so"
+
+tcmalloc_align.ld_preload = f"{align_to_cl_location} {tcmalloc_align.ld_preload}"
 # pylint: enable=invalid-name
 
 
@@ -86,8 +88,7 @@ tcmalloc_gperftools_align = TCMallocGperftools("TCMalloc-Gperftools-Aligned",
                                                color="xkcd:navy blue")
 
 tcmalloc_gperftools_align.ld_preload = (
-    f"{get_allocbench_allocator_build_dir()}/align_to_cl.so "
-    f"{tcmalloc_gperftools_align.ld_preload}")
+    f"{align_to_cl_location} {tcmalloc_gperftools_align.ld_preload}")
 
 tcmalloc_gperftools_cacheline_exclusive = TCMallocGperftools(
     "TCMalloc-Gperftools-Cacheline-Exclusive",

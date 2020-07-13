@@ -28,11 +28,16 @@ from allocbench.util import print_license_and_exit
 
 
 def load_file(filename):
+    """Load a json file"""
     with open(filename, "r") as json_file:
         return json.load(json_file)
 
 
 def main():
+    """Merge the two allocbench benchmark results
+
+    For each benchmark result included in both result directories all
+    missing allocators in the first results are copied from the second."""
     if "--license" in sys.argv:
         print_license_and_exit()
 

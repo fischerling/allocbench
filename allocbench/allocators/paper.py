@@ -17,12 +17,14 @@
 """Collection containing  all available allocators"""
 
 from allocbench.allocators.glibc import glibc
-from allocbench.allocators.tcmalloc import tcmalloc, tcmalloc_align, tcmalloc_gperftools, tcmalloc_gperftools_align
 from allocbench.allocators.jemalloc import jemalloc
 from allocbench.allocators.llalloc import llalloc
 from allocbench.allocators.mimalloc import mimalloc
 from allocbench.allocators.bumpptr import bumpptr
 from allocbench.allocators.speedymalloc import speedymalloc
+from allocbench.allocators.tcmalloc import (tcmalloc, tcmalloc_align,
+                                            tcmalloc_gperftools,
+                                            tcmalloc_gperftools_align)
 
 # pylint: disable=invalid-name
 allocators = [

@@ -35,20 +35,21 @@ def set_verbosity(verbosity: int):
     """
     loglevels = [logging.ERROR, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[verbosity])
-    global VERBOSITY
+    global VERBOSITY  # pylint: disable = global-statement
     VERBOSITY = verbosity
 
 
 logger = logging.getLogger(__file__)
 
 
-def run_cmd(cmd,
-            output_verbosity=2,
-            capture=False,
-            shell=False,
-            check=True,
-            cwd=None,
-            input=None):  # pylint: disable=redefined-builtin
+def run_cmd(  # pylint: disable=too-many-arguments
+        cmd,
+        output_verbosity=2,
+        capture=False,
+        shell=False,
+        check=True,
+        cwd=None,
+        input=None):  # pylint: disable=redefined-builtin
     """subprocess.run wrapper which cares about the set verbosity"""
     if capture:
         stdout = subprocess.PIPE

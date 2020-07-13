@@ -87,7 +87,7 @@ RESDIR = None
 
 def set_current_result_dir(resdir: Union[Path, str]):
     """Set the path to the result directory of the current invocation and silently create it"""
-    global RESDIR
+    global RESDIR  # pylint: disable=global-statement
     RESDIR = Path(resdir)
     RESDIR.mkdir(parents=True, exist_ok=True)
 

@@ -208,6 +208,9 @@ import allocbench.facter as facter
 
 class BenchmarkLld(Benchmark):
     """LLVM-lld speed benchmark definition"""
+
+    requirements = ["ld.lld"]
+
     def __init__(self):
         name = "lld"
 
@@ -225,7 +228,6 @@ class BenchmarkLld(Benchmark):
 
         self.measure_cmd = "perf stat -x, -d time -f %M,KB,VmHWM"
         self.measure_cmd_csv = True
-        self.requirements = ["ld.lld"]
 
         self.tests_artifact = ArchiveArtifact(
             "lld-speed-test",

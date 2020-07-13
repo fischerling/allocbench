@@ -69,6 +69,7 @@ def check_dependencies():
 
 
 def main():
+    """Main entry point for an allocbench benchmark run"""
     check_dependencies()
 
     parser = argparse.ArgumentParser(description="benchmark memory allocators")

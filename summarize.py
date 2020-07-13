@@ -208,7 +208,7 @@ def main():
         allocbench.plots.latex_custom_preamble = args.latex_preamble
 
     if not os.path.isdir(args.results):
-        logger.critical(f"%s is no directory", args.results)
+        logger.critical("%s is no directory", args.results)
         sys.exit(1)
 
     set_current_result_dir(args.results)

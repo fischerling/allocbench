@@ -609,6 +609,7 @@ def create_ascii_leaderboards(bench, datapoints: List[Tuple[str, str]]):
 
 
 def calc_ttests_for_alloc_pair(bench, alloc1, alloc2, datapoint: str) -> Dict:
+    """Calculate independent t-test between two allocators for each argument permutation"""
     ttest_results = {}
     for perm in bench.iterate_args():
         data1 = [float(m[datapoint]) for m in bench.results[alloc1][perm]]

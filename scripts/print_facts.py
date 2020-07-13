@@ -26,12 +26,15 @@ CURRENTDIR = os.path.dirname(os.path.abspath(__file__))
 PARENTDIR = os.path.dirname(CURRENTDIR)
 sys.path.insert(0, PARENTDIR)
 
+# pylint: disable=wrong-import-position
 from allocbench.benchmark import AVAIL_BENCHMARKS, get_benchmark_object
 import allocbench.facter as facter
 from allocbench.plots import print_facts, print_common_facts
+# pylint: enable=wrong-import-position
 
 
 def main():
+    """Print facts about an allocbench benchmark results"""
     parser = argparse.ArgumentParser(
         description="Print facts about an allocbench result directory")
     parser.add_argument("results", help="path to allocbench results", type=str)

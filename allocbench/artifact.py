@@ -33,7 +33,7 @@ ARTIFACT_STORE_DIR = get_allocbench_base_dir() / "cache"
 logger = logging.getLogger(__file__)
 
 
-class Artifact:
+class Artifact:  # pylint: disable=too-few-public-methods
     """Base class for external ressources"""
     def __init__(self, name):
         self.name = name

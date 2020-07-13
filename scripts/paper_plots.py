@@ -27,12 +27,14 @@ currentdir = os.path.dirname(os.path.abspath(__file__))
 parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
+# pylint: disable=wrong-import-position
 from allocbench.allocators.paper import allocators as paper_allocators
 from allocbench.benchmark import get_benchmark_object
 from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
 import allocbench.plots as plt
 from allocbench.util import print_status, set_verbosity, print_license_and_exit
+# pylint: enable=wrong-import-position
 
 logger = logging.getLogger(__file__)
 
@@ -48,6 +50,7 @@ ALIGNED_ALLOCATORS = [
 
 
 def falsesharing_plots(falsesharing):
+    """Create falsesharing tikz plots"""
     args = falsesharing.results["args"]
 
     falsesharing.results["allocators"] = {
@@ -93,6 +96,7 @@ def falsesharing_plots(falsesharing):
 
 
 def blowup_plots(blowup):
+    """Create blowup bar plot including ideal rss"""
     args = blowup.results["args"]
     blowup.results["allocators"] = {
         k: v
@@ -126,6 +130,7 @@ def blowup_plots(blowup):
 
 
 def loop_plots(loop):
+    """Create simple loop throughput tikz plot for 40 threads"""
     args = loop.results["args"]
     loop.results["allocators"] = {
         k: v
@@ -143,8 +148,8 @@ def loop_plots(loop):
 
 
 def mysqld_plots(mysql):
+    """Create transactions and VmHWM tikz plots"""
     args = mysql.results["args"]
-    #    mysql.results["allocators"] = {k: v for k, v in mysql.results["allocators"].items() if k in SURVEY_ALLOCATORS}
 
     plt.pgfplot(mysql,
                 mysql.iterate_args(args),
@@ -170,6 +175,7 @@ def mysqld_plots(mysql):
 
 
 def keydb_plots(keydb):
+    """Create throughput tikz bar plot"""
     args = keydb.results["args"]
     keydb.results["allocators"] = {
         k: v
@@ -229,6 +235,7 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
 
 
 def main():
+    """Main entry point for WIP paper plot creation"""
     parser = argparse.ArgumentParser(
         description="Summarize allocbench results in allocator sets")
     parser.add_argument("results", help="path to results", type=str)

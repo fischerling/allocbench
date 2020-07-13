@@ -77,7 +77,6 @@ import os
 import re
 import shutil
 from subprocess import CalledProcessError
-import sys
 
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter

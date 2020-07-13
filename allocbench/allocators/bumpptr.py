@@ -21,7 +21,6 @@ memory in speeds favor. Memory is mmapped per thread and never freed.
 See allocbench/bumpptr.c for the actual implementation.
 """
 
-import os
 from allocbench.allocator import Allocator
 from allocbench.directories import get_allocbench_allocator_build_dir
 
