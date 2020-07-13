@@ -19,7 +19,7 @@
 """Create pgfplots used in our paper"""
 
 import argparse
-import importlib
+import logging
 import os
 import sys
 
@@ -28,11 +28,13 @@ parentdir = os.path.dirname(currentdir)
 sys.path.insert(0, parentdir)
 
 from allocbench.allocators.paper import allocators as paper_allocators
+from allocbench.benchmark import get_benchmark_object
+from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
-import allocbench.globalvars
 import allocbench.plots as plt
-from allocbench.util import print_status, print_warn, print_error
-from allocbench.util import print_license_and_exit
+from allocbench.util import print_status, set_verbosity, print_license_and_exit
+
+logger = logging.getLogger(__file__)
 
 ALLOCATOR_NAMES = [a.name for a in paper_allocators]
 SURVEY_ALLOCATORS = [
@@ -194,40 +196,34 @@ def summarize(benchmarks=None, exclude_benchmarks=None):
 
     cwd = os.getcwd()
 
-    for benchmark, func in {
-            "blowup": blowup_plots,
-            "falsesharing": falsesharing_plots,
-            "mysql": mysqld_plots,
-            "keydb": keydb_plots,
-            "loop": loop_plots
-    }.items():
+    summaries = {
+        "blowup": blowup_plots,
+        "falsesharing": falsesharing_plots,
+        "mysql": mysqld_plots,
+        "keydb": keydb_plots,
+        "loop": loop_plots
+    }
+
+    for benchmark, func in summaries.items():
         if benchmarks and not benchmark in benchmarks:
             continue
         if exclude_benchmarks and benchmark in exclude_benchmarks:
             continue
 
-        bench_module = importlib.import_module(
-            f"allocbench.benchmarks.{benchmark}")
-
-        if not hasattr(bench_module, benchmark):
-            print_error(f"{benchmark} has no member {benchmark}")
-            print_error(f"Skipping {benchmark}.")
-
-        bench = getattr(bench_module, benchmark)
+        bench = get_benchmark_object(benchmark)
 
         try:
-            bench.load(allocbench.globalvars.resdir)
+            bench.load(get_current_result_dir())
         except FileNotFoundError:
-            print_warn(f"Skipping {bench.name}. No results found")
+            logger.error("Skipping %s. No results found", bench.name)
             continue
 
         print_status(f"Summarizing {bench.name} ...")
 
-        res_dir = os.path.join(allocbench.globalvars.resdir, bench.name,
-                               "paper")
-        if not os.path.isdir(res_dir):
-            os.makedirs(res_dir)
-        os.chdir(res_dir)
+        result_dir = get_current_result_dir() / bench.name / "paper"
+        if not result_dir.isdir():
+            result_dir.mkdir(parents=True)
+        os.chdir(result_dir)
         func(bench)
         os.chdir(cwd)
 
@@ -243,7 +239,11 @@ def main():
                         help="print version info and exit",
                         action='version',
                         version=f"allocbench {facter.allocbench_version()}")
-    parser.add_argument("-v", "--verbose", help="more output", action='count')
+    parser.add_argument("-v",
+                        "--verbose",
+                        help="more output",
+                        action='count',
+                        default=0)
     parser.add_argument("-b",
                         "--benchmarks",
                         help="benchmarks to summarize",
@@ -259,20 +259,19 @@ def main():
 
     args = parser.parse_args()
 
-    if args.verbose:
-        allocbench.globalvars.verbosity = args.verbose
-
-    if args.latex_preamble:
-        allocbench.globalvars.latex_custom_preamble = args.latex_preamble
+    set_verbosity(args.verbose)
 
     if not os.path.isdir(args.results):
-        print_error(f"{args.results} is no directory")
+        logger.critical("%s is no directory", args.results)
         sys.exit(1)
 
-    allocbench.globalvars.resdir = args.results
+    set_current_result_dir(args.results)
+
+    if args.latex_preamble:
+        plt.LATEX_CUSTOM_PREAMBLE = args.latex_preamble
 
     # Load facts
-    facter.load_facts(allocbench.globalvars.resdir)
+    facter.load_facts(get_current_result_dir())
 
     summarize(benchmarks=args.benchmarks,
               exclude_benchmarks=args.exclude_benchmarks)
