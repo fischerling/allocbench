@@ -19,7 +19,6 @@
 """Print facts about an allocbench result directory"""
 
 import argparse
-import importlib
 import os
 import sys
 
@@ -27,10 +26,9 @@ CURRENTDIR = os.path.dirname(os.path.abspath(__file__))
 PARENTDIR = os.path.dirname(CURRENTDIR)
 sys.path.insert(0, PARENTDIR)
 
-from allocbench.benchmark import AVAIL_BENCHMARKS
+from allocbench.benchmark import AVAIL_BENCHMARKS, get_benchmark_object
 import allocbench.facter as facter
 from allocbench.plots import print_facts, print_common_facts
-from allocbench.util import print_error
 
 
 def main():
@@ -48,14 +46,7 @@ def main():
     os.chdir(args.results)
 
     for benchmark in AVAIL_BENCHMARKS:
-        bench_module = importlib.import_module(
-            f"allocbench.benchmarks.{benchmark}")
-
-        if not hasattr(bench_module, benchmark):
-            print_error(f"{benchmark} has no member {benchmark}")
-            print_error(f"Skipping {benchmark}.")
-
-        bench = getattr(bench_module, benchmark)
+        bench = get_benchmark_object(benchmark)
 
         try:
             bench.load()
