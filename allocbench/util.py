@@ -21,7 +21,8 @@ import os
 import subprocess
 import sys
 
-import allocbench.globalvars
+# Verbosity level -1: quiet, 0: status, 1: info, 2: stdout of subcommands, 3: debug info
+VERBOSITY = 0
 
 
 def run_cmd(cmd,
@@ -35,7 +36,7 @@ def run_cmd(cmd,
     if capture:
         stdout = subprocess.PIPE
         stderr = stdout
-    elif allocbench.globalvars.VERBOSITY < output_verbosity:
+    elif VERBOSITY < output_verbosity:
         stdout = subprocess.DEVNULL
         stderr = stdout
     else:
@@ -98,7 +99,7 @@ def prefix_cmd_with_abspath(cmd):
 
 def allocbench_msg(color, *objects, sep=' ', end='\n', file=None):
     """Colored output function wrapping print"""
-    if allocbench.globalvars.VERBOSITY < 0:
+    if VERBOSITY < 0:
         return
 
     color = {
@@ -119,28 +120,28 @@ def allocbench_msg(color, *objects, sep=' ', end='\n', file=None):
 
 def print_debug(*objects, sep=' ', end='\n', file=None):
     """Print colorless debug message"""
-    if allocbench.globalvars.VERBOSITY < 3:
+    if VERBOSITY < 3:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
 def print_info(*objects, sep=' ', end='\n', file=None):
     """Print colorless info message"""
-    if allocbench.globalvars.VERBOSITY < 1:
+    if VERBOSITY < 1:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
 def print_info0(*objects, sep=' ', end='\n', file=None):
     """Print colorless info message at every verbosity level message"""
-    if allocbench.globalvars.VERBOSITY < 0:
+    if VERBOSITY < 0:
         return
     print(*objects, sep=sep, end=end, file=file)
 
 
 def print_info2(*objects, sep=' ', end='\n', file=None):
     """Print colorless info message at the second verbosity level message"""
-    if allocbench.globalvars.VERBOSITY < 2:
+    if VERBOSITY < 2:
         return
     print(*objects, sep=sep, end=end, file=file)
 
@@ -152,7 +153,7 @@ def print_status(*objects, sep=' ', end='\n', file=None):
 
 def print_warn(*objects, sep=' ', end='\n', file=None):
     """Print yellow warning"""
-    if allocbench.globalvars.VERBOSITY < 1:
+    if VERBOSITY < 1:
         return
     allocbench_msg("YELLOW", *objects, sep=sep, end=end, file=file)
 

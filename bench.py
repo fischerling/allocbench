@@ -31,6 +31,7 @@ from allocbench.benchmark import get_benchmark_object
 from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
 import allocbench.globalvars
+import allocbench.util
 from allocbench.util import run_cmd
 from allocbench.util import print_status, print_warn, print_error
 from allocbench.util import print_info, print_info2, print_debug
@@ -127,14 +128,14 @@ def main():
     # 2: Print all infos
     # 3: Print everything
     if args.verbose:
-        allocbench.globalvars.VERBOSITY = args.verbose
+        allocbench.util.VERBOSITY = args.verbose
 
     print_info2("Arguments:", args)
 
     # Prepare allocbench
     print_status("Building allocbench ...")
     make_cmd = ["make"]
-    if allocbench.globalvars.VERBOSITY < 2:
+    if allocbench.util.VERBOSITY < 2:
         make_cmd.append("-s")
     run_cmd(make_cmd, output_verbosity=1)
 

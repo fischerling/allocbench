@@ -16,15 +16,11 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Global variables for allocbench
 
-VERBOSITY: Verbosity level -1: quiet, 0: status, 1: info, 2: stdout of subcommands, 3: debug info
 ALLOCATORS: Dict holding the allocators to compare
-BENCHMARKS: List of available benchmarks
 """
 
 from typing import Dict
 
 from allocbench.allocator import Allocator
-
-VERBOSITY = 0
 
 ALLOCATORS: Dict[str, Allocator] = {}
