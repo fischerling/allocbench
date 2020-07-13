@@ -15,7 +15,8 @@
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """cfrac is a single threaded implementation of the continued fraction factorization algorithm,
-described by Zorn and Grunwald in their paper "Empirical Measurements of Six Allocation-intensive C Programs" in 1992.
+described by Zorn and Grunwald in their paper "Empirical Measurements of Six Allocation-intensive
+C Programs" in 1992.
 
 It is mentioned in:
 * Dirk Grunwald et al. - 1992 - CustoMalloc: Efficient Synthesized Memory Allocators

@@ -57,6 +57,7 @@ class BenchmarkLoop(Benchmark):
 
     @staticmethod
     def process_output(result, stdout, stderr, alloc, perm):  # pylint: disable=too-many-arguments, unused-argument
+        """Calculate million operation per second from the total run time"""
         result["mops"] = perm.threads / float(result["task-clock"])
 
     def summary(self):

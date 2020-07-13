@@ -78,8 +78,6 @@ import shutil
 from subprocess import CalledProcessError
 import sys
 
-import numpy as np
-
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
 from allocbench.util import print_status, print_debug, print_info2, print_warn, run_cmd
@@ -187,6 +185,7 @@ class BenchmarkMYSQL(Benchmark):
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
+        """Extract transactions and descriptive statistics from sysbench's output"""
         result["transactions"] = re.search("transactions:\\s*(\\d*)",
                                            stdout).group(1)
         result["queries"] = re.search("queries:\\s*(\\d*)", stdout).group(1)

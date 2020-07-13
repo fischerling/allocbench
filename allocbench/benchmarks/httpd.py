@@ -53,6 +53,7 @@ class BenchmarkHTTPD(Benchmark):
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
+        """Extract total time and handled requests from ab's output"""
         result["time"] = re.search(
             "Time taken for tests:\\s*(\\d*\\.\\d*) seconds", stdout).group(1)
         result["requests"] = re.search(

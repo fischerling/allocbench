@@ -72,6 +72,7 @@ class BenchmarkLarson(Benchmark):
 
     @staticmethod
     def process_output(result, stdout, stderr, target, perm):  # pylint: disable=too-many-arguments, unused-argument
+        """Extract and store throughput from larson's output"""
         for line in stdout.splitlines():
             res = THROUGHPUT_RE.match(line)
             if res:

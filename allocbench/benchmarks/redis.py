@@ -72,10 +72,12 @@ class BenchmarkRedis(Benchmark):
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
+        """Extract handled requests from redis-bench"""
         result["requests"] = REQUESTS_RE.search(stdout).group("requests")
 
     @staticmethod
     def cleanup():
+        """Remove regular database dump if needed"""
         if os.path.exists("dump.rdb"):
             os.remove("dump.rdb")
 

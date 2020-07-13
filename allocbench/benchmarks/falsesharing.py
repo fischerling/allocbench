@@ -14,7 +14,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
-"""Definition of the falsesahring benchmark"""
+"""Definition of the falsesharing benchmark"""
 
 import re
 
@@ -45,6 +45,7 @@ class BenchmarkFalsesharing(Benchmark):
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
+        """Extract and store the needed time from stdout"""
         result["time"] = TIME_RE.match(stdout).group("time")
 
     def summary(self):

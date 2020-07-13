@@ -55,8 +55,6 @@ The relevant non functional allocator properties are the raw speed of the
 API function as well as memory placement strategies with good data locality.
 """
 
-import os
-
 from allocbench.benchmark import Benchmark
 from allocbench.directories import get_allocbench_benchmark_src_dir
 

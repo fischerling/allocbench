@@ -96,6 +96,7 @@ class BenchmarkKeyDB(Benchmark):
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
+        """Extract measured values from memtier"""
         cmds = ["Sets", "Gets", "Waits", "Totals"]
         stats = ["ops", "hits", "misses", "latency", "throughput"]
         for line in stdout.splitlines():
@@ -108,6 +109,7 @@ class BenchmarkKeyDB(Benchmark):
 
     @staticmethod
     def cleanup():
+        """Remove regular database dump if needed"""
         if os.path.exists("dump.rdb"):
             os.remove("dump.rdb")
 

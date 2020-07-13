@@ -73,12 +73,14 @@ class BenchmarkRaxmlng(Benchmark):
 
     @staticmethod
     def cleanup():
+        """Delete data written to the file system"""
         for direntry in os.listdir():
             if direntry.startswith("prim.raxml"):
                 os.remove(direntry)
 
     @staticmethod
     def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument, no-self-use
+        """extract the runtime from raxmlng's output"""
         result["runtime"] = RUNTIME_RE.search(stdout).group("runtime")
 
     def summary(self):
