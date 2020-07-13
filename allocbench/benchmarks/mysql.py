@@ -303,11 +303,13 @@ class BenchmarkMYSQL(Benchmark):
                   file=table_file)
             print("Fäden / Allokator ", end=" ", file=table_file)
             for head in headers:
-                print("& {}".format(head), end=" ", file=table_file)
+                print("& {}".format(plt.tex_escape(str(head))),
+                      end=" ",
+                      file=table_file)
             print("\\\\\n\\hline", file=table_file)
 
             for allocator in allocators:
-                print(allocator, end=" ", file=table_file)
+                print(plt.tex_escape(allocator), end=" ", file=table_file)
                 for perm in self.iterate_args(args=args):
                     mean = data[allocator][perm]["mean"]
                     entry_string = "& \\textcolor{{{}}}{{{:.3f}}}"
