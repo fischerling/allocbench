@@ -59,7 +59,6 @@ import os
 
 from allocbench.benchmark import Benchmark
 from allocbench.directories import get_allocbench_benchmark_src_dir
-import allocbench.plots as plt
 
 
 class BenchmarkEspresso(Benchmark):
@@ -75,6 +74,9 @@ class BenchmarkEspresso(Benchmark):
         super().__init__(name)
 
     def summary(self):
+        """Create plots showing the execution time, VmHWM as well as L1 data cache miss rate"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         # Speed
         plt.plot(self,
                  "{task-clock}/1000",

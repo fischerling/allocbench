@@ -82,7 +82,6 @@ import numpy as np
 
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
-import allocbench.plots as plt
 from allocbench.util import print_status, print_debug, print_info2, print_warn, run_cmd
 
 MYSQL_USER = "root"
@@ -197,6 +196,9 @@ class BenchmarkMYSQL(Benchmark):
         result["max"] = re.search("max:\\s*(\\d*.\\d*)", stdout).group(1)
 
     def summary(self):
+        """Create plots shwoing transactions and VmHWM"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         allocators = self.results["allocators"]
         args = self.results["args"]
 

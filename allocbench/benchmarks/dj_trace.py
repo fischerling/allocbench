@@ -17,13 +17,11 @@
 """Benchmark definition using the traces collected by DJ Delorie"""
 
 import re
-import matplotlib.pyplot as plt
 import numpy as np
 
 from allocbench.artifact import ArchiveArtifact
 from allocbench.benchmark import Benchmark
 import allocbench.plots as abplt
-from allocbench.plots import SUMMARY_FILE_EXT
 
 COMMA_SEP_NUMBER_RE = "(?:\\d*(?:,\\d*)?)*"
 RSS_RE = f"(?P<rss>{COMMA_SEP_NUMBER_RE})"
@@ -170,6 +168,10 @@ class BenchmarkDJTrace(Benchmark):
 
     def summary(self):
         """Create time, rss usage plots and a plain text summary like the one from DJ Delorie"""
+
+        import matplotlib.pyplot as plt  # pylint: disable=import-outside-toplevel
+        from allocbench.plots import SUMMARY_FILE_EXT  # pylint: disable=import-outside-toplevel
+
         args = self.results["args"]
         allocators = self.results["allocators"]
 

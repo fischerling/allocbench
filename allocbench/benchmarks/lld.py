@@ -201,13 +201,9 @@ So data locality and scalability should be the most important factor for those w
 
 import os
 
-import matplotlib.pyplot as plt
-
 from allocbench.artifact import ArchiveArtifact
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
-import allocbench.plots
-from allocbench.plots import SUMMARY_FILE_EXT
 
 
 class BenchmarkLld(Benchmark):
@@ -259,6 +255,10 @@ class BenchmarkLld(Benchmark):
 
     def summary(self):
         """Create time and memory usage plots"""
+        import allocbench.plots  # pylint: disable=import-outside-toplevel
+        import matplotlib.pyplot as plt  # pylint: disable=import-outside-toplevel
+        from allocbench.plots import SUMMARY_FILE_EXT  # pylint: disable=import-outside-toplevel
+
         args = self.results["args"]
         allocators = self.results["allocators"]
 

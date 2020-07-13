@@ -26,7 +26,6 @@ import re
 
 from allocbench.artifact import ArchiveArtifact
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 from allocbench.util import run_cmd
 
 REQUESTS_RE = re.compile("(?P<requests>(\\d*.\\d*)) requests per second")
@@ -81,6 +80,9 @@ class BenchmarkRedis(Benchmark):
             os.remove("dump.rdb")
 
     def summary(self):
+        """Create plots showing handled requests and VmHWM"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         plt.plot(self,
                  "{requests}",
                  plot_type='bar',

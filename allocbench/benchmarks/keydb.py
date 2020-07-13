@@ -24,7 +24,6 @@ import os
 
 from allocbench.artifact import GitArtifact
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 from allocbench.util import run_cmd
 
 KEYDB_VERSION = "v5.3.1"
@@ -113,6 +112,8 @@ class BenchmarkKeyDB(Benchmark):
             os.remove("dump.rdb")
 
     def summary(self):
+        """Create plots shwowing operation count and VmHWM"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
         plt.plot(self,
                  "{totals_ops}",
                  fig_options={

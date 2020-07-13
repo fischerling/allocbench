@@ -35,7 +35,6 @@ Interpretation:
 """
 
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 
 
 class BenchmarkLoop(Benchmark):
@@ -61,6 +60,9 @@ class BenchmarkLoop(Benchmark):
         result["mops"] = perm.threads / float(result["task-clock"])
 
     def summary(self):
+        """Create plots showing MOPS and l1 data cache misses"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         # Speed
         plt.plot(self,
                  "{mops}",

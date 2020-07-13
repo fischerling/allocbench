@@ -21,7 +21,6 @@ import re
 
 from allocbench.artifact import GitArtifact
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 from allocbench.util import run_cmd
 
 RUNTIME_RE = re.compile("Elapsed time: (?P<runtime>(\\d*.\\d*)) seconds")
@@ -83,6 +82,8 @@ class BenchmarkRaxmlng(Benchmark):
         result["runtime"] = RUNTIME_RE.search(stdout).group("runtime")
 
     def summary(self):
+        """Create plots showing runtime and VmHWM"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
         plt.plot(self,
                  "{runtime}",
                  plot_type='bar',

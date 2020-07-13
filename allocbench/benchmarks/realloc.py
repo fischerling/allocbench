@@ -16,7 +16,6 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Definition of the realloc micro benchmark"""
 
-import allocbench.plots as plt
 from allocbench.benchmark import Benchmark
 
 
@@ -34,6 +33,9 @@ class BenchmarkRealloc(Benchmark):
         super().__init__(name)
 
     def summary(self):
+        """Create plot showing the needed runtime"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         plt.plot(self,
                  "{task-clock}",
                  plot_type='bar',

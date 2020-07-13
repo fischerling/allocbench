@@ -20,7 +20,6 @@ import os
 
 from allocbench.artifact import ArchiveArtifact, GitArtifact
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 
 LINUX_VERSION = 'v5.3'
 FD_VERSION = 'v7.4.0'
@@ -63,6 +62,8 @@ class BenchmarkFd(Benchmark):
         os.link(src, dest)
 
     def summary(self):
+        """Create plots showing execution time and VmHWM"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
         plt.plot(self,
                  "{task-clock}",
                  plot_type='bar',

@@ -48,7 +48,6 @@ false sharing because it uses multiple threads, which pass memory around.
 import re
 
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 
 THROUGHPUT_RE = re.compile(
     "^Throughput =\\s*(?P<throughput>\\d+) operations per second.$")
@@ -80,6 +79,9 @@ class BenchmarkLarson(Benchmark):
                 return
 
     def summary(self):
+        """Create plots showing throughput and L1 data chache miss rate"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         # Plot threads->throughput and maxsize->throughput
         plt.plot(self,
                  "{throughput}/1000000",

@@ -17,7 +17,6 @@
 """Definition of the blowup micro benchmark"""
 
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 
 
 class BenchmarkBlowup(Benchmark):
@@ -40,6 +39,9 @@ class BenchmarkBlowup(Benchmark):
         super().__init__(name)
 
     def summary(self):
+        """Create plots showing the needed VmHWM compared to the ideal one"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         # hack ideal rss in data set
         allocators = self.results["allocators"]
         allocators["Ideal-RSS"] = {"color": "xkcd:gold"}

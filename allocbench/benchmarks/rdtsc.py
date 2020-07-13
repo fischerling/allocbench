@@ -23,11 +23,8 @@ https://developers.redhat.com/blog/2016/03/11/practical-micro-benchmarking-with-
 """
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 from allocbench.benchmark import Benchmark
-import allocbench.plots
-from allocbench.plots import SUMMARY_FILE_EXT
 
 
 class BenchmarkRdtsc(Benchmark):
@@ -55,6 +52,11 @@ class BenchmarkRdtsc(Benchmark):
         result["cycles"] = np.mean(all_cycles)
 
     def summary(self):
+        """Create plots showing needed cycles"""
+        import matplotlib.pyplot as plt  # pylint: disable=import-outside-toplevel
+        import allocbench.plots  # pylint: disable=import-outside-toplevel
+        from allocbench.plots import SUMMARY_FILE_EXT  # pylint: disable=import-outside-toplevel
+
         for perm in self.iterate_args(args=self.results['args']):
             label = f'rdtsc_{perm}_cycles'
             fig = plt.figure(label)

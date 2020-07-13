@@ -20,7 +20,6 @@ import re
 
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
-import allocbench.plots as plt
 
 
 class BenchmarkHTTPD(Benchmark):
@@ -60,6 +59,9 @@ class BenchmarkHTTPD(Benchmark):
             "Requests per second:\\s*(\\d*\\.\\d*) .*", stdout).group(1)
 
     def summary(self):
+        """Create plots shwoing requests and VmHWM"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         plt.plot(self,
                  "{requests}",
                  fig_options={

@@ -17,7 +17,6 @@
 """Definition of the commonly used t-test1 allocator test"""
 
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 
 
 class BenchmarkTTest1(Benchmark):
@@ -39,6 +38,9 @@ class BenchmarkTTest1(Benchmark):
         super().__init__(name)
 
     def summary(self):
+        """Create plots showing runtime and L1 data cache miss rate"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         # mops / per second
         yval = "perm.nthreads / ({task-clock}/1000)"
         # Speed

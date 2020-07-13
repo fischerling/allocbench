@@ -19,7 +19,6 @@
 import re
 
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 
 TIME_RE = re.compile("^Time elapsed = (?P<time>\\d*\\.\\d*) seconds.$")
 
@@ -49,6 +48,8 @@ class BenchmarkFalsesharing(Benchmark):
         result["time"] = TIME_RE.match(stdout).group("time")
 
     def summary(self):
+        """Create plots showing the speedup and L1 data cache miss rate"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
         args = self.results["args"]
         allocators = self.results["allocators"]
 

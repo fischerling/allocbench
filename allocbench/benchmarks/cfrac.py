@@ -59,7 +59,6 @@ API function as well as memory placement strategies with good data locality.
 """
 
 from allocbench.benchmark import Benchmark
-import allocbench.plots as plt
 
 
 class BenchmarkCfrac(Benchmark):
@@ -75,6 +74,9 @@ class BenchmarkCfrac(Benchmark):
         super().__init__(name)
 
     def summary(self):
+        """Create plots showing the needed execution times and VmHWM"""
+        import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
+
         # Speed
         plt.plot(self,
                  "{task-clock}/1000",
