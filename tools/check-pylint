@@ -1,8 +1,8 @@
 #!/bin/bash
 
-PYLINT_EXIT=$?
-# pylint error masks
+PYLINT_EXIT=${1}
 
+# pylint error masks
 FATAL_MASK=1
 ERROR_MASK=2 
 WARNING_MASK=4
