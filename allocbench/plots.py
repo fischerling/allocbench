@@ -19,7 +19,6 @@
 import ast
 import copy
 import itertools
-import logging
 import operator
 import os
 import re
@@ -32,8 +31,9 @@ import numpy as np
 import scipy.stats
 
 import allocbench.facter as facter
+from allocbench.util import get_logger
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 # This is useful when evaluating strings in the plot functions. str(np.NaN) == "nan"
 nan = np.NaN  # pylint: disable=invalid-name

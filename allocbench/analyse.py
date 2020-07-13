@@ -17,13 +17,12 @@
 """Analyze benchmarks and allocators"""
 
 import importlib
-import logging
 import os
 import traceback
 
-from allocbench.util import find_cmd, print_status
+from allocbench.util import find_cmd, print_status, get_logger
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 
 def build_analyze_alloc():

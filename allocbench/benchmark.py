@@ -24,7 +24,6 @@ import csv
 import importlib
 import itertools
 import json
-import logging
 import multiprocessing
 import os
 import subprocess
@@ -40,10 +39,10 @@ from allocbench.directories import (get_allocbench_benchmark_src_dir,
                                     get_allocbench_build_dir)
 import allocbench.facter as facter
 import allocbench.globalvars
-from allocbench.util import print_status
-from allocbench.util import find_cmd, prefix_cmd_with_abspath, run_cmd
+from allocbench.util import (print_status, find_cmd, prefix_cmd_with_abspath,
+                             run_cmd, get_logger)
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 AVAIL_BENCHMARKS = [
     p.stem for p in get_allocbench_benchmark_src_dir().glob('*.py')

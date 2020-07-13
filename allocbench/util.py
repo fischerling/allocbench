@@ -39,7 +39,12 @@ def set_verbosity(verbosity: int):
     VERBOSITY = verbosity
 
 
-logger = logging.getLogger(__file__)
+def get_logger(path: str) -> logging.Logger:
+    """Return the logger retrieved by logging.getLogger with the basename of path"""
+    return logging.getLogger(os.path.basename(path))
+
+
+logger = get_logger(__file__)
 
 
 def run_cmd(  # pylint: disable=too-many-arguments

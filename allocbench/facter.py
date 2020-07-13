@@ -20,16 +20,15 @@ import ctypes
 import datetime
 import errno
 import json
-import logging
 import multiprocessing
 import os
 import platform
 from subprocess import CalledProcessError
 
 from allocbench.directories import get_allocbench_build_dir
-from allocbench.util import run_cmd
+from allocbench.util import run_cmd, get_logger
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 FACTS = {}
 

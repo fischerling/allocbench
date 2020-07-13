@@ -19,7 +19,6 @@
 """Summarize the results of an allocbench run"""
 
 import argparse
-import logging
 import os
 import sys
 
@@ -28,9 +27,9 @@ import allocbench.facter as facter
 import allocbench.globalvars
 import allocbench.benchmark
 import allocbench.util
-from allocbench.util import print_status, set_verbosity, print_license_and_exit
+from allocbench.util import print_status, set_verbosity, print_license_and_exit, get_logger
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 
 def specific_summary(bench, sum_dir, allocators):

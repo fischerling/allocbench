@@ -20,7 +20,6 @@ from datetime import datetime
 import fnmatch
 import inspect
 import importlib
-import logging
 import os
 from pathlib import Path
 import shutil
@@ -28,12 +27,12 @@ from subprocess import CalledProcessError
 from typing import List, Optional
 
 from allocbench.artifact import Artifact, ArchiveArtifact, GitArtifact
-from allocbench.util import print_status, run_cmd
+from allocbench.util import print_status, run_cmd, get_logger
 from allocbench.directories import (get_allocbench_build_dir,
                                     get_allocbench_allocator_src_dir,
                                     get_allocbench_allocator_build_dir)
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 LIBRARY_PATH = ""
 for line in run_cmd(["ldconfig", "-v", "-N"],

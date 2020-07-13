@@ -19,7 +19,6 @@
 """Create pgfplots used in our paper"""
 
 import argparse
-import logging
 import os
 import sys
 
@@ -33,10 +32,10 @@ from allocbench.benchmark import get_benchmark_object
 from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
 import allocbench.plots as plt
-from allocbench.util import print_status, set_verbosity, print_license_and_exit
+from allocbench.util import print_status, set_verbosity, print_license_and_exit, get_logger
 # pylint: enable=wrong-import-position
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 ALLOCATOR_NAMES = [a.name for a in paper_allocators]
 SURVEY_ALLOCATORS = [

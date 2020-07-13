@@ -72,7 +72,6 @@ allocators algorithm, host system and workload is needed.
 """
 
 import multiprocessing
-import logging
 import os
 import re
 import shutil
@@ -80,9 +79,9 @@ from subprocess import CalledProcessError
 
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
-from allocbench.util import print_status, run_cmd
+from allocbench.util import print_status, run_cmd, get_logger
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 MYSQL_USER = "root"
 RUN_TIME = 300

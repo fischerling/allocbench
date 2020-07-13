@@ -22,15 +22,14 @@ Both flavours are version controlled archive with a checksum and git repositorie
 with a specific checkout.
 """
 
-import logging
 from subprocess import CalledProcessError
 
 from allocbench.directories import get_allocbench_base_dir
-from allocbench.util import print_status, run_cmd, sha1sum
+from allocbench.util import print_status, run_cmd, sha1sum, get_logger
 
 ARTIFACT_STORE_DIR = get_allocbench_base_dir() / "cache"
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 
 class Artifact:  # pylint: disable=too-few-public-methods

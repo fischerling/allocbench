@@ -32,11 +32,11 @@ from allocbench.benchmark import get_benchmark_object
 from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
 import allocbench.globalvars
-from allocbench.util import run_cmd, print_status, print_license_and_exit
+from allocbench.util import run_cmd, print_status, print_license_and_exit, get_logger
 
 from summarize import summarize
 
-logger = logging.getLogger(__file__)
+logger = get_logger(__file__)
 
 
 def epilog():
