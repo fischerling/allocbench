@@ -27,7 +27,7 @@ import traceback
 
 from allocbench.allocator import collect_allocators
 from allocbench.analyse import analyze_bench, analyze_allocators
-from allocbench.benchmark import get_benchmark_object
+from allocbench.benchmark import get_benchmark_object, AVAIL_BENCHMARKS
 from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
 from allocbench.util import (run_cmd, print_status, print_license_and_exit,
@@ -164,11 +164,11 @@ def main():
 
     # warn about unknown benchmarks
     for bench in (args.benchmarks or []) + (args.exclude_benchmarks or []):
-        if bench not in allocbench.benchmark.AVAIL_BENCHMARKS:
+        if bench not in AVAIL_BENCHMARKS:
             logger.error('Benchmark "%s" unknown!', bench)
 
     # Run actual benchmarks
-    for bench in allocbench.benchmark.AVAIL_BENCHMARKS:
+    for bench in AVAIL_BENCHMARKS:
         if args.benchmarks and bench not in args.benchmarks:
             continue
 
