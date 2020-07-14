@@ -31,8 +31,8 @@ from allocbench.analyse import analyze_bench, analyze_allocators
 from allocbench.benchmark import get_benchmark_object
 from allocbench.directories import get_current_result_dir, set_current_result_dir
 import allocbench.facter as facter
-import allocbench.globalvars
-from allocbench.util import run_cmd, print_status, print_license_and_exit, get_logger
+from allocbench.util import (run_cmd, print_status, print_license_and_exit,
+                             get_logger, set_verbosity)
 
 from summarize import summarize
 
@@ -125,13 +125,7 @@ def main():
 
     atexit.register(epilog)
 
-    # Set global verbosity
-    # default | 0: Only print status, errors and warnings
-    # 1: Print above plus infos
-    # 2: Print above plus debug information
-    loglevels = [logging.ERROR, logging.INFO, logging.DEBUG]
-    logging.basicConfig(level=loglevels[args.verbose])
-    allocbench.util.VERBOSITY = args.verbose
+    set_verbosity(args.verbose)
 
     logger.debug("Arguments: %s", args)
 
