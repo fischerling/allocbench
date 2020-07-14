@@ -166,6 +166,97 @@ class BenchmarkDJTrace(Benchmark):
                 fname = functions[i]
                 result["avg_" + fname] = to_int(res.group("time"))
 
+    def create_dj_plain_summary(self, func_times_means, rss_means):
+        """Create plain text summary similar to DJ's
+
+        see: https://sourceware.org/ml/libc-alpha/2017-01/msg00452.html"""
+
+        args = self.results["args"]
+        allocators = self.results["allocators"]
+
+        cycles_means = {
+            allocator: {
+                perm: self.results["stats"][allocator][perm]["mean"]
+                for perm in self.iterate_args(args=args)
+            }
+            for allocator in allocators
+        }
+
+        with open(self.name + "_plain.txt", "w") as summary_file:
+            # Absolutes
+            fmt = "{:<20} {:>15} {:>7} {:>7} {:>7} {:>7} {:>7}"
+            for i, allocator in enumerate(allocators):
+                print(f"{'-' * 10} {allocator} {'-' * 10}", file=summary_file)
+                print(fmt.format("Workload", "Total", "malloc", "calloc",
+                                 "realloc", "free", "RSS"),
+                      file=summary_file)
+
+                for perm in self.iterate_args(args=args):
+                    cycles = abplt.get_y_data(self, "{cycles}", allocator,
+                                              perm)[0]
+                    times = func_times_means[allocator][perm]
+                    rss = rss_means[allocator][perm]
+                    print(fmt.format(perm.workload, cycles, times[0], times[1],
+                                     times[2], times[3], rss),
+                          file=summary_file)
+
+                print(file=summary_file)
+
+            # Changes. First allocator in allocators is the reference
+            fmt_changes = "{:<20} {:>14.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}%"
+            ref_alloc = list(allocators)[0]
+            for allocator in list(allocators)[1:]:
+                print("{0} Changes {1} {0}".format("-" * 10, allocator),
+                      file=summary_file)
+                print(fmt.format("Workload", "Total", "malloc", "calloc",
+                                 "realloc", "free", "RSS"),
+                      file=summary_file)
+
+                cycles_change_means = []
+                times_change_means = []
+                rss_change_means = []
+                for perm in self.iterate_args(args=args):
+
+                    normal_cycles = cycles_means[ref_alloc][perm]
+                    if normal_cycles:
+                        cycles = np.round(cycles_means[allocator][perm] /
+                                          normal_cycles * 100)
+                    else:
+                        cycles = 0
+                    cycles_change_means.append(cycles)
+
+                    normal_times = func_times_means[ref_alloc][perm]
+                    times = [0, 0, 0, 0]
+                    for i, normalized_func_time in enumerate(normal_times):
+                        func_time = func_times_means[allocator][perm][i]
+                        if normalized_func_time != 0:
+                            times[i] = np.round(func_time /
+                                                normalized_func_time * 100)
+                    times_change_means.append(times)
+
+                    normal_rss = rss_means[ref_alloc][perm]
+                    if normal_rss:
+                        rss = np.round(rss_means[allocator][perm] /
+                                       normal_rss * 100)
+                    else:
+                        rss = 0
+                    rss_change_means.append(rss)
+
+                    print(fmt_changes.format(perm.workload, cycles, times[0],
+                                             times[1], times[2], times[3],
+                                             rss),
+                          file=summary_file)
+                print(file=summary_file)
+                tmeans = [0, 0, 0, 0]
+                for i in range(0, len(times)):
+                    tmeans[i] = np.mean(
+                        [times[i] for times in times_change_means])
+                print(fmt_changes.format("Mean:", np.mean(cycles_change_means),
+                                         tmeans[0], tmeans[1], tmeans[2],
+                                         tmeans[3], np.mean(rss_change_means)),
+                      '\n',
+                      file=summary_file)
+
     def summary(self):
         """Create time, rss usage plots and a plain text summary like the one from DJ Delorie"""
 
@@ -295,89 +386,4 @@ class BenchmarkDJTrace(Benchmark):
         }],
                               file_postfix="table")
 
-        # Create summary similar to DJ's at
-        # https://sourceware.org/ml/libc-alpha/2017-01/msg00452.html
-        cycles_means = {
-            allocator: {
-                perm: self.results["stats"][allocator][perm]["mean"]
-                for perm in self.iterate_args(args=args)
-            }
-            for allocator in allocators
-        }
-
-        with open(self.name + "_plain.txt", "w") as summary_file:
-            # Absolutes
-            fmt = "{:<20} {:>15} {:>7} {:>7} {:>7} {:>7} {:>7}"
-            for i, allocator in enumerate(allocators):
-                print("{0} {1} {0}".format("-" * 10, allocator),
-                      file=summary_file)
-                print(fmt.format("Workload", "Total", "malloc", "calloc",
-                                 "realloc", "free", "RSS"),
-                      file=summary_file)
-
-                for perm in self.iterate_args(args=args):
-                    cycles = abplt.get_y_data(self, "{cycles}", allocator,
-                                              perm)[0]
-                    times = func_times_means[allocator][perm]
-                    rss = rss_means[allocator][perm]
-                    print(fmt.format(perm.workload, cycles, times[0], times[1],
-                                     times[2], times[3], rss),
-                          file=summary_file)
-
-                print(file=summary_file)
-
-            # Changes. First allocator in allocators is the reference
-            fmt_changes = "{:<20} {:>14.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}% {:>6.0f}%"
-            for allocator in list(allocators)[1:]:
-                print("{0} Changes {1} {0}".format("-" * 10, allocator),
-                      file=summary_file)
-                print(fmt.format("Workload", "Total", "malloc", "calloc",
-                                 "realloc", "free", "RSS"),
-                      file=summary_file)
-
-                ref_alloc = list(allocators)[0]
-                cycles_change_means = []
-                times_change_means = []
-                rss_change_means = []
-                for perm in self.iterate_args(args=args):
-
-                    normal_cycles = cycles_means[ref_alloc][perm]
-                    if normal_cycles:
-                        cycles = np.round(cycles_means[allocator][perm] /
-                                          normal_cycles * 100)
-                    else:
-                        cycles = 0
-                    cycles_change_means.append(cycles)
-
-                    normal_times = func_times_means[ref_alloc][perm]
-                    times = [0, 0, 0, 0]
-                    for i in range(0, len(times)):
-                        func_time = func_times_means[allocator][perm][i]
-                        normalized_func_time = normal_times[i]
-                        if normalized_func_time != 0:
-                            times[i] = np.round(func_time /
-                                                normalized_func_time * 100)
-                    times_change_means.append(times)
-
-                    normal_rss = rss_means[ref_alloc][perm]
-                    if normal_rss:
-                        rss = np.round(rss_means[allocator][perm] /
-                                       normal_rss * 100)
-                    else:
-                        rss = 0
-                    rss_change_means.append(rss)
-
-                    print(fmt_changes.format(perm.workload, cycles, times[0],
-                                             times[1], times[2], times[3],
-                                             rss),
-                          file=summary_file)
-                print(file=summary_file)
-                tmeans = [0, 0, 0, 0]
-                for i in range(0, len(times)):
-                    tmeans[i] = np.mean(
-                        [times[i] for times in times_change_means])
-                print(fmt_changes.format("Mean:", np.mean(cycles_change_means),
-                                         tmeans[0], tmeans[1], tmeans[2],
-                                         tmeans[3], np.mean(rss_change_means)),
-                      '\n',
-                      file=summary_file)
+        self.create_dj_plain_summary(func_times_means, rss_means)
