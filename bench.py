@@ -21,7 +21,6 @@
 import argparse
 import atexit
 import datetime
-import logging
 import os
 import sys
 import traceback
