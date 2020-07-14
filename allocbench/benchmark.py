@@ -38,7 +38,6 @@ from allocbench.directories import (get_allocbench_benchmark_src_dir,
                                     get_allocbench_benchmark_build_dir,
                                     get_allocbench_build_dir)
 import allocbench.facter as facter
-import allocbench.globalvars
 from allocbench.util import (print_status, find_cmd, prefix_cmd_with_abspath,
                              run_cmd, get_logger)
 
@@ -188,8 +187,6 @@ class Benchmark:
         """Initialize a benchmark with default members if they aren't set already"""
         self.name = name
 
-        self.allocators = copy.deepcopy(allocbench.globalvars.ALLOCATORS)
-
         # Set result_dir
         if not hasattr(self, "result_dir"):
             res_dir = get_current_result_dir()
@@ -207,13 +204,12 @@ class Benchmark:
 
         default_results = {
             "args": self.args,
-            "allocators": self.allocators,
+            "allocators": None,
             "facts": {
                 "libcs": {},
                 "versions": {}
             }
         }
-        default_results.update({alloc: {} for alloc in self.allocators})
 
         if not hasattr(self, "results"):
             self.results = default_results
@@ -521,8 +517,22 @@ class Benchmark:
         for server in self.servers:
             self.shutdown_server(server)
 
-    def run(self, runs=3):
+    def expand_invalid_results(self, valid_result, allocators):
+        """Expand each empty measurement with the fields from a valid one and NaN"""
+        for allocator in allocators:
+            for perm in self.iterate_args():
+                for i, measure in enumerate(self.results[allocator][perm]):
+                    if not measure:
+                        self.results[allocator][perm][i] = {
+                            k: np.NaN
+                            for k in valid_result
+                        }
+
+    def run(self, allocators: Dict[str, Dict[str, str]], runs=3):
         """generic run implementation"""
+
+        self.results["allocators"] = copy.deepcopy(allocators)
+        self.results.update({alloc: {} for alloc in allocators})
 
         # check if we are allowed to use perf
         if self.measure_cmd.startswith("perf"):
@@ -536,13 +546,12 @@ class Benchmark:
 
         self.results["facts"]["runs"] = runs
 
-        total_executions = len(list(self.iterate_args())) * len(
-            self.allocators)
+        total_executions = len(list(self.iterate_args())) * len(allocators)
         for run in range(1, runs + 1):
             print_status(run, ". run", sep='')
 
             i = 0
-            for alloc_name, alloc in self.allocators.items():
+            for alloc_name, alloc in allocators.items():
                 if alloc_name not in self.results:
                     self.results[alloc_name] = {}
 
@@ -683,15 +692,8 @@ class Benchmark:
             f"{os.pathsep}{self.build_dir}", "")
 
         # expand invalid results
-        if valid_result != {}:
-            for allocator in self.allocators:
-                for perm in self.iterate_args():
-                    for i, measure in enumerate(self.results[allocator][perm]):
-                        if measure == {}:
-                            self.results[allocator][perm][i] = {
-                                k: np.NaN
-                                for k in valid_result
-                            }
+        if valid_result:
+            self.expand_invalid_results(valid_result, allocators)
 
         self.calc_desc_statistics()
 

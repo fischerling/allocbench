@@ -24,7 +24,6 @@ import sys
 
 from allocbench.directories import set_current_result_dir, get_current_result_dir
 import allocbench.facter as facter
-import allocbench.globalvars
 import allocbench.benchmark
 import allocbench.util
 from allocbench.util import print_status, set_verbosity, print_license_and_exit, get_logger
@@ -61,8 +60,6 @@ def specific_summary(bench, sum_dir, allocators):
     for _, value in allocs_in_set.items():
         if value["color"] is None:
             value["color"] = avail_colors.pop()
-
-    allocbench.globalvars.ALLOCATORS = allocators
 
     bench.summary()
     bench.results["allocators"] = old_allocs

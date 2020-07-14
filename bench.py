@@ -144,7 +144,6 @@ def main():
 
     # allocators to benchmark
     allocators = collect_allocators(args.allocators)
-    allocbench.globalvars.ALLOCATORS = allocators
 
     logger.info(f"Allocators: {'%s, ' * (len(allocators) - 1)}%s",
                 *allocators.keys())
@@ -203,14 +202,14 @@ def main():
             analyze_bench(bench)
 
         if args.analyze_allocators:
-            analyze_allocators(bench, allocbench.globalvars.ALLOCATORS)
+            analyze_allocators(bench, allocators)
 
         if args.runs > 0:
             print_status("Running", bench.name, "...")
             start_time = datetime.datetime.now()
             bench.results['facts']['start-time'] = start_time.isoformat()
             try:
-                bench.run(runs=args.runs)
+                bench.run(allocators, runs=args.runs)
             except Exception:  #pylint: disable=broad-except
                 # Reset cwd
                 os.chdir(cwd)

@@ -376,9 +376,9 @@ def plot(bench,
         Directory where the plot should be saved. If not provided defaults
         to the current working directory.
 
-    file_ext : str, optional, default=:rc:`allocbench.globalvars.SUMMARY_FILE_EXT`
+    file_ext : str, optional, default=:rc:`allocbench.plots.SUMMARY_FILE_EXT`
         File extension of the saved plot. If not provided defaults to the
-        value of :rc:`allocbench.globalvars.SUMMARY_FILE_EXT`
+        value of :rc:`allocbench.plots.SUMMARY_FILE_EXT`
 
     """
 
