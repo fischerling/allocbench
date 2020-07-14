@@ -200,7 +200,6 @@ class BenchmarkMYSQL(Benchmark):
         import allocbench.plots as plt  # pylint: disable=import-outside-toplevel
 
         allocators = self.results["allocators"]
-        args = self.results["args"]
 
         # linear plot
         plt.plot(self,
@@ -268,63 +267,6 @@ class BenchmarkMYSQL(Benchmark):
             "sort": "<"
         }],
                             file_postfix="table")
-
-        # Colored latex table showing transactions count
-        data = {allocator: {} for allocator in allocators}
-        for perm in self.iterate_args(args=args):
-            for allocator in allocators:
-                mean = plt.get_y_data(self, "{transactions}", allocator,
-                                      perm)[0]
-                std = plt.get_y_data(self,
-                                     "{transactions}",
-                                     allocator,
-                                     perm,
-                                     stat="std")[0]
-                data[allocator][perm] = {"mean": mean, "std": std}
-
-        mins = {}
-        maxs = {}
-        for perm in self.iterate_args(args=args):
-            cmax = None
-            cmin = None
-            for allocator in allocators:
-                mean = data[allocator][perm]["mean"]
-                if not cmax or mean > cmax:
-                    cmax = mean
-                if not cmin or mean < cmin:
-                    cmin = mean
-            maxs[perm] = cmax
-            mins[perm] = cmin
-
-        fname = ".".join([self.name, "transactions.tex"])
-        headers = [perm.nthreads for perm in self.iterate_args(args=args)]
-        with open(fname, "w") as table_file:
-            print("\\begin{tabular}{| l" + " l" * len(headers) + " |}",
-                  file=table_file)
-            print("Fäden / Allokator ", end=" ", file=table_file)
-            for head in headers:
-                print("& {}".format(plt.tex_escape(str(head))),
-                      end=" ",
-                      file=table_file)
-            print("\\\\\n\\hline", file=table_file)
-
-            for allocator in allocators:
-                print(plt.tex_escape(allocator), end=" ", file=table_file)
-                for perm in self.iterate_args(args=args):
-                    mean = data[allocator][perm]["mean"]
-                    entry_string = "& \\textcolor{{{}}}{{{:.3f}}}"
-                    if mean == maxs[perm]:
-                        color = "green"
-                    elif mean == mins[perm]:
-                        color = "red"
-                    else:
-                        color = "black"
-                    print(entry_string.format(color, mean),
-                          end=" ",
-                          file=table_file)
-                print("\\\\", file=table_file)
-
-            print("\\end{tabular}", file=table_file)
 
         plt.export_stats_to_csv(self, "transactions")
         plt.export_stats_to_dataref(self, "transactions")
