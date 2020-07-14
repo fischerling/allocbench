@@ -44,7 +44,7 @@ class BenchmarkRdtsc(Benchmark):
         super().__init__(name)
 
     @staticmethod
-    def process_output(result, stdout, stderr, alloc, perm):  # pylint: disable=too-many-arguments, unused-argument
+    def process_output(result, stdout, stderr, allocator, perm):  # pylint: disable=too-many-arguments, unused-argument
         """Collect cycles needed during all iterations and calcullate mean"""
         all_cycles = []
         for line in stdout.splitlines():

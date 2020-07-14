@@ -26,10 +26,11 @@ import itertools
 import json
 import multiprocessing
 import os
+import pathlib
 import subprocess
 from time import sleep
 import traceback
-from typing import Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 import numpy as np
 
@@ -59,7 +60,24 @@ class Benchmark:
     args: Dict[str, Iterable] = {}
     measure_cmd_csv = False
     measure_cmd = "perf stat -x, -d"
-    servers: List[Dict[str, str]] = []
+    servers: List[Dict[str, Union[str, subprocess.Popen]]] = []
+
+    run_dir: Optional[Union[str, pathlib.Path]] = None
+
+    @staticmethod
+    def preallocator_hook(allocator_tuple, run, env):  #pylint: disable=unused-argument
+        """Empty default preallocator_hook implementation"""
+        return
+
+    @staticmethod
+    def process_output(result, stdout, stderr, allocator, perm):  #pylint: disable=unused-argument
+        """Empty default process_output implementation"""
+        return
+
+    @staticmethod
+    def postallocator_hook(allocator_tuple, run):  #pylint: disable=unused-argument
+        """Empty default postallocator_hook implementation"""
+        return
 
     @staticmethod
     def terminate_subprocess(proc, timeout=5):
@@ -542,7 +560,7 @@ class Benchmark:
         os.environ["PATH"] += f"{os.pathsep}{self.build_dir}"
 
         # save one valid result to expand invalid results
-        valid_result = {}
+        valid_result: Dict[str, Any] = {}
 
         self.results["facts"]["runs"] = runs
 
@@ -555,7 +573,6 @@ class Benchmark:
                 if alloc_name not in self.results:
                     self.results[alloc_name] = {}
 
-                skip = False
                 try:
                     self.start_servers(alloc_name=alloc_name,
                                        alloc=alloc,
@@ -564,25 +581,21 @@ class Benchmark:
                     logger.debug("%s", traceback.format_exc())
                     logger.error("%s", err)
                     logger.error("Skipping %s", alloc_name)
-                    skip = True
+                    # starting the server failed mark each measurement as empty
+                    # and continue with the next allocator
+                    for perm in self.iterate_args():
+                        self.results[alloc_name].setdefault(perm,
+                                                            []).append({})
+                    # shutdown all previously successful started servers
+                    self.shutdown_servers()
+                    continue
 
                 # Preallocator hook
-                if hasattr(self, "preallocator_hook"):
-                    self.preallocator_hook(  # pylint: disable=no-member
-                        (alloc_name, alloc), run, os.environ)
+                self.preallocator_hook((alloc_name, alloc), run, os.environ)
 
                 # Run benchmark for alloc
                 for perm in self.iterate_args():
                     i += 1
-
-                    # create new result entry
-                    if perm not in self.results[alloc_name]:
-                        self.results[alloc_name][perm] = []
-
-                    # starting the server failed -> add empty result and continue
-                    if skip:
-                        self.results[alloc_name][perm].append({})
-                        continue
 
                     # TODO: make this silencable
                     print(i, "of", total_executions, "\r", end='')
@@ -609,8 +622,8 @@ class Benchmark:
                                                  prepend=False)
 
                     cwd = os.getcwd()
-                    if hasattr(self, "run_dir"):
-                        run_dir = self.run_dir.format(**substitutions)  # pylint: disable=no-member
+                    if self.run_dir:
+                        run_dir = str(self.run_dir).format(**substitutions)
                         os.chdir(run_dir)
                         logger.debug("\nChange cwd to: %s", run_dir)
 
@@ -619,7 +632,7 @@ class Benchmark:
                     except subprocess.CalledProcessError as err:
                         res = err
 
-                    result = {}
+                    result: Dict[str, Any] = {}
 
                     if (res.returncode != 0 or "ERROR: ld.so" in res.stderr
                             or "Segmentation fault" in res.stderr
@@ -656,22 +669,21 @@ class Benchmark:
                                 Benchmark.parse_and_save_perf_output(
                                     result, res.stderr, alloc_name, perm)
 
-                        if hasattr(self, "process_output"):
-                            self.process_output(  # pylint: disable=no-member
-                                result, res.stdout, res.stderr, alloc_name,
-                                perm)
+                        self.process_output(result, res.stdout, res.stderr,
+                                            alloc_name, perm)
 
                         # save a valid result so we can expand invalid ones
                         if valid_result is None:
                             valid_result = result
 
                     logger.debug("Resulting in: %s", result)
-                    self.results[alloc_name][perm].append(result)
+                    self.results[alloc_name].setdefault(perm,
+                                                        []).append(result)
 
                     if os.getcwd() != cwd:
                         os.chdir(cwd)
 
-                if self.servers != [] and not skip:
+                if self.servers != []:
                     self.shutdown_servers()
 
                     for server in self.servers:
@@ -680,10 +692,9 @@ class Benchmark:
                         server_result["stdout"].append(server["stdout"])
                         server_result["stderr"].append(server["stderr"])
                         server_result["returncode"].append(
-                            server["popen"].returncode)
+                            cast(subprocess.Popen, server["popen"]).returncode)
 
-                if hasattr(self, "postallocator_hook"):
-                    self.postallocator_hook((alloc_name, alloc), run)  # pylint: disable=no-member
+                self.postallocator_hook((alloc_name, alloc), run)
 
             print()
 
