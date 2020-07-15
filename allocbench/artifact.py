@@ -22,6 +22,7 @@ Both flavours are version controlled archive with a checksum and git repositorie
 with a specific checkout.
 """
 
+from pathlib import Path
 from subprocess import CalledProcessError
 
 from allocbench.directories import get_allocbench_base_dir
@@ -66,6 +67,9 @@ class GitArtifact(Artifact):
         """checkout new worktree at location"""
         if not location:
             location = self.basedir / checkout
+
+        # make sure location is a pathlib Path object
+        location = Path(location)
 
         # check if we have already provided this checkout
         if location.exists():
@@ -150,6 +154,9 @@ class ArchiveArtifact(Artifact):
 
         if not location:
             location = self.basedir / "content"
+
+        # make sure location is a pathlib Path object
+        location = Path(location)
 
         # Check if we already provided the archive at location
         if location.exists():
