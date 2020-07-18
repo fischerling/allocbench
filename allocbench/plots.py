@@ -86,9 +86,11 @@ def _set_all_alloc_colors(allocators):
     matplotlib_c_colors = ["C" + str(i) for i in range(0, 10)]
     avail_colors = [c for c in matplotlib_c_colors if c not in explicit_colors]
 
+    i = 0
     for alloc in allocators.values():
         if alloc["color"] is None:
-            alloc["color"] = avail_colors.pop()
+            alloc["color"] = avail_colors[i]
+            i = (i + 1) % len(avail_colors)
 
 
 def get_alloc_color(bench, alloc):
