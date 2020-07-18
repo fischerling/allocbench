@@ -363,7 +363,7 @@ class Benchmark:
         self.iterate_args(args, {"a2":"bar"}) yields [(1, "bar"), (2, "bar")]
         self.iterate_args(args, {"a1":2, "a2":"foo"}) yields [(2, "foo")]"""
         if not args:
-            args = self.args
+            args = self.results["args"] or self.args
         if not fixed:
             fixed = {}
 
