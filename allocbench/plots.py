@@ -30,6 +30,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
 
+from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
 from allocbench.util import get_logger
 
@@ -610,14 +611,29 @@ def create_ascii_leaderboards(bench, datapoints: List[Tuple[str, str]]):
     return res[:-1]
 
 
-def calc_ttests_for_alloc_pair(bench, alloc1, alloc2, datapoint: str) -> Dict:
+def calc_ttests_for_alloc_pair(bench: Benchmark,
+                               alloc1: str,
+                               alloc2: str,
+                               datapoint: str,
+                               sig=0.005) -> Dict:
     """Calculate independent t-test between two allocators for each argument permutation"""
     ttest_results = {}
     for perm in bench.iterate_args():
         data1 = [float(m[datapoint]) for m in bench.results[alloc1][perm]]
         data2 = [float(m[datapoint]) for m in bench.results[alloc2][perm]]
 
-        ttest_results[perm] = scipy.stats.ttest_ind(data1, data2)
+        var1 = scipy.stats.describe(data1).variance
+        var2 = scipy.stats.describe(data2).variance
+        # equal variance condition taken from wikipedia
+        # https://en.wikipedia.org/wiki/Student%27s_t-test
+        equal_variance = not (var1 > 2 * var2 or var2 > 2 * var1)
+
+        ttest_result = scipy.stats.ttest_ind(data1,
+                                             data2,
+                                             equal_var=equal_variance)
+        result = f'{"un" if ttest_result.pvalue < sig else ""}equal means'
+
+        ttest_results[perm] = (result, ttest_result, equal_variance)
 
     return ttest_results
 
