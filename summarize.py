@@ -138,6 +138,9 @@ def summarize(benchmarks=None,
         except FileNotFoundError:
             continue
 
+        if not hasattr(bench, "summary"):
+            continue
+
         print_status(f"Summarizing {bench.name} ...")
         try:
             bench_sum(bench, exclude_allocators=exclude_allocators, sets=sets)
