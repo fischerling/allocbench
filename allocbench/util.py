@@ -49,10 +49,12 @@ def get_logger(path: str) -> logging.Logger:
 
 logger = get_logger(__file__)
 
+CmdType = Union[str, List[str]]
+
 
 # yapf: disable
 def run_cmd(  # pylint: disable=too-many-arguments
-        cmd: Union[str, List[str]],
+        cmd: CmdType,
         output_verbosity=2,
         capture=False,
         shell=False,
@@ -156,7 +158,7 @@ def print_license_and_exit():
 
 
 # https://stackoverflow.com/questions/22058048/hashing-a-file-in-python
-def sha1sum(filename: str) -> str:
+def sha1sum(filename: PathType) -> str:
     """Return sha1sum of a file"""
     sha1 = hashlib.sha1()
     barray = bytearray(64 * 1024)
