@@ -19,13 +19,16 @@
 import importlib
 import os
 import traceback
+from typing import cast, Tuple
 
+from allocbench.allocator import AllocatorDict, AllocatorCollection
+from allocbench.benchmark import Benchmark
 from allocbench.util import find_cmd, print_status, get_logger
 
 logger = get_logger(__file__)
 
 
-def build_analyze_alloc():
+def build_analyze_alloc() -> Tuple[str, AllocatorDict]:
     """Select and build available analysis allocator"""
     if find_cmd("malt") is not None:
         alloc_name = "malt"
@@ -39,7 +42,7 @@ def build_analyze_alloc():
     return alloc_name, getattr(analyze_alloc_module, alloc_name).build()
 
 
-def analyze_bench(bench):
+def analyze_bench(bench: Benchmark):
     """Analyse a single benchmark"""
     print_status("Analysing {} ...".format(bench))
 
@@ -50,13 +53,11 @@ def analyze_bench(bench):
 
     alloc_name, alloc_dict = build_analyze_alloc()
 
-    old_allocs = bench.allocators
     old_measure_cmd = bench.measure_cmd
     bench.measure_cmd = ""
-    bench.allocators = {alloc_name: alloc_dict}
 
     try:
-        bench.run(runs=1)
+        bench.run({alloc_name: alloc_dict}, runs=1)
     except Exception:  #pylint: disable=broad-except
         logger.debug("%s", traceback.format_exc())
         logger.error("Skipping analysis of %s!", bench)
@@ -69,18 +70,15 @@ def analyze_bench(bench):
     if "stats" in bench.results and alloc_name in bench.results["stats"]:
         del bench.results["stats"][alloc_name]
 
-    # restore allocs
-    bench.allocators = old_allocs
 
-
-def analyze_allocators(bench, allocators):
+def analyze_allocators(bench: Benchmark, allocators: AllocatorCollection):
     """Analyse a single benchmark for each allocator in allocators"""
     # build analyzse allocator before globaly setting LD_PRELOAD
     alloc_name, _ = build_analyze_alloc()
 
     for name, alloc in allocators.items():
         print_status(f"Analysing {name} during {bench} ...")
-        os.environ["LD_PRELOAD"] = alloc["LD_PRELOAD"]
+        os.environ["LD_PRELOAD"] = cast(str, alloc["LD_PRELOAD"])
         analyze_bench(bench)
 
         # save the resulting trace
