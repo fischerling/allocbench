@@ -21,6 +21,7 @@ import logging
 import os
 import subprocess
 import sys
+from typing import List, Optional, Union
 
 # Verbosity level -1: quiet, 0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG
 VERBOSITY = 0
@@ -35,7 +36,7 @@ def set_verbosity(verbosity: int):
     """
     loglevels = [logging.ERROR, logging.INFO, logging.DEBUG]
     logging.basicConfig(level=loglevels[verbosity])
-    global VERBOSITY  # pylint: disable = global-statement
+    global VERBOSITY  # pylint: disable=global-statement
     VERBOSITY = verbosity
 
 
@@ -47,23 +48,26 @@ def get_logger(path: str) -> logging.Logger:
 logger = get_logger(__file__)
 
 
+# yapf: disable
 def run_cmd(  # pylint: disable=too-many-arguments
-        cmd,
+        cmd: Union[str, List[str]],
         output_verbosity=2,
         capture=False,
         shell=False,
         check=True,
         cwd=None,
-        input=None):  # pylint: disable=redefined-builtin
+        input: str = None  # pylint: disable=redefined-builtin
+) -> subprocess.CompletedProcess:
+    # yapf: enable
     """subprocess.run wrapper which cares about the set verbosity"""
+
+    stdout = None
+    stderr = None
     if capture:
         stdout = subprocess.PIPE
         stderr = stdout
     elif VERBOSITY < output_verbosity:
         stdout = subprocess.DEVNULL
-        stderr = stdout
-    else:
-        stdout = None
         stderr = stdout
 
     logger.debug("Running command %s", cmd)
@@ -78,12 +82,12 @@ def run_cmd(  # pylint: disable=too-many-arguments
                           universal_newlines=True)
 
 
-def is_exe(fpath):
+def is_exe(fpath: str) -> bool:
     """Check if the given path is an exexutable file"""
     return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
 
 
-def find_cmd(cmd):
+def find_cmd(cmd: str) -> Optional[str]:
     """Return abspath of cmd if it is an executable or in PATH"""
     fpath, _ = os.path.split(cmd)
 
@@ -101,7 +105,7 @@ def find_cmd(cmd):
     return None
 
 
-def prefix_cmd_with_abspath(cmd):
+def prefix_cmd_with_abspath(cmd: str) -> str:
     """Prefix cmd with the abspath of the first word
 
     Usefull if cmd should be executed by the loader of a custom glibc."""
@@ -109,18 +113,13 @@ def prefix_cmd_with_abspath(cmd):
     if os.path.isabs(cmd) or cmd == "":
         return cmd
 
-    binary_end = cmd.find(" ")
-    binary_end = None if binary_end == -1 else binary_end
-
-    binary_abspath = find_cmd(cmd[0:binary_end])
-
-    # add arguments of cmd to the abspath
-    if binary_end:
-        return binary_abspath + " " + cmd[binary_end:]
-    return binary_abspath
+    argv = cmd.split()
+    abs_path = find_cmd(argv[0])
+    argv[0] = abs_path or ""
+    return ' '.join(argv)
 
 
-def allocbench_msg(color, *objects, sep=' ', end='\n', file=None):
+def allocbench_msg(color: str, *objects, sep=' ', end='\n', file=None):
     """Colored output function wrapping print"""
     if VERBOSITY < 0:
         return
@@ -154,12 +153,16 @@ def print_license_and_exit():
     sys.exit(0)
 
 
-def sha1sum(filename):
+# https://stackoverflow.com/questions/22058048/hashing-a-file-in-python
+def sha1sum(filename: str) -> str:
     """Return sha1sum of a file"""
     sha1 = hashlib.sha1()
     barray = bytearray(64 * 1024)
     view = memoryview(barray)
     with open(filename, 'rb', buffering=0) as input_file:
-        for bytes_read in iter(lambda: input_file.readinto(view), 0):
+        # ignoring till https://github.com/python/typing/issues/659 is solved
+        for bytes_read in iter(
+                lambda: input_file.readinto(view),  # type: ignore
+                0):
             sha1.update(view[:bytes_read])
     return sha1.hexdigest()
