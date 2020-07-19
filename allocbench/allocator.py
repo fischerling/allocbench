@@ -191,20 +191,23 @@ class Allocator:
         return res_dict
 
 
+def create_empty_allocator_dict() -> AllocatorDict:
+    """Return an empty allocator dict"""
+    return {
+        "cmd_prefix": "",
+        "binary_suffix": "",
+        "LD_PRELOAD": "",
+        "LD_LIBRARY_PATH": "",
+        "color": None
+    }
+
+
 def collect_installed_allocators() -> AllocatorCollection:
     """Collect allocators using installed system libraries"""
 
     maybe_allocators = list(collect_available_allocators().keys())
 
-    allocators = {
-        "libc": {
-            "cmd_prefix": "",
-            "binary_suffix": "",
-            "LD_PRELOAD": "",
-            "LD_LIBRARY_PATH": "",
-            "color": None
-        }
-    }
+    allocators = {"system_default": create_empty_allocator_dict()}
 
     for alloc in maybe_allocators:
         try:
@@ -295,6 +298,8 @@ def collect_allocators(
                 alloc_name: alloc.build()
                 for alloc_name, alloc in available_allocators.items()
             }
+        if name == "system_default":
+            return {"system_default": create_empty_allocator_dict()}
 
         # file exists -> interpret as python file with a global variable allocators
         if os.path.isfile(name):
