@@ -24,7 +24,7 @@ import os
 from pathlib import Path
 import shutil
 from subprocess import CalledProcessError
-from typing import List, Optional
+from typing import List, Optional, Dict, Iterable
 
 from allocbench.artifact import Artifact, ArchiveArtifact, GitArtifact
 from allocbench.util import print_status, run_cmd, get_logger
@@ -45,6 +45,9 @@ SRCDIR = Path(get_allocbench_build_dir()) / "src"
 
 SRCDIR.mkdir(parents=True, exist_ok=True)
 
+AllocatorDict = Dict[str, Optional[str]]
+AllocatorCollection = Dict[str, AllocatorDict]
+
 
 class Allocator:
     """Allocator base class
@@ -53,19 +56,14 @@ class Allocator:
     patches, and instructions to build the allocator.
     Allocator.build will compile the allocator and produce a for allocbench usable
     allocator dict"""
-    allowed_attributes = [
-        "analyze_alloc", "binary_suffix", "cmd_prefix", "ld_preload",
-        "ld_library_path", "color", "sources", "version", "patches",
-        "prepare_cmds", "build_cmds"
-    ]
 
-    binary_suffix: Optional[str] = None
-    cmd_prefix: Optional[str] = None
-    ld_preload: Optional[str] = None
-    ld_library_path: Optional[str] = None
+    binary_suffix = ''
+    cmd_prefix = ''
+    ld_preload = ''
+    ld_library_path = ''
     color = None
     sources: Optional[Artifact] = None
-    version: Optional[str] = None
+    version = ''
     patches: List[str] = []
     prepare_cmds: List[str] = []
     build_cmds: List[str] = []
@@ -129,7 +127,7 @@ class Allocator:
                     logger.error("Prepare %s failed", self.name)
                     raise
 
-    def build(self):
+    def build(self) -> AllocatorDict:
         """Build the allocator if needed and produce an allocator dict"""
         if self.build_cmds:
             build_needed = not self.dir.is_dir()
@@ -142,8 +140,8 @@ class Allocator:
                     timestamp = datetime.fromtimestamp(
                         float(buildtimestamp_file.read()))
 
-                modtime = os.stat(self.class_file).st_mtime
-                modtime = datetime.fromtimestamp(modtime)
+                st_mtime = os.stat(self.class_file).st_mtime
+                modtime = datetime.fromtimestamp(st_mtime)
 
                 build_needed = timestamp < modtime
 
@@ -175,15 +173,16 @@ class Allocator:
 
         logger.info("Create allocator dictionary")
         res_dict = {
-            "cmd_prefix": self.cmd_prefix or "",
-            "binary_suffix": self.binary_suffix or "",
-            "LD_PRELOAD": self.ld_preload or "",
-            "LD_LIBRARY_PATH": self.ld_library_path or "",
-            "color": self.color
+            "cmd_prefix": self.cmd_prefix,
+            "binary_suffix": self.binary_suffix,
+            "LD_PRELOAD": self.ld_preload,
+            "LD_LIBRARY_PATH": self.ld_library_path,
+            "color": self.color,
+            "version": self.version
         }
 
         for attr in ["LD_PRELOAD", "LD_LIBRARY_PATH", "cmd_prefix"]:
-            value = getattr(self, attr.lower(), "") or ""
+            value = getattr(self, attr.lower(), "")
             if value != "":
                 value = value.format(dir=self.dir, srcdir=self.srcdir)
                 res_dict[attr] = value
@@ -192,7 +191,7 @@ class Allocator:
         return res_dict
 
 
-def collect_installed_allocators():
+def collect_installed_allocators() -> AllocatorCollection:
     """Collect allocators using installed system libraries"""
 
     maybe_allocators = list(collect_available_allocators().keys())
@@ -203,7 +202,7 @@ def collect_installed_allocators():
             "binary_suffix": "",
             "LD_PRELOAD": "",
             "LD_LIBRARY_PATH": "",
-            "color": "C1"
+            "color": None
         }
     }
 
@@ -227,7 +226,7 @@ def collect_installed_allocators():
     return allocators
 
 
-def collect_available_allocators():
+def collect_available_allocators() -> Dict[str, Allocator]:
     """Collect all allocator definitions shipped with allocbench"""
 
     available_allocators = {}
@@ -242,27 +241,36 @@ def collect_available_allocators():
     return available_allocators
 
 
-def read_allocators_collection_file(alloc_path):
+def read_allocators_collection_file(alloc_path) -> AllocatorCollection:
     """Read and evaluate a python file looking for an exported dict called allocators"""
 
     exec_globals = {"__file__": alloc_path}
     with open(alloc_path, "r") as alloc_file:
         exec(compile(alloc_file.read(), alloc_path, 'exec'), exec_globals)  #pylint: disable=exec-used
 
-    if "allocators" in exec_globals:
-        return {a.name: a.build() for a in exec_globals["allocators"]}
+    if "allocators" not in exec_globals:
+        logger.error("No global dictionary 'allocators' in %s", alloc_path)
+        return {}
 
-    logger.error("No global dictionary 'allocators' in %s", alloc_path)
-    return {}
+    res = {}
+    for name, alloc in exec_globals["allocators"]:
+        if issubclass(alloc.__class__, Allocator):
+            res[name] = alloc.build()
+        else:
+            # TODO: check v's type
+            res[name] = alloc
+
+    return res
 
 
-def collect_allocators(allocators):
+def collect_allocators(
+        allocators: Optional[Iterable[str]]) -> AllocatorCollection:
     """Collect allocators to benchmark
 
     If allocators is None we use either the allocators exported in the default
     allocators file at build/allocators/allocators.py or the ones installed.
 
-    Otherwise allocators is interpreted as a list of names or files. If an entry in
+    Otherwise allocators is interpreted as a sequence of names or files. If an entry in
     allocators is a file it is handled as a allocator collection file exporting
     a allocators variable. If the entry is no file it is interpreted as an allocator
     name and is searched for in our allocator definitions located at allocbench/allocators.
@@ -271,8 +279,12 @@ def collect_allocators(allocators):
     # Default allocators definition file
     default_allocators_file = "build/allocators/allocators.py"
 
-    if allocators is None and os.path.isfile(default_allocators_file):
-        return read_allocators_collection_file(default_allocators_file)
+    if allocators is None:
+        if os.path.isfile(default_allocators_file):
+            return read_allocators_collection_file(default_allocators_file)
+
+        print_status("Using system-wide installed allocators ...")
+        return collect_installed_allocators()
 
     available_allocators = collect_available_allocators()
 
@@ -280,14 +292,12 @@ def collect_allocators(allocators):
     for name in allocators:
         if name == "all":
             return {
-                a: available_allocators[a].build()
-                for a in available_allocators
+                alloc_name: alloc.build()
+                for alloc_name, alloc in available_allocators.items()
             }
-        if name == "installed":
-            print_status("Using system-wide installed allocators ...")
-            ret.update(collect_installed_allocators())
+
         # file exists -> interpret as python file with a global variable allocators
-        elif os.path.isfile(name):
+        if os.path.isfile(name):
             print_status("Sourcing allocators definitions at", name, "...")
             ret.update(read_allocators_collection_file(name))
 
