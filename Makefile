@@ -69,6 +69,6 @@ tags:
 integration-test:
 	python3 -m unittest discover -s tests/integration
 
-test: integration-test
+test: all integration-test
 
 check: check-pylint check-format check-mypy test
