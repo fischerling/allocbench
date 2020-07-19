@@ -1,11 +1,11 @@
-image: "debian:buster-backports"
+image: "flowdalic/debian-dev:1.4"
 
 before_script:
   - apt update -qq
   - >
     apt install -y --no-install-recommends
-    gcc
-    make
+    git
+    cmake
     pipenv
   - pipenv install --dev
 
