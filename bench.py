@@ -222,8 +222,8 @@ def main():
             print_status("Cleaning up", bench.name, "...")
             bench.cleanup()
 
-        if args.summarize:
-            summarize()
+    if args.summarize:
+        summarize()
 
 
 if __name__ == "__main__":
