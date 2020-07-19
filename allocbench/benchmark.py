@@ -627,6 +627,10 @@ class Benchmark:
                         os.chdir(run_dir)
                         logger.debug("\nChange cwd to: %s", run_dir)
 
+                    # We only check returncode, stderr and stderr which are available
+                    # in CompletedProcess and CalledProcessError.
+                    res: Optional[Union[subprocess.CompletedProcess,
+                                        subprocess.CalledProcessError]] = None
                     try:
                         res = run_cmd(argv, capture=True)
                     except subprocess.CalledProcessError as err:
