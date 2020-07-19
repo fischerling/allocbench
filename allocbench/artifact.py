@@ -25,8 +25,8 @@ with a specific checkout.
 from pathlib import Path
 from subprocess import CalledProcessError
 
-from allocbench.directories import get_allocbench_base_dir
-from allocbench.util import print_status, run_cmd, sha1sum, get_logger
+from allocbench.directories import get_allocbench_base_dir, PathType
+from allocbench.util import print_status, run_cmd, sha1sum, get_logger, CmdType
 
 ARTIFACT_STORE_DIR = get_allocbench_base_dir() / "cache"
 
@@ -35,11 +35,11 @@ logger = get_logger(__file__)
 
 class Artifact:  # pylint: disable=too-few-public-methods
     """Base class for external ressources"""
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name
         self.basedir = ARTIFACT_STORE_DIR / name
 
-    def _retrieve(self, cmd):
+    def _retrieve(self, cmd: CmdType):
         """Run cmd to retrieve the artifact"""
         self.basedir.mkdir(exist_ok=True)
 
@@ -53,7 +53,7 @@ GIT_FETCH_CMD = ["git", "fetch", "--force", "--tags"]
 
 class GitArtifact(Artifact):
     """External git repository"""
-    def __init__(self, name, url):
+    def __init__(self, name: str, url: str):
         super().__init__(name)
         self.url = url
         self.repo = self.basedir / "repo"
@@ -63,7 +63,7 @@ class GitArtifact(Artifact):
         super()._retrieve(
             ["git", "clone", "--recursive", "--bare", self.url, "repo"])
 
-    def provide(self, checkout, location=None):
+    def provide(self, checkout: str, location: PathType = None):
         """checkout new worktree at location"""
         if not location:
             location = self.basedir / checkout
@@ -91,7 +91,7 @@ class GitArtifact(Artifact):
         if not self.repo.exists():
             self.retrieve()
 
-        worktree_cmd = ["git", "worktree", "add", location, checkout]
+        worktree_cmd = ["git", "worktree", "add", str(location), checkout]
         logger.debug("create new worktree. By running: %s in %s", worktree_cmd,
                      self.repo)
         try:
@@ -124,7 +124,8 @@ class ArchiveArtifact(Artifact):
     """External archive"""
     supported_formats = ["tar"]
 
-    def __init__(self, name, url, archive_format, checksum):
+    def __init__(self, name: str, url: str, archive_format: str,
+                 checksum: str):
         super().__init__(name)
         self.url = url
         if archive_format not in self.supported_formats:
@@ -139,7 +140,7 @@ class ArchiveArtifact(Artifact):
         """download the archive"""
         super()._retrieve(["wget", "-O", self.archive, self.url])
 
-    def provide(self, location=None):
+    def provide(self, location: PathType = None):
         """extract the archive"""
 
         # Download archive
@@ -166,7 +167,7 @@ class ArchiveArtifact(Artifact):
 
         # Extract archive
         if self.archive_format == "tar":
-            cmd = ["tar", "Cxf", location, self.archive]
+            cmd = ["tar", "Cxf", str(location), str(self.archive)]
 
         logger.debug("extract archive by running: %s in %s", cmd, self.basedir)
         run_cmd(cmd, output_verbosity=1, cwd=self.basedir)
