@@ -34,6 +34,7 @@ from typing import Any, Dict, Iterable, List, Optional, Union, cast
 
 import numpy as np
 
+from allocbench.allocator import AllocatorCollection
 from allocbench.directories import (get_allocbench_benchmark_src_dir,
                                     get_current_result_dir,
                                     get_allocbench_benchmark_build_dir,
@@ -546,7 +547,7 @@ class Benchmark:
                             for k in valid_result
                         }
 
-    def run(self, allocators: Dict[str, Dict[str, str]], runs=3):
+    def run(self, allocators: AllocatorCollection, runs=3):
         """generic run implementation"""
 
         self.results["allocators"] = copy.deepcopy(allocators)
