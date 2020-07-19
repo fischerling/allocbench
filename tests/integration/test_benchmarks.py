@@ -27,9 +27,14 @@ class TestDummy(unittest.TestCase):
     def test_execution(self):
         """Test if it executes successfully and outputs something"""
         cmd = './bench.py -b dummy -a system_default -r 1 -vv'
-        res = subprocess.check_output(cmd.split(),
-                                      text=True,
-                                      stderr=subprocess.STDOUT)
+        try:
+            res = subprocess.check_output(cmd.split(),
+                                          text=True,
+                                          stderr=subprocess.STDOUT)
+        except subprocess.CalledProcessError as e:
+            print(e.stdout)
+            print(e.stderr)
+            raise
 
         # allocbench should output something
         self.assertNotEqual(res, "")
