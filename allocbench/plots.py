@@ -17,19 +17,23 @@
 """Plot different graphs from allocbench results"""
 
 import ast
+from collections import namedtuple
 import copy
 import itertools
 import operator
 import os
 import re
 import traceback
-from typing import Dict, List, Tuple, NamedTuple
+from typing import (Any, cast, Mapping, MutableMapping, Dict, List, Tuple,
+                    NamedTuple, Union, Sequence)
 
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.stats
+from scipy.stats.stats import Ttest_indResult
 
+from allocbench.allocator import AllocatorCollection
 from allocbench.benchmark import Benchmark
 import allocbench.facter as facter
 from allocbench.util import get_logger
@@ -79,7 +83,7 @@ DEFAULT_FIG_OPTIONS = {
 FIGURES = {}
 
 
-def _set_all_alloc_colors(allocators):
+def _set_all_alloc_colors(allocators: AllocatorCollection):
     """Populate all not set allocator colors with matplotlib 'C' colors"""
     explicit_colors = [
         v["color"] for v in allocators.values() if v["color"] is not None
@@ -105,7 +109,8 @@ def get_alloc_color(bench, alloc):
 
 
 #https://stackoverflow.com/questions/2371436/evaluating-a-mathematical-expression-in-a-string
-def _eval_with_stat(bench, evaluation, alloc, perm, stat):
+def _eval_with_stat(bench: Benchmark, evaluation: str, alloc: str,
+                    perm: NamedTuple, stat: str):
     """Helper to evaluate a datapoint description string as arithmetic operation"""
     def _eval(node):
         """evaluate a arithmetic ast node"""
@@ -139,7 +144,7 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
                        alloc, perm)
         return nan
 
-    node = ast.parse(expr, mode='eval')
+    node = cast(ast.Expression, ast.parse(expr, mode='eval'))
 
     try:
         return _eval(node.body)
@@ -150,15 +155,15 @@ def _eval_with_stat(bench, evaluation, alloc, perm, stat):
         return nan
 
 
-def get_y_data(bench,
-               expression,
-               allocator,
-               perms,
+def get_y_data(bench: Benchmark,
+               expression: str,
+               allocator: str,
+               perms: Union[List[NamedTuple], NamedTuple],
                stat="mean",
-               scale=None) -> List[float]:
+               scale: str = None) -> List:
     """Helper to get the y data of an allocator for given permutations"""
 
-    y_data: List[float] = []
+    y_data = []
 
     if isinstance(perms, bench.Perm):
         perms = [perms]
@@ -179,7 +184,7 @@ def get_y_data(bench,
     return y_data
 
 
-def _create_plot_options(plot_type, **kwargs):
+def _create_plot_options(plot_type: str, **kwargs) -> Dict[str, Any]:
     """
     Create a plot options dictionary.
 
@@ -199,14 +204,16 @@ def _create_plot_options(plot_type, **kwargs):
         Dict holding the specified options and all default values for plot type
     """
 
-    options = copy.deepcopy(DEFAULT_PLOT_OPTIONS[plot_type])
+    options: Dict[str, Any] = copy.deepcopy(
+        cast(Dict, DEFAULT_PLOT_OPTIONS[plot_type]))
     for key, value in kwargs.items():
         options[key] = value
 
     return options
 
 
-def _create_figure_options(plot_type, fig_label, **kwargs):
+def _create_figure_options(plot_type: str, fig_label: str,
+                           **kwargs) -> Dict[str, Any]:
     """
     Create a figure options dictionary
 
@@ -226,7 +233,7 @@ def _create_figure_options(plot_type, fig_label, **kwargs):
         Dict holding the specified options and all default values for plot type
     """
 
-    options = copy.deepcopy(DEFAULT_FIG_OPTIONS[plot_type])
+    options = copy.deepcopy(cast(Dict, DEFAULT_FIG_OPTIONS[plot_type]))
 
     options['fig_label'] = fig_label
 
@@ -236,15 +243,15 @@ def _create_figure_options(plot_type, fig_label, **kwargs):
     return options
 
 
-def _plot(bench,
-          allocators,
-          y_expression,
-          x_data,
-          perms,
-          plot_type,
-          plot_options,
-          fig_options,
-          scale=None,
+def _plot(bench: Benchmark,
+          allocators: AllocatorCollection,
+          y_expression: str,
+          x_data: Sequence,
+          perms: Union[List[NamedTuple], NamedTuple],
+          plot_type: str,
+          plot_options: MutableMapping[str, Any],
+          fig_options: Mapping[str, Any],
+          scale: str = None,
           sumdir="",
           file_ext=SUMMARY_FILE_EXT):
     """
@@ -290,11 +297,12 @@ def _plot(bench,
             logger.debug('Unknown plot type: %s', plot_type)
             raise
 
-        _x_data = x_data
         if not fig_options['autoticks']:
             _x_data = np.arange(1, len(x_data) + 1)
             if plot_type == 'bar':
                 _x_data = _x_data + width / 2 + (i * plot_options['width'])
+        else:
+            _x_data = x_data
 
         plot_func(_x_data,
                   y_data,
@@ -476,7 +484,7 @@ def print_common_facts(comment_symbol="", file=None):
     print(file=file)
 
 
-def print_facts(bench,
+def print_facts(bench: Benchmark,
                 comment_symbol="",
                 print_common=True,
                 print_allocators=False,
@@ -500,7 +508,7 @@ def print_facts(bench,
     print(file=file)
 
 
-def export_stats_to_csv(bench, datapoint, path=None):
+def export_stats_to_csv(bench: Benchmark, datapoint: str, path=None):
     """Write descriptive statistics about datapoint to csv file"""
     allocators = bench.results["allocators"]
     args = bench.results["args"]
@@ -519,7 +527,7 @@ def export_stats_to_csv(bench, datapoint, path=None):
         widths.append(len(fieldname) + 2)
 
     # collect rows
-    rows = {}
+    rows: Dict[str, Dict[NamedTuple, List]] = {}
     for alloc in allocators:
         rows[alloc] = {}
         for perm in bench.iterate_args(args=args):
@@ -559,7 +567,7 @@ def export_stats_to_csv(bench, datapoint, path=None):
                 print(line.replace("_", "-"), file=csv_file)
 
 
-def get_ordered_results_for_perm(bench,
+def get_ordered_results_for_perm(bench: Benchmark,
                                  datapoint: str,
                                  perm: NamedTuple,
                                  order='>') -> List[Tuple[float, List[str]]]:
@@ -567,15 +575,19 @@ def get_ordered_results_for_perm(bench,
     data: Dict[float, List[str]] = {}
     for allocator in bench.results["allocators"]:
         value = _eval_with_stat(bench, datapoint, allocator, perm, "mean")
-        if value in data:
-            data[value].append(allocator)
-        else:
-            data[value] = [allocator]
+        data.setdefault(value, []).append(allocator)
 
-    return sorted(data.items(), reverse=order == ">")
+    res = sorted([(v, a) for v, a in data.items() if v is not nan],
+                 reverse=order == ">")
+    if nan in data:
+        res.append((nan, data[nan]))
+    return res
 
 
-def get_ordered_results(bench, datapoint, order='>'):
+def get_ordered_results(
+        bench: Benchmark,
+        datapoint: str,
+        order='>') -> Dict[NamedTuple, List[Tuple[float, List[str]]]]:
     """Return a ordered list of the allocator and their results"""
     results = {}
     for perm in bench.iterate_args(args=bench.results["args"]):
@@ -694,8 +706,8 @@ def export_stats_to_dataref(bench, datapoint, path=None):
                     print(cur_line, file=dataref_file)
 
 
-def write_best_doublearg_tex_table(bench,
-                                   expr,
+def write_best_doublearg_tex_table(bench: Benchmark,
+                                   expr: str,
                                    sort=">",
                                    file_postfix="",
                                    sumdir=""):
@@ -711,7 +723,7 @@ def write_best_doublearg_tex_table(bench,
     headers = args[header_arg]
     rows = args[row_arg]
 
-    cell_text = []
+    cell_parts = []
     for arg_value in rows:
         row = []
         for perm in bench.iterate_args(args=args, fixed={row_arg: arg_value}):
@@ -738,11 +750,11 @@ def write_best_doublearg_tex_table(bench,
 
             row.append(f"{tex_escape(best[0])}: {val_str}")
             row_str = " & ".join(row)
-        cell_text.append(f"{arg_value} & {row_str}")
+        cell_parts.append(f"{arg_value} & {row_str}")
 
     table_layout = " l |" * (len(headers) + 1)
     header_line = " & ".join([tex_escape(str(x)) for x in headers])
-    cell_text = "\\\\\n".join(cell_text)
+    cell_text = "\\\\\n".join(cell_parts)
 
     tex =\
 f"""\\documentclass{{standalone}}
@@ -868,7 +880,7 @@ def write_tex_table(bench, entries, file_postfix="", sumdir=""):
         print("\\end{document}", file=tex_file)
 
 
-def pgfplot_legend(bench,
+def pgfplot_legend(bench: Benchmark,
                    sumdir="",
                    file_name="pgfplot_legend",
                    colors=True,
@@ -920,10 +932,10 @@ f"""
         print(tex, file=legend_file)
 
 
-def pgfplot(bench,
-            perms,
-            xexpr,
-            yexpr,
+def pgfplot(bench: Benchmark,
+            perms: Sequence[NamedTuple],
+            xexpr: str,
+            yexpr: str,
             axis_attr="",
             bar=False,
             ylabel="y-label",
@@ -931,7 +943,7 @@ def pgfplot(bench,
             title="default title",
             postfix="",
             sumdir="",
-            scale=None,
+            scale: str = None,
             error_bars=True,
             colors=True):
     """Create a pgf plot for a given expression"""
