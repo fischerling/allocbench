@@ -23,6 +23,8 @@ import subprocess
 import sys
 from typing import List, Optional, Union
 
+from allocbench.directories import PathType
+
 # Verbosity level -1: quiet, 0: logging.WARNING, 1: logging.INFO, 2: logging.DEBUG
 VERBOSITY = 0
 
@@ -55,7 +57,7 @@ def run_cmd(  # pylint: disable=too-many-arguments
         capture=False,
         shell=False,
         check=True,
-        cwd=None,
+        cwd: PathType = None,
         input: str = None  # pylint: disable=redefined-builtin
 ) -> subprocess.CompletedProcess:
     # yapf: enable

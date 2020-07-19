@@ -24,16 +24,14 @@ import multiprocessing
 import os
 import platform
 from subprocess import CalledProcessError
-from typing import Any, Dict, Tuple, Optional, Union
+from typing import Any, Dict, Tuple, Optional
 
-from allocbench.directories import get_allocbench_build_dir
+from allocbench.directories import get_allocbench_build_dir, PathType
 from allocbench.util import run_cmd, get_logger
 
 logger = get_logger(__file__)
 
 FACTS: Dict[str, Any] = {}
-
-PathType = Union[str, os.PathLike]
 
 
 def collect_facts():

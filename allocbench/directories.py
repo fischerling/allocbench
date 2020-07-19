@@ -16,11 +16,14 @@
 # along with allocbench.  If not, see <http://www.gnu.org/licenses/>.
 """Functions to obtain specific directories in the allocbench directory tree"""
 
+from os import PathLike
 from pathlib import Path
 from typing import Optional, Union
 
 # /.../allocbench/allocbench
 SRCDIR = Path(__file__).parent
+
+PathType = Union[str, PathLike]
 
 
 def get_allocbench_src_dir() -> Path:
@@ -85,7 +88,7 @@ def get_allocbench_benchmark_build_dir() -> Path:
 RESDIR = None
 
 
-def set_current_result_dir(resdir: Union[Path, str]):
+def set_current_result_dir(resdir: PathType):
     """Set the path to the result directory of the current invocation and silently create it"""
     global RESDIR  # pylint: disable=global-statement
     RESDIR = Path(resdir)
