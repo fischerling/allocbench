@@ -599,12 +599,52 @@ def get_ordered_results(
     return results
 
 
-def create_ascii_leaderboards(bench, datapoints: List[Tuple[str, str]]):
+LeaderBoardEntry = namedtuple('LeaderBoardEntry',
+                              ['mean', 'allocators', 'pvalue', 'change'])
+
+
+def create_leaderboard(bench: Benchmark,
+                       datapoint: str,
+                       order='<') -> Dict[NamedTuple, List[LeaderBoardEntry]]:
+    """Return a dictionary containing a leaderboard for each argument permutation
+
+    A leaderboard is a ordered list of NamedTuples containing the mean,
+    a list of allocators, a p-value from an independent ttest of the entry with
+    the previous as well as the change from the previous mean in percent."""
+    leaderboards = {}
+
+    for perm, ordered_result in get_ordered_results(bench,
+                                                    datapoint,
+                                                    order=order).items():
+        leaderboard: List[LeaderBoardEntry] = []
+        for i, (val, allocators) in enumerate(ordered_result):
+            if i == 0:
+                leaderboard.append(LeaderBoardEntry(val, allocators, 0, 0))
+                continue
+
+            previous_val, previous_allocators = ordered_result[i - 1]
+
+            ttest_results = calc_ttests_for_alloc_pair_perm(
+                bench, allocators[0], previous_allocators[0], datapoint, perm)
+
+            change = val / previous_val
+
+            entry = LeaderBoardEntry(val, allocators, ttest_results[1].pvalue,
+                                     change)
+            leaderboard.append(entry)
+
+        leaderboards[perm] = leaderboard
+
+    return leaderboards
+
+
+def create_ascii_leaderboards(bench: Benchmark,
+                              datapoints: List[Tuple[str, str]]) -> str:
     """Return a dictionary containing ordered list of allocators according to their results"""
 
     res = ""
     leaderboards = {
-        datapoint: get_ordered_results(bench, datapoint, order=order)
+        datapoint: create_leaderboard(bench, datapoint, order=order)
         for datapoint, order in datapoints
     }
     # combined = []
@@ -613,14 +653,40 @@ def create_ascii_leaderboards(bench, datapoints: List[Tuple[str, str]]):
         res += f'leaderboard for "{datapoint}":\n'
         for perm in leaderboard:
             res += f'{perm}:\n'
-            doubles = 0
-            for i, (val, allocators) in enumerate(leaderboard[perm]):
-                doubles += len(allocators) - 1
-                allocs_str = ','.join(allocators)
-                res += f'{i + 1}. {allocs_str}: {val}\n'
+            rank = 0
+            for (val, allocators, pvalue, change) in leaderboard[perm]:
+                rank += len(allocators)
+                allocs_str = ', '.join(allocators)
+                res += f'{rank}. {allocs_str}: {val}; ttest p: {pvalue}; change: {change:.4f}\n'
             res += '\n'
 
     return res[:-1]
+
+
+def calc_ttests_for_alloc_pair_perm(
+        bench: Benchmark,
+        alloc1: str,
+        alloc2: str,
+        datapoint: str,
+        perm: NamedTuple,
+        sig=0.005) -> Tuple[str, Ttest_indResult, bool]:
+    """Calculate independent t-test between two allocators for a single argument permutation"""
+
+    data1 = [float(datapoint.format(**m)) for m in bench.results[alloc1][perm]]
+    data2 = [float(datapoint.format(**m)) for m in bench.results[alloc2][perm]]
+
+    var1 = scipy.stats.describe(data1).variance
+    var2 = scipy.stats.describe(data2).variance
+    # equal variance condition taken from wikipedia
+    # https://en.wikipedia.org/wiki/Student%27s_t-test
+    equal_variance = not (var1 > 2 * var2 or var2 > 2 * var1)
+
+    ttest_result = scipy.stats.ttest_ind(data1,
+                                         data2,
+                                         equal_var=equal_variance)
+    result = f'{"un" if ttest_result.pvalue < sig else ""}equal means'
+
+    return result, ttest_result, equal_variance
 
 
 def calc_ttests_for_alloc_pair(bench: Benchmark,
@@ -631,21 +697,12 @@ def calc_ttests_for_alloc_pair(bench: Benchmark,
     """Calculate independent t-test between two allocators for each argument permutation"""
     ttest_results = {}
     for perm in bench.iterate_args():
-        data1 = [float(m[datapoint]) for m in bench.results[alloc1][perm]]
-        data2 = [float(m[datapoint]) for m in bench.results[alloc2][perm]]
-
-        var1 = scipy.stats.describe(data1).variance
-        var2 = scipy.stats.describe(data2).variance
-        # equal variance condition taken from wikipedia
-        # https://en.wikipedia.org/wiki/Student%27s_t-test
-        equal_variance = not (var1 > 2 * var2 or var2 > 2 * var1)
-
-        ttest_result = scipy.stats.ttest_ind(data1,
-                                             data2,
-                                             equal_var=equal_variance)
-        result = f'{"un" if ttest_result.pvalue < sig else ""}equal means'
-
-        ttest_results[perm] = (result, ttest_result, equal_variance)
+        ttest_results[perm] = calc_ttests_for_alloc_pair_perm(bench,
+                                                              alloc1,
+                                                              alloc2,
+                                                              datapoint,
+                                                              perm,
+                                                              sig=sig)
 
     return ttest_results
 
