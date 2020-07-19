@@ -130,10 +130,12 @@ def main():
 
     # Prepare allocbench
     print_status("Building allocbench ...")
-    make_cmd = ["make"]
-    if args.verbose < 2:
-        make_cmd.append("-s")
-    run_cmd(make_cmd, output_verbosity=1)
+    # TODO: sort out recursive makes when running integration tests through our Makefile
+    if not 'MAKELEVEL' in os.environ:
+        make_cmd = ["make", "-d"]
+        if args.verbose < 2:
+            make_cmd.append("-s")
+        run_cmd(make_cmd, output_verbosity=1)
 
     # allocators to benchmark
     allocators = collect_allocators(args.allocators)

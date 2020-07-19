@@ -20,8 +20,12 @@ export CXXFLAGS = -std=c++11 $(CFLAGS) -fno-exceptions
 export LDFLAGS = -pthread -static-libgcc
 export LDXXFLAGS = $(LDFLAGS) -static-libstdc++
 
-.PHONY: all clean pylint format tags check check-format check-pylint $(MAKEFILES) $(CMAKELISTS)
-all: $(OBJDIR)/ccinfo  $(MAKEFILES) $(CMAKELISTS)
+.PHONY: all clean pylint format tags\
+	check check-format check-pylint check-mypy\
+	test integration-test\
+	 $(MAKEFILES) $(CMAKELISTS)
+
+all: $(OBJDIR)/ccinfo $(MAKEFILES) $(CMAKELISTS)
 
 $(CMAKELISTS):
 	$(eval BENCHDIR=$(OBJDIR)$(shell echo $@ | sed s/$(SRCDIR)//))
@@ -62,4 +66,9 @@ check-mypy:
 tags:
 	ctags -R --exclude="build/*" --exclude="cache/*" --exclude="doc/*" --exclude="results/*"
 
-check: check-pylint check-format check-mypy
+integration-test:
+	python3 -m unittest discover -s tests/integration
+
+test: integration-test
+
+check: check-pylint check-format check-mypy test
