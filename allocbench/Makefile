@@ -10,7 +10,8 @@ CFLAGS ?= $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 
 LDFLAGS ?= -pthread -static-libgcc
 
-MEMSIZE_KB=$(shell grep -E "MemTotal|SwapTotal" /proc/meminfo | grep -o "[0-9]*" | paste -sd+ | bc)
+MEMSIZE_KB=$(shell grep -E "MemTotal|SwapTotal" /proc/meminfo | grep -o "[0-9]*"\
+	| python -c "import sys; print(sum([int(x) for x in sys.stdin.readlines()]))")
 MEMSIZE="$(MEMSIZE_KB) * 1024l"
 
 TOOLS = print_status_on_exit.so exec sig_handlers.so
