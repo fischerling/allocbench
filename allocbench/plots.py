@@ -25,7 +25,7 @@ import os
 import re
 import traceback
 from typing import (Any, cast, Mapping, MutableMapping, Dict, List, Tuple,
-                    NamedTuple, Union, Sequence)
+                    NamedTuple, Union, Sequence, Literal)
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -46,6 +46,8 @@ nan = np.NaN  # pylint: disable=invalid-name
 SUMMARY_FILE_EXT = "svg"
 
 LATEX_CUSTOM_PREAMBLE = ""
+
+PlotType = Literal['plot', 'errorbar', 'bar']
 
 DEFAULT_PLOT_OPTIONS = {
     'plot': {
@@ -184,7 +186,7 @@ def get_y_data(bench: Benchmark,
     return y_data
 
 
-def _create_plot_options(plot_type: str, **kwargs) -> Dict[str, Any]:
+def _create_plot_options(plot_type: PlotType, **kwargs) -> Dict[str, Any]:
     """
     Create a plot options dictionary.
 
@@ -212,7 +214,7 @@ def _create_plot_options(plot_type: str, **kwargs) -> Dict[str, Any]:
     return options
 
 
-def _create_figure_options(plot_type: str, fig_label: str,
+def _create_figure_options(plot_type: PlotType, fig_label: str,
                            **kwargs) -> Dict[str, Any]:
     """
     Create a figure options dictionary
@@ -248,7 +250,7 @@ def _plot(bench: Benchmark,
           y_expression: str,
           x_data: Sequence,
           perms: Union[List[NamedTuple], NamedTuple],
-          plot_type: str,
+          plot_type: PlotType,
           plot_options: MutableMapping[str, Any],
           fig_options: Mapping[str, Any],
           scale: str = None,
@@ -333,7 +335,7 @@ def _plot(bench: Benchmark,
 
 def plot(bench,
          y_expression,
-         plot_type='errorbar',
+         plot_type: PlotType = 'errorbar',
          x_args=None,
          scale=None,
          plot_options=None,
