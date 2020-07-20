@@ -10,7 +10,7 @@ CFLAGS ?= $(OPTFLAGS) $(WARNFLAGS) $(COMMONFLAGS)
 
 LDFLAGS ?= -pthread -static-libgcc
 
-MEMSIZE_KB=$(shell free -t | tail -1 | tr -s ' ' | cut -d ' ' -f 2)
+MEMSIZE_KB=$(shell grep -E "MemTotal|SwapTotal" /proc/meminfo | grep -o "[0-9]*" | paste -sd+ | bc)
 MEMSIZE="$(MEMSIZE_KB) * 1024l"
 
 TOOLS = print_status_on_exit.so exec sig_handlers.so
