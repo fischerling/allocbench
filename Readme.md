@@ -1,6 +1,16 @@
 # allocbench - benchmark tool for POSIX memory allocators
 
 allocbench is a POSIX memory allocator benchmarking framework and tooling.
+It was used in Florian Fischer's [BA thesis](https://muhq.space/ba.html).
+
+What can allocbench do for you ?
+
+* Deterministically builds and patches allocators from git or source archives
+* Couples allocators with various included benchmarks as well as your custom ones
+* Supports you in analyzing your benchmark results by providing statistical and plot helper functions
+* Comes with support for two different malloc tracers to help you understand benchmark and allocator behavior
+* Contains numerous wildly used benchmarks in allocator research (espresso, cfrac, larson, ...)
+* It is extended easily with our own allocators and or custom benchmarks
 
 To obtain allocbench run
 
@@ -10,12 +20,12 @@ git clone https://muhq.space/software/allocbench.git
 
 ## Requirements
 
-* python >= 3.6
+* python >= 3.8
 * make, find, gcc (build dependencies)
 * perf (`perf stat -d` is the default command to measure benchmark results)
 * util-linux (`whereis` is used to find system installed allocators)
 * git, tar to handle external artifacts
-* numpy and matplotlib to summarize results and generate plots
+* numpy, scipy and matplotlib to summarize results and generate plots
 
 
 ## Usage
@@ -96,13 +106,12 @@ It groups the included allocators into categories to produce readable and not ex
 
 	./bench.py -b loop
 
-runs only the loop benchmark for all included allocators and will put its
+runs only the loop benchmark for all allocators found on the system and will put its
 results in `$PWD/results/$HOSTNAME/<time>/loop`.
 
-	./bench.py -a ba_allocators
+	./bench.py -a "tcmalloc*"
 
-builds all allocators used in Florian Fischer's [BA thesis](https://muhq.space/ba.html)
-and runs all benchmarks.
+builds all tcmalloc variants shipped with allocbench and runs all benchmarks.
 
 	./summarize.py <path/to/saved/results>
 
